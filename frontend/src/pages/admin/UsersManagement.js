@@ -369,8 +369,8 @@ const UsersManagement = () => {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {users.map((user) => {
-                const kycInfo = getKYCStatusBadge(user.kyc_status);
-                const statusInfo = getStatusBadge(user.is_active);
+                const kycInfo = getKYCStatusBadge(user.kycStatus || user.kyc_status);
+                const statusInfo = getStatusBadge(user.isActive !== undefined ? user.isActive : user.is_active);
                 const KycIcon = kycInfo.icon;
                 const StatusIcon = statusInfo.icon;
 
@@ -381,23 +381,28 @@ const UsersManagement = () => {
                         <div className="flex-shrink-0 h-10 w-10">
                           <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
                             <span className="text-sm font-medium text-gray-700">
-                              {user.name?.charAt(0) || 'U'}
+                              {(user.fullName || user.name || 'U').charAt(0).toUpperCase()}
                             </span>
                           </div>
                         </div>
                         <div className="ml-4">
                           <div className="flex items-center space-x-2">
                             <span className="text-sm font-medium text-gray-900">
-                              {user.name || 'Unknown User'}
+                              {user.fullName || user.name || 'Unknown User'}
                             </span>
-                            {!user.is_active && (
+                            {user.displayCode && (
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                {user.displayCode}
+                              </span>
+                            )}
+                            {!user.isActive && user.isActive !== undefined && (
                               <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
                                 Deleted
                               </span>
                             )}
                           </div>
                           <div className="text-sm text-gray-500">
-                            ID: {user.id.slice(0, 8)}...
+                            ID: {user.id?.slice(0, 8)}...
                           </div>
                         </div>
                       </div>
@@ -431,7 +436,7 @@ const UsersManagement = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       <div className="flex items-center">
                         <Calendar className="w-3 h-3 mr-2 text-gray-400" />
-                        {formatDate(user.created_at)}
+                        {formatDate(user.createdAt || user.created_at)}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -453,10 +458,10 @@ const UsersManagement = () => {
                         <Button 
                           variant="outline" 
                           size="sm" 
-                          className={`${!user.is_active ? 'text-gray-400 cursor-not-allowed opacity-50' : 'text-red-600 hover:text-red-700 hover:bg-red-50'}`}
-                          onClick={() => !user.is_active ? null : handleDeleteUser(user)}
-                          title={!user.is_active ? 'User already deleted' : `Delete ${user.name}`}
-                          disabled={!user.is_active}
+                          className={`${!(user.isActive !== undefined ? user.isActive : user.is_active) ? 'text-gray-400 cursor-not-allowed opacity-50' : 'text-red-600 hover:text-red-700 hover:bg-red-50'}`}
+                          onClick={() => !(user.isActive !== undefined ? user.isActive : user.is_active) ? null : handleDeleteUser(user)}
+                          title={!(user.isActive !== undefined ? user.isActive : user.is_active) ? 'User already deleted' : `Delete ${user.fullName || user.name}`}
+                          disabled={!(user.isActive !== undefined ? user.isActive : user.is_active)}
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>
@@ -537,7 +542,7 @@ const UsersManagement = () => {
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    User: {selectedUser.name}
+                    User: {selectedUser.fullName || selectedUser.name}
                   </label>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Email: {selectedUser.email}
@@ -547,8 +552,12 @@ const UsersManagement = () => {
                   <label className="flex items-center">
                     <input
                       type="checkbox"
-                      checked={selectedUser.is_active}
-                      onChange={(e) => setSelectedUser(prev => ({ ...prev, is_active: e.target.checked }))}
+                      checked={selectedUser.isActive !== undefined ? selectedUser.isActive : selectedUser.is_active}
+                      onChange={(e) => setSelectedUser(prev => ({ 
+                        ...prev, 
+                        isActive: e.target.checked,
+                        is_active: e.target.checked 
+                      }))}
                       className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                     />
                     <span className="ml-2 text-sm text-gray-700">Active User</span>
@@ -602,7 +611,7 @@ const UsersManagement = () => {
                 </div>
               </div>
               <p className="text-sm text-gray-700 mb-6">
-                Are you sure you want to delete <strong>{userToDelete.name}</strong>? 
+                Are you sure you want to delete <strong>{userToDelete.fullName || userToDelete.name}</strong>? 
                 This will deactivate the user account.
               </p>
               <div className="flex justify-end space-x-3">
