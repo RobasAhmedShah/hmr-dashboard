@@ -113,8 +113,20 @@ const UsersManagement = () => {
     }
   );
 
-  const users = usersData?.data?.data?.users || usersData?.data?.users || [];
-  const pagination = usersData?.data?.data?.pagination || usersData?.data?.pagination || {};
+  // Handle different response formats from backend
+  const users = usersData?.data?.data?.users || 
+                usersData?.data?.users || 
+                usersData?.data || 
+                (Array.isArray(usersData) ? usersData : []);
+  const pagination = usersData?.data?.data?.pagination || 
+                     usersData?.data?.pagination || 
+                     {
+                       totalPages: 1,
+                       currentPage: 1,
+                       totalUsers: users.length,
+                       hasPrev: false,
+                       hasNext: false
+                     };
 
 
   const handleFilterChange = (key, value) => {
@@ -226,7 +238,14 @@ const UsersManagement = () => {
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Users Management</h2>
-          <p className="text-gray-600">Manage all users in your platform</p>
+          <p className="text-gray-600">
+            Manage all users in your platform
+            {pagination.totalUsers > 0 && (
+              <span className="ml-2 text-blue-600 font-medium">
+                ({pagination.totalUsers} {pagination.totalUsers === 1 ? 'user' : 'users'})
+              </span>
+            )}
+          </p>
         </div>
         <Button onClick={handleCreateUser} className="flex items-center space-x-2">
           <Plus className="w-4 h-4" />
