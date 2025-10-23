@@ -34,21 +34,11 @@ const TransactionsManagement = () => {
   // Fetch transactions
   const { data: transactionsData, isLoading, error } = useQuery(
     ['admin-transactions', filters, currentPage],
-    async () => {
-      try {
-        return await adminAPI.getTransactions({
-          ...filters,
-          page: currentPage,
-          limit: 10
-        });
-      } catch (err) {
-        // If admin endpoint doesn't exist (404), provide helpful error message
-        if (err.response?.status === 404) {
-          console.log('Admin transactions endpoint not available');
-        }
-        throw err;
-      }
-    },
+    () => adminAPI.getTransactions({
+      ...filters,
+      page: currentPage,
+      limit: 10
+    }),
     {
       retry: 1,
       refetchOnWindowFocus: false,
@@ -128,17 +118,6 @@ const TransactionsManagement = () => {
           <XCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
           <p className="text-red-600 font-semibold mb-2">Failed to load transactions</p>
           <p className="text-gray-600 text-sm mb-2">{error.message}</p>
-          {error.response?.status === 404 && (
-            <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg max-w-md mx-auto">
-              <p className="text-sm text-yellow-800">
-                <strong>Backend API Issue:</strong> The admin transactions endpoint is not yet available. 
-                The backend needs to implement <code className="bg-yellow-100 px-1 rounded">/admin/transactions</code> endpoint.
-              </p>
-              <p className="text-xs text-yellow-700 mt-2">
-                See API_INTEGRATION_GUIDE.md for implementation details.
-              </p>
-            </div>
-          )}
         </div>
         <Button onClick={() => window.location.reload()} className="mt-4">
           Retry

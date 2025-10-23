@@ -109,32 +109,36 @@ export const walletTransactionsAPI = {
   createThirdPartyDeposit: (data) => api.post('/wallet/deposit', { ...data, type: 'thirdparty' }), // Updated for new backend
 };
 
-// Admin API (Complete)
+// Admin API (Updated to match actual backend)
 export const adminAPI = {
-  // Dashboard
+  // Dashboard - Not yet implemented in backend
   getDashboard: () => api.get('/admin/dashboard'),
   getAnalytics: () => api.get('/admin/analytics'),
   
   // Users CRUD
   getUsers: (params) => api.get('/admin/users', { params }),
-  getUser: (id) => api.get(`/admin/users/${id}`),
+  getUser: (id) => api.get(`/admin/users/${id}`), // Not yet implemented
   createUser: (data) => api.post('/admin/users', data),
-  updateUser: (id, data) => api.put(`/admin/users/${id}`, data),
-  deleteUser: (id) => api.delete(`/admin/users/${id}`),
-  updateUserStatus: (id, data) => api.patch(`/admin/users/${id}/status`, data),
+  updateUser: (id, data) => api.put(`/admin/users/${id}`, data), // Not yet implemented
+  deleteUser: (id) => api.delete(`/admin/users/${id}`), // Not yet implemented
+  updateUserStatus: (id, data) => api.patch(`/admin/users/${id}/status`, data), // Not yet implemented
   
-  // Properties CRUD
-  getProperties: (params) => api.get('/admin/properties', { params }),
-  getProperty: (id) => api.get(`/admin/properties/${id}`),
-  getPropertyDetail: (id) => api.get(`/admin/properties/${id}/detail`),
-  createProperty: (data) => api.post('/admin/properties', data),
-  updateProperty: (id, data) => api.put(`/admin/properties/${id}`, data),
-  deleteProperty: (id) => api.delete(`/admin/properties/${id}`),
-  updatePropertyStatus: (id, data) => api.patch(`/admin/properties/${id}/status`, data),
+  // Properties CRUD - Use public endpoints as admin endpoints don't exist
+  getProperties: (params) => api.get('/properties', { params }),
+  getProperty: (id) => api.get(`/properties/${id}`),
+  getPropertyDetail: (id) => api.get(`/properties/${id}`), // Use regular endpoint
+  createProperty: (data) => api.post('/properties', data),
+  updateProperty: (id, data) => api.put(`/properties/${id}`), // Not yet implemented
+  deleteProperty: (id) => api.delete(`/properties/${id}`), // Not yet implemented
+  updatePropertyStatus: (id, data) => api.patch(`/properties/${id}/status`, data), // Not yet implemented
   
-  // Other
-  getInvestments: (params) => api.get('/admin/investments', { params }),
-  getTransactions: (params) => api.get('/admin/transactions', { params }),
+  // Investments - Use public endpoints
+  getInvestments: (params) => api.get('/investments', { params }),
+  getInvestment: (id) => api.get(`/investments/${id}`),
+  
+  // Transactions - Use public endpoints
+  getTransactions: (params) => api.get('/transactions', { params }),
+  getTransaction: (id) => api.get(`/transactions/${id}`), // Not yet implemented
 };
 
 // Portfolio API (Mobile Optimized)
