@@ -249,7 +249,11 @@ const PropertiesManagement = () => {
   if (error) {
     return (
       <div className="text-center py-12">
-        <p className="text-red-600">Failed to load properties: {error.message}</p>
+        <div className="mb-4">
+          <AlertTriangle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+          <p className="text-red-600 font-semibold mb-2">Failed to load properties</p>
+          <p className="text-gray-600 text-sm mb-2">{error.message}</p>
+        </div>
         <Button onClick={() => window.location.reload()} className="mt-4">
           Retry
         </Button>
@@ -264,7 +268,14 @@ const PropertiesManagement = () => {
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Properties Management</h2>
-          <p className="text-gray-600">Manage all properties in your platform</p>
+          <p className="text-gray-600">
+            Manage all properties in your platform
+            {pagination.totalProperties > 0 && (
+              <span className="ml-2 text-blue-600 font-medium">
+                ({pagination.totalProperties} {pagination.totalProperties === 1 ? 'property' : 'properties'})
+              </span>
+            )}
+          </p>
         </div>
         <Button onClick={handleCreateProperty} className="flex items-center space-x-2">
           <Plus className="w-4 h-4" />

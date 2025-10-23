@@ -40,6 +40,8 @@ const TransactionsManagement = () => {
       limit: 10
     }),
     {
+      retry: 1,
+      refetchOnWindowFocus: false,
       enabled: isAuthenticated
     }
   );
@@ -112,7 +114,11 @@ const TransactionsManagement = () => {
   if (error) {
     return (
       <div className="text-center py-12">
-        <p className="text-red-600">Failed to load transactions</p>
+        <div className="mb-4">
+          <XCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+          <p className="text-red-600 font-semibold mb-2">Failed to load transactions</p>
+          <p className="text-gray-600 text-sm mb-2">{error.message}</p>
+        </div>
         <Button onClick={() => window.location.reload()} className="mt-4">
           Retry
         </Button>
@@ -126,7 +132,14 @@ const TransactionsManagement = () => {
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Transactions Management</h2>
-          <p className="text-gray-600">Monitor all financial transactions</p>
+          <p className="text-gray-600">
+            Monitor all financial transactions
+            {pagination.totalTransactions > 0 && (
+              <span className="ml-2 text-blue-600 font-medium">
+                ({pagination.totalTransactions} {pagination.totalTransactions === 1 ? 'transaction' : 'transactions'})
+              </span>
+            )}
+          </p>
         </div>
       </div>
 
