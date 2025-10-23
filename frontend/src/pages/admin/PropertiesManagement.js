@@ -20,7 +20,7 @@ import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import Badge from '../../components/ui/Badge';
 import PropertyForm from '../../components/admin/PropertyForm';
-import { adminAPI } from '../../services/api';
+import { adminAPI, propertiesAPI } from '../../services/api';
 import { useAdminAuth } from '../../components/admin/AdminAuth';
 
 const PropertiesManagement = () => {
@@ -46,11 +46,26 @@ const PropertiesManagement = () => {
   // Fetch properties
   const { data: propertiesData, isLoading, error } = useQuery(
     ['admin-properties', filters, currentPage],
-    () => adminAPI.getProperties({
-      ...filters,
-      page: currentPage,
-      limit: 10
-    }),
+    async () => {
+      try {
+        return await adminAPI.getProperties({
+          ...filters,
+          page: currentPage,
+          limit: 10
+        });
+      } catch (err) {
+        // If admin endpoint doesn't exist (404), try the public properties endpoint
+        if (err.response?.status === 404) {
+          console.log('Admin endpoint not available, falling back to public endpoint');
+          return await propertiesAPI.getAll({
+            ...filters,
+            page: currentPage,
+            limit: 10
+          });
+        }
+        throw err;
+      }
+    },
     {
       retry: 1,
       refetchOnWindowFocus: false,
@@ -249,7 +264,22 @@ const PropertiesManagement = () => {
   if (error) {
     return (
       <div className="text-center py-12">
-        <p className="text-red-600">Failed to load properties: {error.message}</p>
+        <div className="mb-4">
+          <AlertTriangle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+          <p className="text-red-600 font-semibold mb-2">Failed to load properties</p>
+          <p className="text-gray-600 text-sm mb-2">{error.message}</p>
+          {error.response?.status === 404 && (
+            <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg max-w-md mx-auto">
+              <p className="text-sm text-yellow-800">
+                <strong>Backend API Issue:</strong> The admin properties endpoint is not yet available. 
+                The backend needs to implement <code className="bg-yellow-100 px-1 rounded">/admin/properties</code> endpoint.
+              </p>
+              <p className="text-xs text-yellow-700 mt-2">
+                See API_INTEGRATION_GUIDE.md for implementation details.
+              </p>
+            </div>
+          )}
+        </div>
         <Button onClick={() => window.location.reload()} className="mt-4">
           Retry
         </Button>
@@ -264,7 +294,14 @@ const PropertiesManagement = () => {
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Properties Management</h2>
-          <p className="text-gray-600">Manage all properties in your platform</p>
+          <p className="text-gray-600">
+            Manage all properties in your platform
+            {pagination.totalProperties > 0 && (
+              <span className="ml-2 text-blue-600 font-medium">
+                ({pagination.totalProperties} {pagination.totalProperties === 1 ? 'property' : 'properties'})
+              </span>
+            )}
+          </p>
         </div>
         <Button onClick={handleCreateProperty} className="flex items-center space-x-2">
           <Plus className="w-4 h-4" />
