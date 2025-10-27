@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HMR Backend API Tester</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            border-bottom: 3px solid #2563eb;
+            padding-bottom: 10px;
+        }
+        .section {
+            margin: 30px 0;
+            padding: 20px;
+            background: #f9fafb;
+            border-radius: 6px;
+        }
+        button {
+            background: #2563eb;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        button:hover {
+            background: #1d4ed8;
+        }
+        button.danger {
+            background: #dc2626;
+        }
+        button.danger:hover {
+            background: #b91c1c;
+        }
+        button.success {
+            background: #16a34a;
+        }
+        button.success:hover {
+            background: #15803d;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f3f4f6;
+            border-radius: 4px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .success {
+            border-left: 4px solid #16a34a;
+        }
+        .error {
+            border-left: 4px solid #dc2626;
+        }
+        .loading {
+            color: #f59e0b;
+        }
+        input, select {
+            padding: 8px 12px;
+            margin: 5px;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        label {
+            display: block;
+            margin: 10px 0 5px 0;
+            font-weight: 600;
+            color: #374151;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏢 HMR Backend API Tester</h1>
+        <p><strong>Backend URL:</strong> <code>https://hmr-backend.vercel.app</code></p>
+
+        <!-- Test Connection -->
+        <div class="section">
+            <h2>1. Test Backend Connection</h2>
+            <button onclick="testConnection()">🔌 Test Connection</button>
+            <div id="connection-result" class="result" style="display:none;"></div>
+        </div>
+
+        <!-- Create Organization -->
+        <div class="section">
+            <h2>2. Create Organization (Required First)</h2>
+            <button onclick="createOrganization()">🏗️ Create HMR Builders Organization</button>
+            <div id="org-result" class="result" style="display:none;"></div>
+        </div>
+
+        <!-- Create Test Users -->
+        <div class="section">
+            <h2>3. Create Test Users</h2>
+            <p>This will create 5 test users with auto-generated wallets, KYC, and portfolios</p>
+            <button onclick="createTestUsers()">👥 Create 5 Test Users</button>
+            <div id="users-result" class="result" style="display:none;"></div>
+        </div>
+
+        <!-- Create Test Property -->
+        <div class="section">
+            <h2>4. Create Test Property</h2>
+            <label>Organization ID (from step 2):</label>
+            <input type="text" id="orgId" placeholder="ORG-000001 or UUID">
+            <button onclick="createProperty()">🏘️ Create Test Property</button>
+            <div id="property-result" class="result" style="display:none;"></div>
+        </div>
+
+        <!-- Get All Users -->
+        <div class="section">
+            <h2>5. Get All Users</h2>
+            <button onclick="getAllUsers()">📋 Fetch All Users</button>
+            <div id="get-users-result" class="result" style="display:none;"></div>
+        </div>
+
+        <!-- Get All Properties -->
+        <div class="section">
+            <h2>6. Get All Properties</h2>
+            <button onclick="getAllProperties()">🏢 Fetch All Properties</button>
+            <div id="get-properties-result" class="result" style="display:none;"></div>
+        </div>
+
+        <!-- Get All Transactions -->
+        <div class="section">
+            <h2>7. Get All Transactions</h2>
+            <button onclick="getAllTransactions()">💰 Fetch All Transactions</button>
+            <div id="get-transactions-result" class="result" style="display:none;"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'https://hmr-backend.vercel.app';
+
+        function showResult(elementId, message, isError = false) {
+            const element = document.getElementById(elementId);
+            element.style.display = 'block';
+            element.className = 'result ' + (isError ? 'error' : 'success');
+            element.textContent = message;
+        }
+
+        function showLoading(elementId) {
+            const element = document.getElementById(elementId);
+            element.style.display = 'block';
+            element.className = 'result loading';
+            element.textContent = 'Loading...';
+        }
+
+        async function testConnection() {
+            showLoading('connection-result');
+            try {
+                const response = await fetch(`${API_BASE_URL}/`);
+                const text = await response.text();
+                showResult('connection-result', `✅ Backend is online!\nResponse: ${text}`);
+            } catch (error) {
+                showResult('connection-result', `❌ Connection failed: ${error.message}`, true);
+            }
+        }
+
+        async function createOrganization() {
+            showLoading('org-result');
+            try {
+                const response = await fetch(`${API_BASE_URL}/organizations`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: 'HMR Builders',
+                        description: 'Leading real estate developer in Pakistan',
+                        website: 'https://hmrbuilders.com',
+                        logoUrl: 'https://example.com/logo.png'
+                    })
+                });
+                const data = await response.json();
+                showResult('org-result', 
+                    `✅ Organization created successfully!\n\n` +
+                    `Display Code: ${data.displayCode}\n` +
+                    `UUID: ${data.id}\n` +
+                    `Name: ${data.name}\n\n` +
+                    `📋 Copy this ID for creating properties: ${data.displayCode}`
+                );
+            } catch (error) {
+                showResult('org-result', `❌ Error: ${error.message}`, true);
+            }
+        }
+
+        async function createTestUsers() {
+            showLoading('users-result');
+            const users = [
+                { fullName: 'Ali Khan', email: 'ali.khan@example.com', phone: '+923001234567', role: 'user' },
+                { fullName: 'Sara Ahmed', email: 'sara.ahmed@example.com', phone: '+923001234568', role: 'user' },
+                { fullName: 'Hassan Malik', email: 'hassan.malik@example.com', phone: '+923001234569', role: 'user' },
+                { fullName: 'Fatima Siddiqui', email: 'fatima.s@example.com', phone: '+923001234570', role: 'user' },
+                { fullName: 'Ahmed Raza', email: 'ahmed.raza@example.com', phone: '+923001234571', role: 'user' }
+            ];
+
+            try {
+                let results = [];
+                for (const user of users) {
+                    const response = await fetch(`${API_BASE_URL}/admin/users`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(user)
+                    });
+                    const data = await response.json();
+                    results.push(data);
+                }
+                
+                showResult('users-result', 
+                    `✅ ${results.length} users created successfully!\n\n` +
+                    results.map(u => 
+                        `${u.displayCode}: ${u.fullName} (${u.email})\n` +
+                        `   Wallet: ✅ | KYC: ✅ Pending | Portfolio: ✅`
+                    ).join('\n\n')
+                );
+            } catch (error) {
+                showResult('users-result', `❌ Error: ${error.message}`, true);
+            }
+        }
+
+        async function createProperty() {
+            const orgId = document.getElementById('orgId').value;
+            if (!orgId) {
+                showResult('property-result', '❌ Please enter an Organization ID', true);
+                return;
+            }
+
+            showLoading('property-result');
+            try {
+                const response = await fetch(`${API_BASE_URL}/properties`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        organizationId: orgId,
+                        title: 'Marina View Residences',
+                        slug: 'marina-view-residences',
+                        description: 'Luxury waterfront apartments with stunning ocean views',
+                        type: 'residential',
+                        status: 'active',
+                        totalValueUSDT: 1000000,
+                        totalTokens: 1000,
+                        expectedROI: 12,
+                        city: 'Karachi',
+                        state: 'Sindh',
+                        country: 'Pakistan',
+                        features: { amenities: ['pool', 'gym', 'parking', 'security'] },
+                        images: ['https://images.unsplash.com/photo-1545324418-cc1a3fa10c00']
+                    })
+                });
+                const data = await response.json();
+                showResult('property-result', 
+                    `✅ Property created successfully!\n\n` +
+                    `Display Code: ${data.displayCode}\n` +
+                    `Title: ${data.title}\n` +
+                    `Price per Token: $${data.pricePerTokenUSDT}\n` +
+                    `Total Tokens: ${data.totalTokens}\n` +
+                    `Available Tokens: ${data.availableTokens}\n` +
+                    `Expected ROI: ${data.expectedROI}%`
+                );
+            } catch (error) {
+                showResult('property-result', `❌ Error: ${error.message}`, true);
+            }
+        }
+
+        async function getAllUsers() {
+            showLoading('get-users-result');
+            try {
+                const response = await fetch(`${API_BASE_URL}/admin/users`);
+                const data = await response.json();
+                const users = Array.isArray(data) ? data : (data.data || data.users || []);
+                
+                showResult('get-users-result', 
+                    `✅ Found ${users.length} users\n\n` +
+                    (users.length > 0 
+                        ? JSON.stringify(users, null, 2)
+                        : '⚠️ No users found. Please create some users first.')
+                );
+            } catch (error) {
+                showResult('get-users-result', `❌ Error: ${error.message}`, true);
+            }
+        }
+
+        async function getAllProperties() {
+            showLoading('get-properties-result');
+            try {
+                const response = await fetch(`${API_BASE_URL}/properties`);
+                const data = await response.json();
+                const properties = Array.isArray(data) ? data : (data.data || data.properties || []);
+                
+                showResult('get-properties-result', 
+                    `✅ Found ${properties.length} properties\n\n` +
+                    (properties.length > 0 
+                        ? JSON.stringify(properties, null, 2)
+                        : '⚠️ No properties found. Please create some properties first.')
+                );
+            } catch (error) {
+                showResult('get-properties-result', `❌ Error: ${error.message}`, true);
+            }
+        }
+
+        async function getAllTransactions() {
+            showLoading('get-transactions-result');
+            try {
+                const response = await fetch(`${API_BASE_URL}/transactions`);
+                const data = await response.json();
+                const transactions = Array.isArray(data) ? data : (data.data || data.transactions || []);
+                
+                showResult('get-transactions-result', 
+                    `✅ Found ${transactions.length} transactions\n\n` +
+                    (transactions.length > 0 
+                        ? JSON.stringify(transactions, null, 2)
+                        : '⚠️ No transactions found.')
+                );
+            } catch (error) {
+                showResult('get-transactions-result', `❌ Error: ${error.message}`, true);
+            }
+        }
+    </script>
+</body>
+</html>
+
+

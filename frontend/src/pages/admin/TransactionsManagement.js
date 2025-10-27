@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery } from 'react-query';
 import { 
   Search, 
@@ -22,6 +22,7 @@ import { useAdminAuth } from '../../components/admin/AdminAuth';
 
 const TransactionsManagement = () => {
   const { isAuthenticated } = useAdminAuth();
+  
   const [filters, setFilters] = useState({
     search: '',
     status: '',
@@ -33,12 +34,14 @@ const TransactionsManagement = () => {
 
   // Fetch transactions
   const { data: transactionsData, isLoading, error } = useQuery(
-    ['admin-transactions', filters, currentPage],
-    () => adminAPI.getTransactions({
-      ...filters,
-      page: currentPage,
-      limit: 10
-    }),
+    ['admin-transactions'],
+    async () => {
+      const response = await adminAPI.getTransactions({
+        limit: 1000 // Get all transactions for frontend filtering
+      });
+      console.log('Transactions API Response:', response);
+      return response;
+    },
     {
       retry: 1,
       refetchOnWindowFocus: false,
@@ -46,12 +49,141 @@ const TransactionsManagement = () => {
     }
   );
 
-  const transactions = transactionsData?.data?.data?.transactions || transactionsData?.data?.transactions || [];
-  const pagination = transactionsData?.data?.data?.pagination || transactionsData?.data?.pagination || {};
+  // Handle different response formats from backend
+  const allTransactions = transactionsData?.data?.data?.transactions || 
+                          transactionsData?.data?.transactions || 
+                          transactionsData?.data || 
+                          (Array.isArray(transactionsData) ? transactionsData : []);
+  
+  // Frontend filtering logic
+  const filteredTransactions = useMemo(() => {
+    let filtered = [...allTransactions];
+    
+    // Search filter
+    if (filters.search && filters.search.trim()) {
+      const searchLower = filters.search.toLowerCase();
+      filtered = filtered.filter(transaction => {
+        const id = (transaction.id || '').toLowerCase();
+        const description = (transaction.description || '').toLowerCase();
+        const userName = (transaction.user_name || '').toLowerCase();
+        const userEmail = (transaction.user_email || '').toLowerCase();
+        
+        return id.includes(searchLower) ||
+               description.includes(searchLower) ||
+               userName.includes(searchLower) ||
+               userEmail.includes(searchLower);
+      });
+    }
+    
+    // Status filter
+    if (filters.status && filters.status.trim()) {
+      filtered = filtered.filter(transaction => {
+        const transactionStatus = (transaction.status || '').toLowerCase();
+        const filterStatus = filters.status.toLowerCase();
+        return transactionStatus === filterStatus;
+      });
+    }
+    
+    // Transaction type filter
+    if (filters.transaction_type && filters.transaction_type.trim()) {
+      filtered = filtered.filter(transaction => {
+        const transactionType = (transaction.transaction_type || '').toLowerCase();
+        const filterType = filters.transaction_type.toLowerCase();
+        return transactionType === filterType;
+      });
+    }
+    
+    // Sorting
+    if (filters.sort_by) {
+      filtered.sort((a, b) => {
+        let aValue, bValue;
+        
+        switch (filters.sort_by) {
+          case 'amount_in_pkr':
+            aValue = parseFloat(a.amount_in_pkr || 0);
+            bValue = parseFloat(b.amount_in_pkr || 0);
+            break;
+          case 'status':
+            aValue = (a.status || '').toLowerCase();
+            bValue = (b.status || '').toLowerCase();
+            break;
+          case 'created_at':
+          default:
+            aValue = new Date(a.created_at || 0);
+            bValue = new Date(b.created_at || 0);
+            break;
+        }
+        
+        if (filters.sort_order === 'asc') {
+          return aValue > bValue ? 1 : aValue < bValue ? -1 : 0;
+        } else {
+          return aValue < bValue ? 1 : aValue > bValue ? -1 : 0;
+        }
+      });
+    }
+    
+    return filtered;
+  }, [allTransactions, filters]);
+  
+  // Use filtered transactions instead of raw transactions
+  const transactions = filteredTransactions;
+  
+  const pagination = transactionsData?.data?.data?.pagination || 
+                     transactionsData?.data?.pagination || 
+                     {
+                       totalPages: 1,
+                       currentPage: 1,
+                       totalTransactions: transactions.length,
+                       hasPrev: false,
+                       hasNext: false
+                     };
+
+  // Calculate summary statistics from ALL transactions (not filtered)
+  const summary = useMemo(() => {
+    const stats = {
+      totalDeposits: 0,
+      totalWithdrawals: 0,
+      pendingCount: 0,
+      netVolume: 0
+    };
+    
+    allTransactions.forEach(tx => {
+      const amount = parseFloat(tx.amountUSDT || tx.amount_in_pkr || tx.amount || 0);
+      const type = (tx.transaction_type || tx.type || '').toLowerCase();
+      const status = (tx.status || '').toLowerCase();
+      
+      // Count pending
+      if (status === 'pending') {
+        stats.pendingCount++;
+      }
+      
+      // Sum deposits and withdrawals (only completed)
+      if (status === 'completed') {
+        if (type === 'deposit') {
+          stats.totalDeposits += amount;
+          stats.netVolume += amount;
+        } else if (type === 'withdrawal') {
+          stats.totalWithdrawals += amount;
+          stats.netVolume -= amount;
+        }
+      }
+    });
+    
+    return stats;
+  }, [allTransactions]);
+
+  // Debug logging
+  console.log('Transactions Data:', {
+    raw: transactionsData,
+    allTransactions: allTransactions.length,
+    filteredTransactions: transactions.length,
+    pagination: pagination,
+    summary: summary
+  });
 
   const handleFilterChange = (key, value) => {
     setFilters(prev => ({ ...prev, [key]: value }));
-    setCurrentPage(1);
+    // No need to reset currentPage since we're using frontend filtering
   };
 
   const getStatusBadge = (status) => {
@@ -134,9 +266,9 @@ const TransactionsManagement = () => {
           <h2 className="text-2xl font-bold text-gray-900">Transactions Management</h2>
           <p className="text-gray-600">
             Monitor all financial transactions
-            {pagination.totalTransactions > 0 && (
+            {allTransactions.length > 0 && (
               <span className="ml-2 text-blue-600 font-medium">
-                ({pagination.totalTransactions} {pagination.totalTransactions === 1 ? 'transaction' : 'transactions'})
+                ({allTransactions.length} {allTransactions.length === 1 ? 'transaction' : 'transactions'})
               </span>
             )}
           </p>
@@ -153,7 +285,7 @@ const TransactionsManagement = () => {
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Total Deposits</p>
               <p className="text-2xl font-bold text-gray-900">
-                {formatPrice(transactionsData?.data?.data?.summary?.totalDeposits || transactionsData?.data?.summary?.totalDeposits || 0)}
+                {formatPrice(summary.totalDeposits)}
               </p>
             </div>
           </div>
@@ -167,7 +299,7 @@ const TransactionsManagement = () => {
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Total Withdrawals</p>
               <p className="text-2xl font-bold text-gray-900">
-                {formatPrice(transactionsData?.data?.data?.summary?.totalWithdrawals || transactionsData?.data?.summary?.totalWithdrawals || 0)}
+                {formatPrice(summary.totalWithdrawals)}
               </p>
             </div>
           </div>
@@ -181,7 +313,7 @@ const TransactionsManagement = () => {
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Pending</p>
               <p className="text-2xl font-bold text-gray-900">
-                {transactionsData?.data?.data?.summary?.pendingCount || transactionsData?.data?.summary?.pendingCount || 0}
+                {summary.pendingCount}
               </p>
             </div>
           </div>
@@ -195,7 +327,7 @@ const TransactionsManagement = () => {
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Net Volume</p>
               <p className="text-2xl font-bold text-gray-900">
-                {formatPrice(transactionsData?.data?.data?.summary?.netVolume || transactionsData?.data?.summary?.netVolume || 0)}
+                {formatPrice(summary.netVolume)}
               </p>
             </div>
           </div>
@@ -267,8 +399,8 @@ const TransactionsManagement = () => {
               onChange={(e) => handleFilterChange('sort_order', e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
-              <option value="desc">Descending</option>
-              <option value="asc">Ascending</option>
+              <option value="desc">Descending ↓</option>
+              <option value="asc">Ascending ↑</option>
             </select>
           </div>
         </div>
@@ -304,9 +436,33 @@ const TransactionsManagement = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {transactions.map((transaction) => {
-                const statusInfo = getStatusBadge(transaction.status);
-                const TypeIcon = getTransactionTypeIcon(transaction.transaction_type);
+              {transactions.length === 0 ? (
+                <tr>
+                  <td colSpan="7" className="px-6 py-12 text-center text-gray-500">
+                    <div className="flex flex-col items-center">
+                      <DollarSign className="w-12 h-12 text-gray-400 mb-4" />
+                      <p className="text-lg font-medium">No transactions found</p>
+                      <p className="text-sm">Transactions will appear here once users make deposits or withdrawals</p>
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                transactions.map((transaction) => {
+                  // Map backend field names to frontend
+                  const mappedTransaction = {
+                    ...transaction,
+                    status: transaction.status || 'completed',
+                    transaction_type: transaction.transactionType || transaction.transaction_type || transaction.type || 'deposit',
+                    amount_in_pkr: transaction.amountUSDT || transaction.amount_in_pkr || transaction.amount || 0,
+                    currency: transaction.currency || 'USDT',
+                    created_at: transaction.createdAt || transaction.created_at,
+                    user_name: transaction.user?.fullName || transaction.user_name || 'Unknown',
+                    user_email: transaction.user?.email || transaction.user_email || '',
+                    description: transaction.description || `${transaction.transactionType || transaction.type || 'Transaction'}`
+                  };
+
+                  const statusInfo = getStatusBadge(mappedTransaction.status);
+                  const TypeIcon = getTransactionTypeIcon(mappedTransaction.transaction_type);
                 const StatusIcon = statusInfo.icon;
 
                 return (
@@ -320,10 +476,10 @@ const TransactionsManagement = () => {
                         </div>
                         <div className="ml-4">
                           <div className="text-sm font-medium text-gray-900">
-                            {transaction.id.slice(0, 8)}...
+                            {transaction.displayCode || transaction.id?.slice(0, 8) + '...'}
                           </div>
                           <div className="text-sm text-gray-500">
-                            {transaction.description || 'No description'}
+                            {mappedTransaction.description}
                           </div>
                         </div>
                       </div>
@@ -337,22 +493,22 @@ const TransactionsManagement = () => {
                         </div>
                         <div className="ml-3">
                           <div className="text-sm font-medium text-gray-900">
-                            {transaction.user_name || 'Unknown User'}
+                            {mappedTransaction.user_name}
                           </div>
                           <div className="text-sm text-gray-500">
-                            {transaction.user_email}
+                            {mappedTransaction.user_email}
                           </div>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className={`flex items-center text-sm ${getTransactionTypeColor(transaction.transaction_type)}`}>
+                      <div className={`flex items-center text-sm ${getTransactionTypeColor(mappedTransaction.transaction_type)}`}>
                         <TypeIcon className="w-4 h-4 mr-2" />
-                        {transaction.transaction_type}
+                        <span className="capitalize">{mappedTransaction.transaction_type}</span>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {formatPrice(transaction.amount_in_pkr, transaction.currency)}
+                      {formatPrice(mappedTransaction.amount_in_pkr, mappedTransaction.currency)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <Badge variant={statusInfo.variant} className="flex items-center">
@@ -363,7 +519,7 @@ const TransactionsManagement = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       <div className="flex items-center">
                         <Calendar className="w-3 h-3 mr-2 text-gray-400" />
-                        {formatDate(transaction.created_at)}
+                        {formatDate(mappedTransaction.created_at)}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -375,7 +531,8 @@ const TransactionsManagement = () => {
                     </td>
                   </tr>
                 );
-              })}
+              })
+              )}
             </tbody>
           </table>
         </div>

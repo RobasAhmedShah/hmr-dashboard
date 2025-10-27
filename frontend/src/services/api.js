@@ -111,9 +111,9 @@ export const walletTransactionsAPI = {
 
 // Admin API (Updated to match actual backend)
 export const adminAPI = {
-  // Dashboard - Not yet implemented in backend
+  // Dashboard
   getDashboard: () => api.get('/admin/dashboard'),
-  getAnalytics: () => api.get('/admin/analytics'),
+  getAnalytics: (params) => api.get('/admin/analytics', { params }),
   
   // Users CRUD
   getUsers: (params) => api.get('/admin/users', { params }),
@@ -123,14 +123,22 @@ export const adminAPI = {
   deleteUser: (id) => api.delete(`/admin/users/${id}`), // Not yet implemented
   updateUserStatus: (id, data) => api.patch(`/admin/users/${id}/status`, data), // Not yet implemented
   
+  // KYC Management
+  getUserKYC: (userId) => api.get(`/kyc/user/${userId}`), // Get KYC by user ID or displayCode
+  updateKYCStatus: (kycId, data) => api.patch(`/kyc/${kycId}`, data), // Update KYC status (admin) - PATCH method as per backend
+  getAllKYC: (params) => api.get('/kyc', { params }), // Get all KYC verifications
+  
+  // Organizations
+  getOrganizations: (params) => api.get('/organizations', { params }), // Get all organizations
+  
   // Properties CRUD - Use public endpoints as admin endpoints don't exist
   getProperties: (params) => api.get('/properties', { params }),
   getProperty: (id) => api.get(`/properties/${id}`),
   getPropertyDetail: (id) => api.get(`/properties/${id}`), // Use regular endpoint
   createProperty: (data) => api.post('/properties', data),
-  updateProperty: (id, data) => api.put(`/properties/${id}`), // Not yet implemented
+  updateProperty: (id, data) => api.patch(`/properties/${id}`, data), // PATCH for full property updates
   deleteProperty: (id) => api.delete(`/properties/${id}`), // Not yet implemented
-  updatePropertyStatus: (id, data) => api.patch(`/properties/${id}/status`, data), // Not yet implemented
+  updatePropertyStatus: (id, statusData) => api.patch(`/properties/${id}`, { status: statusData.status }), // PATCH only status field
   
   // Investments - Use public endpoints
   getInvestments: (params) => api.get('/investments', { params }),

@@ -3,9 +3,19 @@ import { X, Save, Building2, MapPin, DollarSign, TrendingUp, Hash, Plus, Trash2,
 import Card from '../ui/Card';
 import Button from '../ui/Button';
 import SimpleMap from './SimpleMap';
+import { adminAPI } from '../../services/api';
 
 const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
   const [formData, setFormData] = useState({
+    // Required fields for backend validation
+    organizationId: '', // Required: organization ID
+    type: 'residential', // Required: property type
+    status: 'active', // Required: one of the allowed values
+    totalValueUSDT: 0, // Required: number
+    totalTokens: 1000, // Required: number
+    expectedROI: 0, // Required: number
+    
+    // Other fields
     title: '',
     slug: '',
     description: '',
@@ -18,7 +28,6 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
     location_longitude: '',
     property_type: 'residential',
     project_type: '',
-    status: 'coming-soon',
     floors: '',
     total_units: '',
     construction_progress: 0,
@@ -57,21 +66,57 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
     listing_price_formatted: 'PKR 0'
   });
 
-  const [newUnitType, setNewUnitType] = useState({ type: '', size: '', price: '' });
+  const [newUnitType, setNewUnitType] = useState({ type: '', size: '', count: '' });
   const [editingUnitIndex, setEditingUnitIndex] = useState(null);
-  const [editingUnit, setEditingUnit] = useState({ type: '', size: '', price: '' });
+  const [editingUnit, setEditingUnit] = useState({ type: '', size: '', count: '' });
   const [newFeature, setNewFeature] = useState('');
   const [newAmenity, setNewAmenity] = useState('');
   const [newDocument, setNewDocument] = useState({ name: '', url: '', type: '' });
   const [newPropertyFeature, setNewPropertyFeature] = useState('');
   const [newImage, setNewImage] = useState({ url: '', alt: '', type: 'main' });
   const [seoData, setSeoData] = useState({ title: '', description: '', keywords: '' });
+  const [organizations, setOrganizations] = useState([]);
+  const [loadingOrgs, setLoadingOrgs] = useState(false);
+
+  // Fetch organizations from database
+  useEffect(() => {
+    const fetchOrganizations = async () => {
+      setLoadingOrgs(true);
+      try {
+        const response = await adminAPI.getOrganizations({ limit: 100 });
+        const orgs = response?.data?.data?.organizations || response?.data?.organizations || response?.data || [];
+        setOrganizations(orgs);
+        console.log('📋 Loaded organizations:', orgs);
+        
+        // Auto-select first organization if available and no org is selected
+        if (orgs.length > 0 && !formData.organizationId) {
+          setFormData(prev => ({
+            ...prev,
+            organizationId: orgs[0].displayCode || orgs[0].id
+          }));
+        }
+      } catch (error) {
+        console.error('Failed to load organizations:', error);
+        // If API fails, user can still manually enter org ID
+      } finally {
+        setLoadingOrgs(false);
+      }
+    };
+    
+    fetchOrganizations();
+  }, []);
 
   useEffect(() => {
     if (property) {
       setFormData({
         ...formData,
-        ...property
+        ...property,
+        // Ensure arrays are always arrays
+        features: Array.isArray(property.features) ? property.features : [],
+        amenities: Array.isArray(property.amenities) ? property.amenities : [],
+        unit_types: Array.isArray(property.unit_types) ? property.unit_types : [],
+        documents: Array.isArray(property.documents) ? property.documents : [],
+        property_features: Array.isArray(property.property_features) ? property.property_features : [],
       });
       if (property.seo) {
         setSeoData(property.seo);
@@ -127,9 +172,9 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
           const generatedUnitTypes = [];
           for (let i = 1; i <= totalUnits; i++) {
             generatedUnitTypes.push({
-              type: `${i}BR`,
-              size: `${800 + (i * 200)} sq ft`,
-              price: `${(1000000 + (i * 500000)).toLocaleString()}`
+              type: `${i} Bedroom`,
+              size: `${800 + (i * 400)} sq ft`,
+              count: `${i}`
             });
           }
           newData.unit_types = generatedUnitTypes;
@@ -157,10 +202,20 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
       return;
     }
     
+    // Format data to match backend structure
     const finalData = {
       ...formData,
-      seo: seoData
+      seo: seoData,
+      features: {
+        amenities: formData.amenities || [],
+        unit_types: formData.unit_types || []
+      }
     };
+    
+    // Remove the redundant top-level fields since they're now in features
+    delete finalData.amenities;
+    delete finalData.unit_types;
+    
     onSave(finalData);
   };
 
@@ -197,8 +252,8 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
       'Korangi Industrial Area, Karachi'
     ];
     
-    const randomPropertyTypes = ['residential', 'commercial', 'mixed-use'];
-    const randomStatuses = ['coming-soon', 'active', 'construction', 'planning', 'on-hold'];
+    const randomPropertyTypes = ['residential', 'commercial'];
+    const randomStatuses = ['active'];
     
     const randomTitle = randomTitles[Math.floor(Math.random() * randomTitles.length)];
     const randomDescription = randomDescriptions[Math.floor(Math.random() * randomDescriptions.length)];
@@ -206,8 +261,15 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
     const randomPropertyType = randomPropertyTypes[Math.floor(Math.random() * randomPropertyTypes.length)];
     const randomStatus = randomStatuses[Math.floor(Math.random() * randomStatuses.length)];
     
+    // Get random organization from loaded organizations
+    const randomOrg = organizations.length > 0 
+      ? organizations[Math.floor(Math.random() * organizations.length)]
+      : null;
+    const orgId = randomOrg ? (randomOrg.displayCode || randomOrg.id) : 'ORG-000001';
+    
     // Generate random pricing values
-    const totalValue = Math.floor(Math.random() * 20000000000) + 1000000000; // 1B to 20B
+    const totalValue = Math.floor(Math.random() * 20000000000) + 1000000000; // 1B to 20B PKR
+    const totalValueUSDT = Math.floor(totalValue / 280); // Convert PKR to USDT (approx rate)
     const minInvestment = Math.floor(Math.random() * 1000000) + 100000; // 100K to 1M
     const roi = (Math.random() * 15 + 5).toFixed(1); // 5% to 20%
     const totalTokens = Math.floor(Math.random() * 200000) + 10000; // 10K to 200K
@@ -220,6 +282,15 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
     completionDate.setMonth(completionDate.getMonth() + Math.floor(Math.random() * 24) + 12);
     
     setFormData({
+      // Required backend fields
+      organizationId: orgId,
+      type: randomPropertyType,
+      status: randomStatus,
+      totalValueUSDT: totalValueUSDT,
+      totalTokens: totalTokens,
+      expectedROI: parseFloat(roi),
+      
+      // Other fields
       title: randomTitle,
       slug: generateSlug(randomTitle),
       description: randomDescription,
@@ -232,7 +303,6 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
       location_longitude: (67.0 + Math.random() * 0.2).toFixed(6),
       property_type: randomPropertyType,
       project_type: ['residential', 'commercial', 'mixed-use', 'residential-commercial', 'retail', 'office'][Math.floor(Math.random() * 6)],
-      status: randomStatus,
       floors: Math.floor(Math.random() * 20) + 5,
       total_units: Math.floor(Math.random() * 10) + 1,
       construction_progress: [0, 25, 50, 75, 100][Math.floor(Math.random() * 5)],
@@ -249,9 +319,9 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
       tokenization_price_per_token: (totalValue / totalTokens).toFixed(2),
       tokenization_token_price: (totalValue / totalTokens).toFixed(2),
       unit_types: [
-        { type: '1 Bedroom', size: '800 sq ft', price: (minInvestment * 0.8).toString() },
-        { type: '2 Bedroom', size: '1200 sq ft', price: minInvestment.toString() },
-        { type: '3 Bedroom', size: '1800 sq ft', price: (minInvestment * 1.5).toString() }
+        { type: '1 Bedroom', size: '800 sq ft', count: '1' },
+        { type: '2 Bedroom', size: '1200 sq ft', count: '2' },
+        { type: '3 Bedroom', size: '1800 sq ft', count: '3' }
       ],
       features: [
         'Swimming Pool',
@@ -346,12 +416,12 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
 
   // Unit Types Management
   const addUnitType = () => {
-    if (newUnitType.type && newUnitType.size && newUnitType.price) {
+    if (newUnitType.type && newUnitType.size && newUnitType.count) {
       setFormData(prev => ({
         ...prev,
         unit_types: [...prev.unit_types, { ...newUnitType }]
       }));
-      setNewUnitType({ type: '', size: '', price: '' });
+      setNewUnitType({ type: '', size: '', count: '' });
     }
   };
 
@@ -506,29 +576,138 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
               Basic Information
             </h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Required Backend Fields */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Property Title *
+                  Organization ID * {loadingOrgs && <span className="text-xs text-gray-500">(Loading...)</span>}
+                </label>
+                {organizations.length > 0 ? (
+                  <select
+                    name="organizationId"
+                    value={formData.organizationId}
+                    onChange={handleChange}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="">Select Organization</option>
+                    {organizations.map((org) => (
+                      <option key={org.id} value={org.displayCode || org.id}>
+                        {org.displayCode || org.id} - {org.name || 'Organization'}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    type="text"
+                    name="organizationId"
+                    value={formData.organizationId}
+                    onChange={handleChange}
+                    required
+                    placeholder="ORG-000001"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                )}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Property Type *
+                </label>
+                <select
+                  name="type"
+                  value={formData.type}
+                  onChange={handleChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="residential">🏠 Residential</option>
+                  <option value="commercial">🏢 Commercial</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Total Value (USDT) *
+                </label>
+                <input
+                  type="number"
+                  name="totalValueUSDT"
+                  value={formData.totalValueUSDT}
+                  onChange={handleChange}
+                  required
+                  min="0"
+                  step="0.01"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Total Tokens *
+                </label>
+                <input
+                  type="number"
+                  name="totalTokens"
+                  value={formData.totalTokens}
+                  onChange={handleChange}
+                  required
+                  min="1"
+                  step="1"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Expected ROI (%) *
+                </label>
+                <input
+                  type="number"
+                  name="expectedROI"
+                  value={formData.expectedROI}
+                  onChange={handleChange}
+                  required
+                  min="0"
+                  step="0.1"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Status *
+                </label>
+                <select
+                  name="status"
+                  value={formData.status}
+                  onChange={handleChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="active">✅ Active</option>
+                </select>
+              </div>
+              
+              {/* Optional Display Fields */}
+              <div className="md:col-span-2 border-t pt-4 mt-4">
+                <p className="text-sm font-medium text-gray-600 mb-4">Optional Display Information</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Property Title
                 </label>
                 <input
                   type="text"
                   name="title"
                   value={formData.title}
                   onChange={handleTitleChange}
-                  required
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Slug *
+                  Slug
                 </label>
                 <input
                   type="text"
                   name="slug"
                   value={formData.slug}
                   onChange={handleChange}
-                  required
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
@@ -724,13 +903,7 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                   required
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
-                  <option value="planning">Planning</option>
-                  <option value="construction">Construction</option>
-                  <option value="active">Active</option>
-                  <option value="coming-soon">Coming Soon</option>
-                  <option value="on-hold">On Hold</option>
-                  <option value="sold-out">Sold Out</option>
-                  <option value="completed">Completed</option>
+                  <option value="active">✅ Active</option>
                 </select>
               </div>
               <div>
@@ -1111,30 +1284,30 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
             </div>
             {formData.unit_types.length > 0 && (
               <p className="text-xs text-gray-500 mb-4">
-                💡 Click the edit button to modify any unit type. You can change the type, size, or price.
+                💡 Click the edit button to modify any unit type. You can change the type, size, or count.
               </p>
             )}
             <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <input
                   type="text"
-                  placeholder="Unit Type (e.g., 2BR)"
+                  placeholder="Unit Type (e.g., 2 Bedroom)"
                   value={newUnitType.type}
                   onChange={(e) => setNewUnitType(prev => ({ ...prev, type: e.target.value }))}
                   className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
                 <input
                   type="text"
-                  placeholder="Size (e.g., 1200 sqft)"
+                  placeholder="Size (e.g., 1200 sq ft)"
                   value={newUnitType.size}
                   onChange={(e) => setNewUnitType(prev => ({ ...prev, size: e.target.value }))}
                   className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
                 <input
                   type="text"
-                  placeholder="Price (e.g., 5000000)"
-                  value={newUnitType.price}
-                  onChange={(e) => setNewUnitType(prev => ({ ...prev, price: e.target.value }))}
+                  placeholder="Count (e.g., 1)"
+                  value={newUnitType.count}
+                  onChange={(e) => setNewUnitType(prev => ({ ...prev, count: e.target.value }))}
                   className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
                 <Button type="button" onClick={addUnitType} className="flex items-center space-x-2">
@@ -1142,7 +1315,7 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                   <span>Add</span>
                 </Button>
               </div>
-              {formData.unit_types.map((unit, index) => (
+              {Array.isArray(formData.unit_types) && formData.unit_types.map((unit, index) => (
                 <div key={index} className="p-3 bg-gray-50 rounded-lg">
                   {editingUnitIndex === index ? (
                     // Edit Mode
@@ -1150,23 +1323,23 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                         <input
                           type="text"
-                          placeholder="Unit Type (e.g., 2BR)"
+                          placeholder="Unit Type (e.g., 2 Bedroom)"
                           value={editingUnit.type}
                           onChange={(e) => setEditingUnit(prev => ({ ...prev, type: e.target.value }))}
                           className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         />
                         <input
                           type="text"
-                          placeholder="Size (e.g., 1200 sqft)"
+                          placeholder="Size (e.g., 1200 sq ft)"
                           value={editingUnit.size}
                           onChange={(e) => setEditingUnit(prev => ({ ...prev, size: e.target.value }))}
                           className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         />
                         <input
                           type="text"
-                          placeholder="Price (e.g., 5000000)"
-                          value={editingUnit.price}
-                          onChange={(e) => setEditingUnit(prev => ({ ...prev, price: e.target.value }))}
+                          placeholder="Count (e.g., 1)"
+                          value={editingUnit.count}
+                          onChange={(e) => setEditingUnit(prev => ({ ...prev, count: e.target.value }))}
                           className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         />
                       </div>
@@ -1195,7 +1368,7 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                       <div className="flex space-x-4">
                         <span className="font-medium">{unit.type}</span>
                         <span className="text-gray-600">{unit.size}</span>
-                        <span className="text-green-600">PKR {unit.price}</span>
+                        <span className="text-blue-600">Count: {unit.count}</span>
                       </div>
                       <div className="flex space-x-2">
                         <Button
@@ -1245,7 +1418,7 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                 </Button>
               </div>
               <div className="flex flex-wrap gap-2">
-                {formData.features.map((feature, index) => (
+                {Array.isArray(formData.features) && formData.features.map((feature, index) => (
                   <div key={index} className="flex items-center space-x-2 bg-blue-100 text-blue-800 px-3 py-1 rounded-full">
                     <span>{feature}</span>
                     <button
@@ -1282,7 +1455,7 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                 </Button>
               </div>
               <div className="flex flex-wrap gap-2">
-                {formData.amenities.map((amenity, index) => (
+                {Array.isArray(formData.amenities) && formData.amenities.map((amenity, index) => (
                   <div key={index} className="flex items-center space-x-2 bg-green-100 text-green-800 px-3 py-1 rounded-full">
                     <span>{amenity}</span>
                     <button
@@ -1348,7 +1521,7 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                   <span>Add</span>
                 </Button>
               </div>
-              {formData.documents.map((doc, index) => (
+              {Array.isArray(formData.documents) && formData.documents.map((doc, index) => (
                 <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <div className="flex space-x-4">
                     <span className="font-medium">{doc.name}</span>
@@ -1392,7 +1565,7 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                 </Button>
               </div>
               <div className="flex flex-wrap gap-2">
-                {formData.property_features.map((feature, index) => (
+                {Array.isArray(formData.property_features) && formData.property_features.map((feature, index) => (
                   <div key={index} className="flex items-center space-x-2 bg-purple-100 text-purple-800 px-3 py-1 rounded-full">
                     <span>{feature}</span>
                     <button
