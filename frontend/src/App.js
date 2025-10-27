@@ -17,6 +17,11 @@ import AdminLogin from './pages/admin/AdminLogin';
 import PropertyDetail from './pages/admin/PropertyDetail';
 import { AdminAuthProvider } from './components/admin/AdminAuth';
 
+// Organization Pages
+import OrgDashboard from './pages/organization/OrgDashboard';
+import OrgLogin from './pages/organization/OrgLogin';
+import { OrganizationAuthProvider } from './components/organization/OrganizationAuth';
+
 // Create a client
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -35,6 +40,7 @@ function App() {
         <Router>
           <div className="App">
             <Routes>
+              {/* Public Routes */}
               <Route path="/" element={<Home />} />
               <Route path="/properties" element={<Properties />} />
               <Route path="/login" element={<Login />} />
@@ -43,21 +49,36 @@ function App() {
               <Route path="/portfolio" element={<Portfolio />} />
               <Route path="/wallet" element={<Wallet />} />
               <Route path="/profile" element={<Profile />} />
-                    <Route path="/admin/login" element={
-                      <AdminAuthProvider>
-                        <AdminLogin />
-                      </AdminAuthProvider>
-                    } />
-                    <Route path="/admin" element={
-                      <AdminAuthProvider>
-                        <AdminDashboard />
-                      </AdminAuthProvider>
-                    } />
-                    <Route path="/admin/property/:propertyId" element={
-                      <AdminAuthProvider>
-                        <PropertyDetail />
-                      </AdminAuthProvider>
-                    } />
+              
+              {/* Admin Routes */}
+              <Route path="/admin/login" element={
+                <AdminAuthProvider>
+                  <AdminLogin />
+                </AdminAuthProvider>
+              } />
+              <Route path="/admin" element={
+                <AdminAuthProvider>
+                  <AdminDashboard />
+                </AdminAuthProvider>
+              } />
+              <Route path="/admin/property/:propertyId" element={
+                <AdminAuthProvider>
+                  <PropertyDetail />
+                </AdminAuthProvider>
+              } />
+              
+              {/* Organization Routes */}
+              <Route path="/org/login" element={
+                <OrganizationAuthProvider>
+                  <OrgLogin />
+                </OrganizationAuthProvider>
+              } />
+              <Route path="/orgdashboard" element={
+                <OrganizationAuthProvider>
+                  <OrgDashboard />
+                </OrganizationAuthProvider>
+              } />
+              
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </div>

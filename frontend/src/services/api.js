@@ -109,6 +109,28 @@ export const walletTransactionsAPI = {
   createThirdPartyDeposit: (data) => api.post('/wallet/deposit', { ...data, type: 'thirdparty' }), // Updated for new backend
 };
 
+// Organizations API (Real estate developers)
+export const organizationsAPI = {
+  // List all organizations
+  getAll: (params) => api.get('/organizations', { params }),
+  
+  // Get organization by ID or displayCode (ORG-000001)
+  getById: (id) => api.get(`/organizations/${id}`),
+  
+  // Create a new organization
+  create: (data) => api.post('/organizations', data),
+  
+  // Get organization liquidity analytics
+  getLiquidity: (id) => api.get(`/organizations/${id}/liquidity`),
+  
+  // Get all transactions for an organization (REAL ENDPOINT)
+  getTransactions: (id, params) => api.get(`/organizations/${id}/transactions`, { params }),
+  
+  // Get organization-specific dashboard data (uses admin endpoint with filter)
+  // Returns: Organization details, properties, investments, transactions, liquidity, investors
+  getDashboard: (id) => api.get(`/admin/dashboard`, { params: { organizationId: id } }),
+};
+
 // Admin API (Updated to match actual backend)
 export const adminAPI = {
   // Dashboard
