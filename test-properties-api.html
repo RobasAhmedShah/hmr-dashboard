@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Properties API</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 900px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            margin: 10px 5px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        button:hover {
+            background: #2563eb;
+        }
+        button:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+        #output {
+            background: #f3f4f6;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .success { color: #10b981; }
+        .error { color: #ef4444; }
+        .info { color: #3b82f6; }
+        input {
+            padding: 8px;
+            margin: 5px;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            width: 300px;
+        }
+        .section {
+            background: white;
+            border: 1px solid #e5e7eb;
+            padding: 20px;
+            margin: 15px 0;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🏢 Test Properties API - HMR Backend</h1>
+    <p>Backend: <strong>https://hmr-backend.vercel.app</strong></p>
+
+    <div class="section">
+        <h2>Step 1: Get Organization Code</h2>
+        <p>First, get your organization code (you need this to create properties)</p>
+        <button onclick="getOrganizations()">Get Organizations</button>
+        <div>
+            <input type="text" id="orgCode" placeholder="Enter ORG-000001 here">
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Step 2: Create Test Properties</h2>
+        <button onclick="createTestProperty()">Create 1 Test Property</button>
+        <button onclick="createMultipleProperties()">Create 5 Test Properties</button>
+    </div>
+
+    <div class="section">
+        <h2>Step 3: View Properties</h2>
+        <button onclick="getAllProperties()">Get All Properties</button>
+        <button onclick="getPropertiesWithPagination()">Get Properties (Paginated)</button>
+    </div>
+
+    <div id="output">Waiting for action...</div>
+
+    <script>
+        const API_BASE_URL = 'https://hmr-backend.vercel.app';
+        const output = document.getElementById('output');
+
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type === 'success' ? 'success' : type === 'error' ? 'error' : 'info';
+            output.innerHTML += `<span class="${className}">[${timestamp}] ${message}</span>\n`;
+            output.scrollTop = output.scrollHeight;
+        }
+
+        async function getOrganizations() {
+            try {
+                log('Fetching organizations...', 'info');
+                const response = await fetch(`${API_BASE_URL}/organizations`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    log(`✅ Found ${data.length} organizations`, 'success');
+                    data.forEach(org => {
+                        log(`  - ${org.name} (${org.displayCode})`, 'info');
+                    });
+                    if (data.length > 0) {
+                        document.getElementById('orgCode').value = data[0].displayCode;
+                        log(`📋 Auto-filled org code: ${data[0].displayCode}`, 'success');
+                    }
+                } else {
+                    log(`❌ Failed: ${JSON.stringify(data)}`, 'error');
+                }
+            } catch (error) {
+                log(`❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function createTestProperty() {
+            const orgCode = document.getElementById('orgCode').value;
+            if (!orgCode) {
+                alert('Please get organization code first!');
+                return;
+            }
+
+            const property = {
+                organizationId: orgCode,
+                title: `Luxury Apartment Complex ${Date.now()}`,
+                slug: `luxury-apt-${Date.now()}`,
+                description: "Modern luxury apartments with state-of-the-art amenities in prime location",
+                address: "123 Main Street, DHA Phase 5",
+                city: "Karachi",
+                state: "Sindh",
+                zipCode: "75500",
+                country: "Pakistan",
+                propertyType: "residential",
+                purchasePriceUSDT: 50000000,
+                totalTokens: 50000,
+                pricePerTokenUSDT: 1000,
+                expectedROI: 15.5,
+                latitude: 24.8607,
+                longitude: 67.0011,
+                imageUrl: "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=800",
+                images: ["https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=800"]
+            };
+
+            try {
+                log(`Creating property: ${property.title}...`, 'info');
+                const response = await fetch(`${API_BASE_URL}/properties`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(property),
+                });
+                const data = await response.json();
+                
+                if (response.ok) {
+                    log(`✅ Created: ${data.title} (${data.displayCode})`, 'success');
+                    log(`   Total Tokens: ${data.totalTokens}`, 'info');
+                    log(`   Price per Token: ${data.pricePerTokenUSDT} USDT`, 'info');
+                } else {
+                    log(`❌ Failed: ${JSON.stringify(data)}`, 'error');
+                }
+            } catch (error) {
+                log(`❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function createMultipleProperties() {
+            const orgCode = document.getElementById('orgCode').value;
+            if (!orgCode) {
+                alert('Please get organization code first!');
+                return;
+            }
+
+            const properties = [
+                {
+                    title: "Downtown Commercial Plaza",
+                    propertyType: "commercial",
+                    city: "Lahore",
+                    purchasePriceUSDT: 100000000,
+                    totalTokens: 100000,
+                    pricePerTokenUSDT: 1000,
+                    expectedROI: 18.5
+                },
+                {
+                    title: "Seaside Luxury Villas",
+                    propertyType: "residential",
+                    city: "Karachi",
+                    purchasePriceUSDT: 75000000,
+                    totalTokens: 75000,
+                    pricePerTokenUSDT: 1000,
+                    expectedROI: 16.0
+                },
+                {
+                    title: "Tech Hub Office Complex",
+                    propertyType: "commercial",
+                    city: "Islamabad",
+                    purchasePriceUSDT: 120000000,
+                    totalTokens: 120000,
+                    pricePerTokenUSDT: 1000,
+                    expectedROI: 20.0
+                },
+                {
+                    title: "Green Valley Residences",
+                    propertyType: "residential",
+                    city: "Multan",
+                    purchasePriceUSDT: 45000000,
+                    totalTokens: 45000,
+                    pricePerTokenUSDT: 1000,
+                    expectedROI: 14.5
+                },
+                {
+                    title: "Heritage Mixed-Use Building",
+                    propertyType: "mixed-use",
+                    city: "Peshawar",
+                    purchasePriceUSDT: 60000000,
+                    totalTokens: 60000,
+                    pricePerTokenUSDT: 1000,
+                    expectedROI: 17.0
+                }
+            ];
+
+            for (let i = 0; i < properties.length; i++) {
+                const prop = properties[i];
+                const fullProperty = {
+                    organizationId: orgCode,
+                    title: prop.title,
+                    slug: prop.title.toLowerCase().replace(/ /g, '-'),
+                    description: `Premium ${prop.propertyType} property in ${prop.city}`,
+                    address: `${i + 1}23 Main Street`,
+                    city: prop.city,
+                    state: "Punjab",
+                    zipCode: "50000",
+                    country: "Pakistan",
+                    propertyType: prop.propertyType,
+                    purchasePriceUSDT: prop.purchasePriceUSDT,
+                    totalTokens: prop.totalTokens,
+                    pricePerTokenUSDT: prop.pricePerTokenUSDT,
+                    expectedROI: prop.expectedROI,
+                    latitude: 24.8607 + (i * 0.1),
+                    longitude: 67.0011 + (i * 0.1),
+                    imageUrl: `https://images.unsplash.com/photo-154532441${i}-cc1a3fa10c00?w=800`,
+                    images: [`https://images.unsplash.com/photo-154532441${i}-cc1a3fa10c00?w=800`]
+                };
+
+                try {
+                    log(`[${i + 1}/5] Creating: ${prop.title}...`, 'info');
+                    const response = await fetch(`${API_BASE_URL}/properties`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(fullProperty),
+                    });
+                    const data = await response.json();
+                    
+                    if (response.ok) {
+                        log(`  ✅ ${data.title} (${data.displayCode})`, 'success');
+                    } else {
+                        log(`  ❌ Failed: ${JSON.stringify(data)}`, 'error');
+                    }
+                } catch (error) {
+                    log(`  ❌ Error: ${error.message}`, 'error');
+                }
+                
+                // Small delay between requests
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+            log('✅ Finished creating properties!', 'success');
+        }
+
+        async function getAllProperties() {
+            try {
+                log('Fetching all properties...', 'info');
+                const response = await fetch(`${API_BASE_URL}/properties`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    const properties = Array.isArray(data) ? data : data.data || [];
+                    log(`✅ Found ${properties.length} properties`, 'success');
+                    properties.slice(0, 10).forEach(prop => {
+                        log(`  - ${prop.title} (${prop.displayCode}) - ${prop.city}`, 'info');
+                        log(`    Tokens: ${prop.totalTokens}, ROI: ${prop.expectedROI}%`, 'info');
+                    });
+                    if (properties.length > 10) {
+                        log(`  ... and ${properties.length - 10} more`, 'info');
+                    }
+                } else {
+                    log(`❌ Failed: ${JSON.stringify(data)}`, 'error');
+                }
+            } catch (error) {
+                log(`❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function getPropertiesWithPagination() {
+            try {
+                log('Fetching properties with pagination...', 'info');
+                const response = await fetch(`${API_BASE_URL}/properties?page=1&limit=10`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    log(`✅ Response received`, 'success');
+                    log(`Full Response: ${JSON.stringify(data, null, 2)}`, 'info');
+                } else {
+                    log(`❌ Failed: ${JSON.stringify(data)}`, 'error');
+                }
+            } catch (error) {
+                log(`❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        // Auto-load organizations on page load
+        window.onload = () => {
+            log('Page loaded. Ready to test!', 'info');
+            getOrganizations();
+        };
+    </script>
+</body>
+</html>
+
+
+

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery } from 'react-query';
 import { 
   Search, 
@@ -22,6 +22,7 @@ import { useAdminAuth } from '../../components/admin/AdminAuth';
 
 const InvestmentsManagement = () => {
   const { isAuthenticated } = useAdminAuth();
+  
   const [filters, setFilters] = useState({
     search: '',
     status: '',
@@ -33,19 +34,126 @@ const InvestmentsManagement = () => {
 
   // Fetch investments
   const { data: investmentsData, isLoading, error } = useQuery(
-    ['admin-investments', filters, currentPage],
-    () => adminAPI.getInvestments({
-      ...filters,
-      page: currentPage,
-      limit: 10
-    }),
+    ['admin-investments'],
+    async () => {
+      const response = await adminAPI.getInvestments({
+        limit: 1000 // Get all investments
+      });
+      console.log('Investments API Response:', response);
+      return response;
+    },
     {
+      retry: 1,
+      refetchOnWindowFocus: false,
       enabled: isAuthenticated
     }
   );
 
-  const investments = investmentsData?.data?.data?.investments || investmentsData?.data?.investments || [];
-  const pagination = investmentsData?.data?.data?.pagination || investmentsData?.data?.pagination || {};
+  // Fetch dashboard stats for accurate investment totals
+  const { data: dashboardData } = useQuery(
+    ['admin-dashboard'],
+    () => adminAPI.getDashboard(),
+    {
+      retry: 1,
+      enabled: isAuthenticated
+    }
+  );
+
+  // Handle different response formats from backend
+  const investments = investmentsData?.data?.data?.investments || 
+                     investmentsData?.data?.investments || 
+                     investmentsData?.data || 
+                     (Array.isArray(investmentsData) ? investmentsData : []);
+
+  // Get unique user IDs from investments
+  const uniqueUserIds = useMemo(() => {
+    const userIds = new Set();
+    investments.forEach((inv) => {
+      const userId = inv.user_id || inv.userId || inv.user?.id;
+      if (userId) userIds.add(userId);
+    });
+    return Array.from(userIds);
+  }, [investments]);
+
+  // Note: Portfolio API is returning 404 errors, so we'll use investment data directly
+  const allUserPortfolios = null; // Disabled - Portfolio API not working
+  
+  const pagination = investmentsData?.data?.data?.pagination || 
+                     investmentsData?.data?.pagination || 
+                     {
+                       totalPages: 1,
+                       currentPage: 1,
+                       totalInvestments: investments.length,
+                       hasPrev: false,
+                       hasNext: false
+                     };
+
+  // Calculate summary statistics using dashboard data for accurate totals
+  const summary = useMemo(() => {
+    // Get investment stats from dashboard API (more accurate)
+    const dashboardInvestments = dashboardData?.data?.investments || {};
+    
+    const stats = {
+      totalInvestments: parseFloat(dashboardInvestments.totalValue || 0),
+      activeInvestments: 0,
+      pendingInvestments: 0,
+      totalInvestors: 0,
+      investmentCount: parseInt(dashboardInvestments.count || 0),
+      averageInvestment: parseFloat(dashboardInvestments.averageInvestment || 0)
+    };
+    
+    const uniqueInvestors = new Set();
+    
+    console.log('📊 Dashboard investments data:', dashboardInvestments);
+    console.log('📊 Calculating counts from investments:', investments.length);
+    
+    // Calculate counts and investors from investment list
+    investments.forEach((inv) => {
+      const status = (inv.status || '').toLowerCase();
+      const userId = inv.user_id || inv.userId;
+      
+      // Count by status
+      if (status === 'active' || status === 'confirmed' || status === 'completed') {
+        stats.activeInvestments++;
+      } else if (status === 'pending') {
+        stats.pendingInvestments++;
+      }
+      
+      // Count unique investors
+      if (userId) {
+        uniqueInvestors.add(userId);
+      }
+    });
+    
+    stats.totalInvestors = uniqueInvestors.size;
+    
+    console.log('📊 Summary calculated:', stats);
+    
+    return stats;
+  }, [investments, dashboardData]);
+
+  // Debug logging
+  console.log('Investments Data:', {
+    raw: investmentsData,
+    investments: investments,
+    pagination: pagination,
+    count: investments.length,
+    summary: summary
+  });
+  
+  // Debug: Log sample investment to see available fields
+  if (investments.length > 0) {
+    console.log('📊 Investment Data Sample (first investment):', {
+      investment: investments[0],
+      availableTokenFields: {
+        tokensToBuy: investments[0].tokensToBuy,
+        tokens_bought: investments[0].tokens_bought,
+        tokens: investments[0].tokens,
+        tokensBought: investments[0].tokensBought,
+        tokensPurchased: investments[0].tokensPurchased
+      }
+    });
+  }
 
   const handleFilterChange = (key, value) => {
     setFilters(prev => ({ ...prev, [key]: value }));
@@ -63,7 +171,7 @@ const InvestmentsManagement = () => {
     return statusMap[status] || { variant: 'default', text: status, icon: Clock };
   };
 
-  const formatPrice = (amount, currency = 'PKR') => {
+  const formatPrice = (amount, currency = 'USD') => {
     const num = parseFloat(amount);
     if (num >= 1000000000) {
       return `${currency} ${(num / 1000000000).toFixed(1)}B`;
@@ -133,7 +241,7 @@ const InvestmentsManagement = () => {
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Total Investments</p>
               <p className="text-2xl font-bold text-gray-900">
-                {formatPrice(investmentsData?.data?.data?.summary?.totalAmount || investmentsData?.data?.summary?.totalAmount || 0)}
+                {formatPrice(summary.totalInvestments)}
               </p>
             </div>
           </div>
@@ -147,7 +255,7 @@ const InvestmentsManagement = () => {
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Active Investments</p>
               <p className="text-2xl font-bold text-gray-900">
-                {investmentsData?.data?.data?.summary?.activeCount || investmentsData?.data?.summary?.activeCount || 0}
+                {summary.activeInvestments}
               </p>
             </div>
           </div>
@@ -161,7 +269,7 @@ const InvestmentsManagement = () => {
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Pending</p>
               <p className="text-2xl font-bold text-gray-900">
-                {investmentsData?.data?.data?.summary?.pendingCount || investmentsData?.data?.summary?.pendingCount || 0}
+                {summary.pendingInvestments}
               </p>
             </div>
           </div>
@@ -175,7 +283,7 @@ const InvestmentsManagement = () => {
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Total Investors</p>
               <p className="text-2xl font-bold text-gray-900">
-                {investmentsData?.data?.data?.summary?.totalInvestors || investmentsData?.data?.summary?.totalInvestors || 0}
+                {summary.totalInvestors}
               </p>
             </div>
           </div>
@@ -290,12 +398,61 @@ const InvestmentsManagement = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {investments.map((investment) => {
-                const statusInfo = getStatusBadge(investment.status);
-                const StatusIcon = statusInfo.icon;
+              {investments.length === 0 ? (
+                <tr>
+                  <td colSpan="6" className="px-6 py-12 text-center text-gray-500">
+                    <div className="flex flex-col items-center">
+                      <TrendingUp className="w-12 h-12 text-gray-400 mb-4" />
+                      <p className="text-lg font-medium">No investments found</p>
+                      <p className="text-sm">Investments will appear here once users start investing in properties</p>
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                investments.map((investment) => {
+                  // Extract tokens directly from investment data
+                  // Portfolio API is not working (returning 404), so use investment object directly
+                  let tokens_bought = parseFloat(
+                    investment.tokensToBuy || 
+                    investment.tokens_bought || 
+                    investment.tokens || 
+                    investment.tokensBought ||
+                    investment.tokensPurchased ||
+                    0
+                  );
+                  
+                  // Debug log for first 3 investments
+                  if (investments.indexOf(investment) < 3) {
+                    console.log(`🔍 Token Extraction #${investments.indexOf(investment) + 1}:`, {
+                      investmentId: investment.id || investment.displayCode,
+                      rawInvestmentData: {
+                        tokensToBuy: investment.tokensToBuy,
+                        tokens_bought: investment.tokens_bought,
+                        tokens: investment.tokens,
+                        tokensBought: investment.tokensBought,
+                        tokensPurchased: investment.tokensPurchased
+                      },
+                      extractedTokens: tokens_bought
+                    });
+                  }
+                  
+                  // Map backend field names to frontend
+                  const mappedInvestment = {
+                    ...investment,
+                    status: investment.status || 'active',
+                    tokens_bought: tokens_bought,
+                    amount_invested: investment.amountUSDT || investment.amount_invested || investment.amount || 0,
+                    created_at: investment.createdAt || investment.created_at,
+                    property_title: investment.property?.title || investment.property_title || 'Unknown Property',
+                    user_name: investment.user?.fullName || investment.user_name || 'Unknown User',
+                    user_email: investment.user?.email || investment.user_email || '',
+                  };
 
-                return (
-                  <tr key={investment.id} className="hover:bg-gray-50">
+                  const statusInfo = getStatusBadge(mappedInvestment.status);
+                  const StatusIcon = statusInfo.icon;
+
+                  return (
+                    <tr key={investment.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <div className="flex-shrink-0 h-10 w-10">
@@ -305,7 +462,7 @@ const InvestmentsManagement = () => {
                         </div>
                         <div className="ml-4">
                           <div className="text-sm font-medium text-gray-900">
-                            {investment.id.slice(0, 8)}...
+                            {investment.displayCode || investment.id?.slice(0, 8) + '...'}
                           </div>
                           <div className="text-sm text-gray-500">
                             Investment
@@ -322,10 +479,10 @@ const InvestmentsManagement = () => {
                         </div>
                         <div className="ml-3">
                           <div className="text-sm font-medium text-gray-900">
-                            {investment.user_name || 'Unknown User'}
+                            {mappedInvestment.user_name}
                           </div>
                           <div className="text-sm text-gray-500">
-                            {investment.user_email}
+                            {mappedInvestment.user_email}
                           </div>
                         </div>
                       </div>
@@ -335,19 +492,29 @@ const InvestmentsManagement = () => {
                         <Building2 className="w-4 h-4 mr-2 text-gray-400" />
                         <div>
                           <div className="text-sm font-medium text-gray-900">
-                            {investment.property_title}
+                            {mappedInvestment.property_title}
                           </div>
                           <div className="text-sm text-gray-500">
-                            {investment.property_slug}
+                            {investment.property?.displayCode || investment.property?.slug || ''}
                           </div>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {formatPrice(investment.investment_amount)}
+                      {formatPrice(mappedInvestment.amount_invested, 'USDT')}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {investment.tokens_purchased?.toLocaleString()}
+                      <div className="flex items-center">
+                        <span className="font-medium">
+                          {parseFloat(mappedInvestment.tokens_bought || 0).toLocaleString(undefined, {
+                            minimumFractionDigits: 0,
+                            maximumFractionDigits: 2
+                          })}
+                        </span>
+                        {mappedInvestment.tokens_bought > 0 && (
+                          <span className="ml-1 text-xs text-gray-500">tokens</span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <Badge variant={statusInfo.variant} className="flex items-center">
@@ -358,7 +525,7 @@ const InvestmentsManagement = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       <div className="flex items-center">
                         <Calendar className="w-3 h-3 mr-2 text-gray-400" />
-                        {formatDate(investment.created_at)}
+                        {formatDate(mappedInvestment.created_at)}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -370,7 +537,8 @@ const InvestmentsManagement = () => {
                     </td>
                   </tr>
                 );
-              })}
+              })
+              )}
             </tbody>
           </table>
         </div>
