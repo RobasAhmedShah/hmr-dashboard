@@ -534,3 +534,4 @@ updatePropertyStatus: (id, data) => api.patch(`/properties/${id}/status`, data)
 **Last Updated:** October 24, 2025
 
 
+
