@@ -18,7 +18,7 @@ import { organizationsAPI } from '../../services/api';
 import { useOrganizationAuth } from '../../components/organization/OrganizationAuth';
 
 const OrgTransactionsManagement = ({ organizationId }) => {
-  const { isAuthenticated } = useOrganizationAuth();
+  const { isAuthenticated, organizationName } = useOrganizationAuth();
   
   const [filters, setFilters] = useState({
     search: '',
@@ -26,13 +26,13 @@ const OrgTransactionsManagement = ({ organizationId }) => {
     transaction_type: ''
   });
 
-  // Fetch transactions using organization-specific API
+  // Fetch organization liquidity transactions
   const { data: transactionsData, isLoading, error } = useQuery(
     ['org-transactions', organizationId],
     async () => {
-      console.log('🔄 Fetching transactions for organization:', organizationId);
+      console.log(`💳 Fetching ONLY ${organizationName} transactions via GET /organizations/${organizationId}/transactions`);
       const response = await organizationsAPI.getTransactions(organizationId);
-      console.log('✅ Transactions API Response:', response);
+      console.log('✅ Organization Transactions API Response:', response);
       return response;
     },
     {
@@ -42,10 +42,53 @@ const OrgTransactionsManagement = ({ organizationId }) => {
     }
   );
 
-  const allTransactions = transactionsData?.data?.data?.transactions || 
+  // Extract transactions from response (handles multiple response structures)
+  const orgTransactions = transactionsData?.data?.data?.transactions || 
                           transactionsData?.data?.transactions || 
                           transactionsData?.data || 
                           (Array.isArray(transactionsData) ? transactionsData : []);
+
+  // Debug: Log transaction structure
+  React.useEffect(() => {
+    if (orgTransactions.length > 0) {
+      console.log(`📊 ${organizationName} - First Transaction Structure:`, orgTransactions[0]);
+      console.log(`💰 Total Transactions Fetched for ${organizationName}:`, orgTransactions.length);
+    } else {
+      console.log(`⚠️ No transactions found for ${organizationName} (${organizationId})`);
+    }
+  }, [orgTransactions, organizationName, organizationId]);
+
+  // All transactions (currently just org transactions, but could be combined with investments)
+  const allTransactions = [...orgTransactions];
+
+  // Helper function to extract transaction amount (handles multiple field name variations)
+  const getTransactionAmount = (tx) => {
+    return parseFloat(
+      tx.amountUSDT || 
+      tx.amount_usdt || 
+      tx.amount || 
+      0
+    );
+  };
+
+  // Helper function to extract user/entity name
+  const getTransactionUser = (tx) => {
+    // For organization transactions, could be fromEntity or toEntity
+    return tx.fromEntity || 
+           tx.toEntity || 
+           tx.user_name || 
+           tx.userName || 
+           (tx.user && (tx.user.fullName || tx.user.name)) ||
+           'N/A';
+  };
+
+  // Helper function to extract transaction type
+  const getTransactionType = (tx) => {
+    return tx.type || 
+           tx.transaction_type || 
+           tx.transactionType || 
+           'other';
+  };
 
   // Frontend filtering
   const filteredTransactions = useMemo(() => {
@@ -54,13 +97,17 @@ const OrgTransactionsManagement = ({ organizationId }) => {
     if (filters.search) {
       const searchLower = filters.search.toLowerCase();
       filtered = filtered.filter(transaction => {
-        const id = (transaction.id || '').toLowerCase();
+        const id = (transaction.id || transaction.displayCode || '').toLowerCase();
         const description = (transaction.description || '').toLowerCase();
-        const userName = (transaction.user_name || '').toLowerCase();
+        const userName = getTransactionUser(transaction).toLowerCase();
+        const fromEntity = (transaction.fromEntity || '').toLowerCase();
+        const toEntity = (transaction.toEntity || '').toLowerCase();
         
         return id.includes(searchLower) ||
                description.includes(searchLower) ||
-               userName.includes(searchLower);
+               userName.includes(searchLower) ||
+               fromEntity.includes(searchLower) ||
+               toEntity.includes(searchLower);
       });
     }
     
@@ -71,9 +118,11 @@ const OrgTransactionsManagement = ({ organizationId }) => {
     }
     
     if (filters.transaction_type) {
-      filtered = filtered.filter(transaction =>
-        (transaction.transaction_type || transaction.transactionType || '').toLowerCase() === filters.transaction_type.toLowerCase()
-      );
+      const typeFilter = filters.transaction_type.toLowerCase();
+      filtered = filtered.filter(transaction => {
+        const txType = getTransactionType(transaction).toLowerCase();
+        return txType === typeFilter;
+      });
     }
     
     return filtered;
@@ -133,6 +182,20 @@ const OrgTransactionsManagement = ({ organizationId }) => {
   const getTransactionTypeBadge = (type) => {
     const typeLower = (type || '').toLowerCase();
     switch (typeLower) {
+      case 'inflow':
+        return (
+          <Badge variant="green" className="flex items-center">
+            <TrendingUp className="w-3 h-3 mr-1" />
+            Inflow
+          </Badge>
+        );
+      case 'outflow':
+        return (
+          <Badge variant="red" className="flex items-center">
+            <TrendingDown className="w-3 h-3 mr-1" />
+            Outflow
+          </Badge>
+        );
       case 'deposit':
         return (
           <Badge variant="blue" className="flex items-center">
@@ -166,10 +229,10 @@ const OrgTransactionsManagement = ({ organizationId }) => {
     }
   };
 
-  // Calculate summary statistics
+  // Calculate summary statistics using helper functions
   const summary = useMemo(() => {
     const totalAmount = filteredTransactions.reduce((sum, tx) => 
-      sum + parseFloat(tx.amount || 0), 0
+      sum + getTransactionAmount(tx), 0
     );
     const completedTransactions = filteredTransactions.filter(tx => 
       (tx.status || '').toLowerCase() === 'completed' || (tx.status || '').toLowerCase() === 'success'
@@ -178,8 +241,23 @@ const OrgTransactionsManagement = ({ organizationId }) => {
       (tx.status || '').toLowerCase() === 'pending'
     ).length;
     
+    // Enhanced debug logging
+    console.log(`💳 ${organizationName} Transaction Summary:`, {
+      totalTransactions: filteredTransactions.length,
+      totalAmount: totalAmount,
+      completedCount: completedTransactions,
+      pendingCount: pendingTransactions,
+      note: `Only showing ${organizationName} transactions`,
+      breakdown: filteredTransactions.map(tx => ({
+        id: tx.displayCode || tx.id,
+        amount: getTransactionAmount(tx),
+        type: getTransactionType(tx),
+        status: tx.status
+      }))
+    });
+    
     return { totalAmount, completedTransactions, pendingTransactions };
-  }, [filteredTransactions]);
+  }, [filteredTransactions, organizationName]);
 
   if (isLoading) {
     return (
@@ -210,10 +288,13 @@ const OrgTransactionsManagement = ({ organizationId }) => {
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Transactions Management</h2>
           <p className="text-gray-600">
-            Monitor all transactions
+            Monitor {organizationName} transactions
             <span className="ml-2 text-blue-600 font-medium">
               ({filteredTransactions.length} {filteredTransactions.length === 1 ? 'transaction' : 'transactions'})
             </span>
+          </p>
+          <p className="text-xs text-gray-500 mt-1">
+            💳 Showing only transactions for {organizationName} (Organization ID: {organizationId})
           </p>
         </div>
       </div>
@@ -302,6 +383,8 @@ const OrgTransactionsManagement = ({ organizationId }) => {
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="">All Types</option>
+              <option value="inflow">Inflow (Money In)</option>
+              <option value="outflow">Outflow (Money Out)</option>
               <option value="deposit">Deposit</option>
               <option value="withdrawal">Withdrawal</option>
               <option value="investment">Investment</option>
@@ -347,40 +430,65 @@ const OrgTransactionsManagement = ({ organizationId }) => {
                   </td>
                 </tr>
               ) : (
-                filteredTransactions.map((transaction) => (
-                  <tr key={transaction.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="text-sm font-mono text-gray-900">
-                        {transaction.id?.slice(0, 8)}...
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <User className="w-4 h-4 text-gray-400 mr-2" />
-                        <span className="text-sm text-gray-900">
-                          {transaction.user_name || 'N/A'}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {getTransactionTypeBadge(transaction.transaction_type || transaction.transactionType)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="text-sm font-semibold text-gray-900">
-                        {formatCurrency(transaction.amount)}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {getStatusBadge(transaction.status)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center text-sm text-gray-500">
-                        <Calendar className="w-3 h-3 mr-2 text-gray-400" />
-                        {formatDate(transaction.created_at || transaction.createdAt)}
-                      </div>
-                    </td>
-                  </tr>
-                ))
+                filteredTransactions.map((transaction) => {
+                  const amount = getTransactionAmount(transaction);
+                  const txType = getTransactionType(transaction);
+                  const userName = getTransactionUser(transaction);
+                  
+                  return (
+                    <tr key={transaction.id || transaction.displayCode} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div>
+                          <div className="text-sm font-mono text-gray-900">
+                            {transaction.displayCode || transaction.id?.slice(0, 12) || 'N/A'}
+                          </div>
+                          {transaction.description && (
+                            <div className="text-xs text-gray-500 truncate max-w-xs" title={transaction.description}>
+                              {transaction.description}
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <User className="w-4 h-4 text-gray-400 mr-2" />
+                          <div>
+                            <div className="text-sm text-gray-900">
+                              {userName}
+                            </div>
+                            {transaction.fromEntity && transaction.toEntity && (
+                              <div className="text-xs text-gray-500">
+                                {transaction.fromEntity} → {transaction.toEntity}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {getTransactionTypeBadge(txType)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-semibold text-green-600">
+                          {formatCurrency(amount)}
+                        </div>
+                        {transaction.propertyId && (
+                          <div className="text-xs text-gray-500">
+                            Property: {transaction.propertyId.slice(0, 8)}...
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {getStatusBadge(transaction.status)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center text-sm text-gray-500">
+                          <Calendar className="w-3 h-3 mr-2 text-gray-400" />
+                          {formatDate(transaction.created_at || transaction.createdAt)}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>

@@ -64,6 +64,17 @@ const OrgPropertiesManagement = ({ organizationId }) => {
                        propertiesData?.data || 
                        (Array.isArray(propertiesData) ? propertiesData : []);
 
+  // Debug: Log property data structure
+  React.useEffect(() => {
+    if (allProperties.length > 0) {
+      console.log('📋 Properties Data Sample:', {
+        count: allProperties.length,
+        firstProperty: allProperties[0],
+        fields: Object.keys(allProperties[0] || {})
+      });
+    }
+  }, [allProperties]);
+
   // Frontend filtering
   const filteredProperties = useMemo(() => {
     let filtered = [...allProperties];
@@ -71,8 +82,10 @@ const OrgPropertiesManagement = ({ organizationId }) => {
     if (filters.search) {
       const searchLower = filters.search.toLowerCase();
       filtered = filtered.filter(property =>
-        (property.name || '').toLowerCase().includes(searchLower) ||
-        (property.location || '').toLowerCase().includes(searchLower)
+        (property.title || property.name || '').toLowerCase().includes(searchLower) ||
+        (property.city || property.location || '').toLowerCase().includes(searchLower) ||
+        (property.country || '').toLowerCase().includes(searchLower) ||
+        (property.displayCode || '').toLowerCase().includes(searchLower)
       );
     }
     
@@ -84,7 +97,7 @@ const OrgPropertiesManagement = ({ organizationId }) => {
     
     if (filters.property_type) {
       filtered = filtered.filter(property =>
-        (property.propertyType || property.property_type || '').toLowerCase() === filters.property_type.toLowerCase()
+        (property.type || property.propertyType || property.property_type || '').toLowerCase() === filters.property_type.toLowerCase()
       );
     }
     
@@ -231,11 +244,12 @@ const OrgPropertiesManagement = ({ organizationId }) => {
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
                     <h3 className="text-lg font-semibold text-gray-900 mb-1">
-                      {property.name || 'Unnamed Property'}
+                      {property.title || property.name || 'Unnamed Property'}
                     </h3>
                     <div className="flex items-center text-sm text-gray-500">
                       <MapPin className="w-4 h-4 mr-1" />
-                      {property.location || 'No location'}
+                      {property.city || property.location || 'No location'}
+                      {property.country && `, ${property.country}`}
                     </div>
                   </div>
                   {getStatusBadge(property.status)}
@@ -245,21 +259,21 @@ const OrgPropertiesManagement = ({ organizationId }) => {
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-gray-600">Price per Token</span>
                     <span className="font-semibold text-gray-900">
-                      {formatCurrency(property.pricePerToken || property.price_per_token)}
+                      {formatCurrency(property.pricePerTokenUSDT || property.pricePerToken || property.price_per_token || 0)}
                     </span>
                   </div>
 
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-gray-600">Total Tokens</span>
                     <span className="font-semibold text-gray-900">
-                      {(property.totalTokens || property.total_tokens || 0).toLocaleString()}
+                      {parseFloat(property.totalTokens || property.total_tokens || 0).toLocaleString()}
                     </span>
                   </div>
 
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-gray-600">Available Tokens</span>
                     <span className="font-semibold text-green-600">
-                      {(property.availableTokens || property.available_tokens || 0).toLocaleString()}
+                      {parseFloat(property.availableTokens || property.available_tokens || 0).toLocaleString()}
                     </span>
                   </div>
 
@@ -267,7 +281,7 @@ const OrgPropertiesManagement = ({ organizationId }) => {
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-gray-600">Type</span>
                       <Badge variant="blue">
-                        {property.propertyType || property.property_type || 'N/A'}
+                        {property.type || property.propertyType || property.property_type || 'N/A'}
                       </Badge>
                     </div>
                   </div>

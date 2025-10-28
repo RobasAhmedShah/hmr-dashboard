@@ -121,14 +121,34 @@ export const organizationsAPI = {
   create: (data) => api.post('/organizations', data),
   
   // Get organization liquidity analytics
+  // GET /organizations/:id/liquidity
   getLiquidity: (id) => api.get(`/organizations/${id}/liquidity`),
   
-  // Get all transactions for an organization (REAL ENDPOINT)
+  // Get all transactions for an organization
+  // GET /organizations/:id/transactions
   getTransactions: (id, params) => api.get(`/organizations/${id}/transactions`, { params }),
   
-  // Get organization-specific dashboard data (uses admin endpoint with filter)
-  // Returns: Organization details, properties, investments, transactions, liquidity, investors
+  // Get organization-specific dashboard data
+  // GET /admin/dashboard?organizationId=ORG-000001
+  // Returns: user, wallet, kyc, investments, rewards, transactions, paymentMethods, portfolio (for user)
+  // OR: overview, users, kyc, properties, investments, transactions (for platform/org)
   getDashboard: (id) => api.get(`/admin/dashboard`, { params: { organizationId: id } }),
+  
+  // Get organization properties
+  // GET /properties?org=ORG-000001
+  getProperties: (id, params) => api.get('/properties', { params: { org: id, ...params } }),
+  
+  // Get organization users (investors)
+  // GET /admin/users?org=ORG-000001
+  getUsers: (id, params) => api.get('/admin/users', { params: { org: id, ...params } }),
+  
+  // Get organization investments
+  // GET /investments?org=ORG-000001
+  getInvestments: (id, params) => api.get('/investments', { params: { org: id, ...params } }),
+  
+  // Get organization investment analytics
+  // GET /investments/analytics/organization/:orgId
+  getInvestmentAnalytics: (id) => api.get(`/investments/analytics/organization/${id}`),
 };
 
 // Admin API (Updated to match actual backend)

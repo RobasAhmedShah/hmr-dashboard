@@ -102,14 +102,16 @@ const OrgDashboard = () => {
     }
   );
 
-  // Fetch organization transactions to count (ORGANIZATION-SPECIFIC ONLY!)
+  // Fetch organization transactions using REAL endpoint
+  // GET /organizations/:id/transactions
   const { data: transactionsData, error: transactionsError } = useQuery(
     ['org-transactions-count', organizationId],
     async () => {
-      console.log(`💳 Fetching ONLY ${organizationName} transactions (organizationId: ${organizationId})`);
+      console.log(`💳 Fetching ONLY ${organizationName} transactions via GET /organizations/${organizationId}/transactions`);
       const response = await organizationsAPI.getTransactions(organizationId);
-      const transactions = response.data?.transactions || response.data?.data?.transactions || response.data || [];
+      const transactions = response.data?.transactions || response.data?.data?.transactions || response.data?.data || [];
       console.log(`✅ Fetched ${Array.isArray(transactions) ? transactions.length : 0} transactions for ${organizationName} (${organizationId})`);
+      console.log('Transaction data structure:', response.data);
       return response;
     },
     { 
@@ -142,14 +144,15 @@ const OrgDashboard = () => {
     }
   );
 
-  // Fetch properties - use dashboard data if available, otherwise fetch separately
+  // Fetch properties using REAL organization API
+  // GET /properties?org=ORG-000001
   const { data: propertiesCountData } = useQuery(
     ['org-properties-count', organizationId],
     async () => {
       try {
-        console.log(`🏢 Fetching ONLY ${organizationName} properties (organizationId: ${organizationId})`);
-        // Use admin API with organizationId filter (REAL ENDPOINT)
-        const response = await adminAPI.getProperties({ organizationId, limit: 1000 });
+        console.log(`🏢 Fetching ONLY ${organizationName} properties via GET /properties?org=${organizationId}`);
+        // Use organizationsAPI.getProperties (GET /properties?org=ORG-000001)
+        const response = await organizationsAPI.getProperties(organizationId, { limit: 1000 });
         const properties = response.data?.properties || response.data?.data?.properties || response.data || [];
         console.log(`✅ Fetched ${Array.isArray(properties) ? properties.length : 0} properties for ${organizationName} (${organizationId})`);
         return response;
@@ -164,16 +167,17 @@ const OrgDashboard = () => {
     }
   );
 
-  // Fetch users - use admin API with organizationId filter
+  // Fetch users (investors) using REAL organization API
+  // GET /admin/users?org=ORG-000001
   const { data: usersCountData } = useQuery(
     ['org-users-count', organizationId],
     async () => {
       try {
-        console.log(`👥 Fetching ONLY ${organizationName} users (organizationId: ${organizationId})`);
-        // Use admin API with organizationId filter (REAL ENDPOINT)
-        const response = await adminAPI.getUsers({ organizationId, limit: 1000 });
+        console.log(`👥 Fetching ONLY ${organizationName} investors via GET /admin/users?org=${organizationId}`);
+        // Use organizationsAPI.getUsers (GET /admin/users?org=ORG-000001)
+        const response = await organizationsAPI.getUsers(organizationId, { limit: 1000 });
         const users = response.data?.users || response.data?.data?.users || response.data || [];
-        console.log(`✅ Fetched ${Array.isArray(users) ? users.length : 0} users for ${organizationName} (${organizationId})`);
+        console.log(`✅ Fetched ${Array.isArray(users) ? users.length : 0} investors for ${organizationName} (${organizationId})`);
         return response;
       } catch (error) {
         console.error(`❌ Users fetch error for ${organizationName}:`, error);
@@ -186,14 +190,15 @@ const OrgDashboard = () => {
     }
   );
 
-  // Fetch investments - use admin API with organizationId filter
+  // Fetch investments using REAL organization API
+  // GET /investments?org=ORG-000001
   const { data: investmentsCountData } = useQuery(
     ['org-investments-count', organizationId],
     async () => {
       try {
-        console.log(`💰 Fetching ONLY ${organizationName} investments (organizationId: ${organizationId})`);
-        // Use admin API with organizationId filter (REAL ENDPOINT)
-        const response = await adminAPI.getInvestments({ organizationId, limit: 1000 });
+        console.log(`💰 Fetching ONLY ${organizationName} investments via GET /investments?org=${organizationId}`);
+        // Use organizationsAPI.getInvestments (GET /investments?org=ORG-000001)
+        const response = await organizationsAPI.getInvestments(organizationId, { limit: 1000 });
         const investments = response.data?.investments || response.data?.data?.investments || response.data || [];
         console.log(`✅ Fetched ${Array.isArray(investments) ? investments.length : 0} investments for ${organizationName} (${organizationId})`);
         return response;
@@ -208,10 +213,33 @@ const OrgDashboard = () => {
     }
   );
 
+  // ALSO fetch Investment Analytics for more accurate totals
+  // GET /investments/analytics/organization/:orgId
+  const { data: investmentAnalyticsData } = useQuery(
+    ['org-investment-analytics', organizationId],
+    async () => {
+      try {
+        console.log(`📊 Fetching investment analytics via GET /investments/analytics/organization/${organizationId}`);
+        const response = await organizationsAPI.getInvestmentAnalytics(organizationId);
+        const analytics = response.data?.analytics || response.data?.data?.analytics || {};
+        console.log(`✅ Investment Analytics for ${organizationName}:`, analytics);
+        return response;
+      } catch (error) {
+        console.error(`❌ Investment Analytics fetch error:`, error);
+        return null;
+      }
+    },
+    { 
+      enabled: isAuthenticated && !!organizationId && !dashboardDataLoading,
+      retry: 1
+    }
+  );
+
   // Calculate statistics from fetched data
+  // GET /organizations/:id/transactions returns: { success: true, transactions: [...] }
   const transactions = transactionsData?.data?.transactions || 
                       transactionsData?.data?.data?.transactions || 
-                      transactionsData?.data || 
+                      transactionsData?.data?.data || 
                       [];
   const properties = propertiesCountData?.data?.properties || 
                     propertiesCountData?.data?.data?.properties || 
@@ -274,29 +302,94 @@ const OrgDashboard = () => {
     }
   });
   
+  // Extract Investment Analytics data (has pre-calculated totals)
+  const investmentAnalytics = investmentAnalyticsData?.data?.analytics || investmentAnalyticsData?.data?.data?.analytics || {};
+  console.log('📊 Investment Analytics API Response:', {
+    analytics: investmentAnalytics,
+    hasAnalytics: Object.keys(investmentAnalytics).length > 0,
+    totalAmountUSDT: investmentAnalytics.totalAmountUSDT,
+    totalInvestments: investmentAnalytics.totalInvestments,
+    activeInvestments: investmentAnalytics.activeInvestments
+  });
+
+  // Helper function to extract investment amount (handles multiple field variations)
+  const getInvestmentAmount = (inv) => {
+    const amount = parseFloat(
+      inv.amountUSDT || 
+      inv.amount_usdt || 
+      inv.amount || 
+      inv.invested_amount || 
+      inv.investmentAmount || 
+      inv.tokensPurchased || 
+      0
+    );
+    console.log(`💰 Investment ${inv.id || inv.displayCode}: Amount = ${amount} (from field: ${inv.amountUSDT ? 'amountUSDT' : inv.amount_usdt ? 'amount_usdt' : inv.amount ? 'amount' : 'other'})`);
+    return amount;
+  };
+
+  // Helper function to extract transaction amount
+  const getTransactionAmount = (tx) => {
+    return parseFloat(
+      tx.amountUSDT || 
+      tx.amount_usdt || 
+      tx.amount || 
+      0
+    );
+  };
+
+  // Helper function to extract property value
+  const getPropertyValue = (prop) => {
+    return parseFloat(
+      prop.totalValueUSDT || 
+      prop.total_value_usdt || 
+      prop.totalValue || 
+      prop.total_value || 
+      prop.price || 
+      prop.pricePerTokenUSDT || 
+      0
+    );
+  };
+
+  // Prioritize Investment Analytics API for investment totals (most accurate)
+  const investmentTotalFromAnalytics = investmentAnalytics.totalAmountUSDT 
+    ? parseFloat(investmentAnalytics.totalAmountUSDT) 
+    : null;
+  const investmentCountFromAnalytics = investmentAnalytics.totalInvestments || null;
+  const activeInvestmentsFromAnalytics = investmentAnalytics.activeInvestments || null;
+  const pendingInvestmentsFromAnalytics = investmentAnalytics.pendingInvestments || null;
+
   // Prioritize dashboard data from /admin/dashboard?organizationId={id}
-  // If dashboard data exists, use it; otherwise calculate from individual endpoints
+  // Then use Investment Analytics API, finally calculate from individual endpoints
   const stats = dashboardStats ? {
     // Use dashboard endpoint data (from /admin/dashboard?organizationId={id})
     totalUsers: Array.isArray(dashboardInvestors) ? dashboardInvestors.length : (Array.isArray(users) ? users.length : 0),
     totalProperties: Array.isArray(dashboardProperties) ? dashboardProperties.length : (Array.isArray(properties) ? properties.length : 0),
     totalTransactions: Array.isArray(dashboardTransactions) ? dashboardTransactions.length : (Array.isArray(transactions) ? transactions.length : 0),
-    totalInvestments: Array.isArray(dashboardInvestments) 
-      ? dashboardInvestments.reduce((sum, inv) => sum + parseFloat(inv.amountUSDT || inv.amount || inv.invested_amount || 0), 0)
-      : (Array.isArray(investments) ? investments.reduce((sum, inv) => sum + parseFloat(inv.amount || inv.invested_amount || 0), 0) : 0),
-    totalInvestmentCount: Array.isArray(dashboardInvestments) ? dashboardInvestments.length : (Array.isArray(investments) ? investments.length : 0),
+    // PRIORITY: Investment Analytics > Dashboard > Manual calculation
+    totalInvestments: investmentTotalFromAnalytics !== null 
+      ? investmentTotalFromAnalytics
+      : (Array.isArray(dashboardInvestments) 
+        ? dashboardInvestments.reduce((sum, inv) => sum + getInvestmentAmount(inv), 0)
+        : (Array.isArray(investments) ? investments.reduce((sum, inv) => sum + getInvestmentAmount(inv), 0) : 0)),
+    totalInvestmentCount: investmentCountFromAnalytics !== null
+      ? investmentCountFromAnalytics
+      : (Array.isArray(dashboardInvestments) ? dashboardInvestments.length : (Array.isArray(investments) ? investments.length : 0)),
     totalTransactionAmount: Array.isArray(dashboardTransactions) 
-      ? dashboardTransactions.reduce((sum, tx) => sum + parseFloat(tx.amountUSDT || tx.amount || 0), 0)
-      : (Array.isArray(transactions) ? transactions.reduce((sum, tx) => sum + parseFloat(tx.amount || 0), 0) : 0),
-    activeInvestments: Array.isArray(dashboardInvestments) 
-      ? dashboardInvestments.filter(inv => inv.status === 'confirmed' || inv.status === 'active').length
-      : (Array.isArray(investments) ? investments.filter(inv => inv.status === 'active' || inv.status === 'approved').length : 0),
-    pendingInvestments: Array.isArray(dashboardInvestments) 
-      ? dashboardInvestments.filter(inv => inv.status === 'pending').length
-      : (Array.isArray(investments) ? investments.filter(inv => inv.status === 'pending').length : 0),
+      ? dashboardTransactions.reduce((sum, tx) => sum + getTransactionAmount(tx), 0)
+      : (Array.isArray(transactions) ? transactions.reduce((sum, tx) => sum + getTransactionAmount(tx), 0) : 0),
+    activeInvestments: activeInvestmentsFromAnalytics !== null
+      ? activeInvestmentsFromAnalytics
+      : (Array.isArray(dashboardInvestments) 
+        ? dashboardInvestments.filter(inv => inv.status === 'confirmed' || inv.status === 'active').length
+        : (Array.isArray(investments) ? investments.filter(inv => inv.status === 'active' || inv.status === 'approved' || inv.status === 'confirmed').length : 0)),
+    pendingInvestments: pendingInvestmentsFromAnalytics !== null
+      ? pendingInvestmentsFromAnalytics
+      : (Array.isArray(dashboardInvestments) 
+        ? dashboardInvestments.filter(inv => inv.status === 'pending').length
+        : (Array.isArray(investments) ? investments.filter(inv => inv.status === 'pending').length : 0)),
     totalPropertyValue: Array.isArray(dashboardProperties) 
-      ? dashboardProperties.reduce((sum, prop) => sum + parseFloat(prop.totalValueUSDT || prop.price || prop.totalValue || 0), 0)
-      : (Array.isArray(properties) ? properties.reduce((sum, prop) => sum + parseFloat(prop.price || prop.totalValue || 0), 0) : 0),
+      ? dashboardProperties.reduce((sum, prop) => sum + getPropertyValue(prop), 0)
+      : (Array.isArray(properties) ? properties.reduce((sum, prop) => sum + getPropertyValue(prop), 0) : 0),
     liquidityData: dashboardLiquidity || liquidityData?.data?.data || liquidityData?.data || null,
     organizationDetails: dashboardOrgData
   } : {
@@ -304,26 +397,62 @@ const OrgDashboard = () => {
     totalUsers: Array.isArray(users) ? users.length : 0,
     totalProperties: Array.isArray(properties) ? properties.length : 0,
     totalTransactions: Array.isArray(transactions) ? transactions.length : 0,
-    totalInvestments: Array.isArray(investments) 
-      ? investments.reduce((sum, inv) => sum + parseFloat(inv.amount || inv.invested_amount || 0), 0)
-      : 0,
-    totalInvestmentCount: Array.isArray(investments) ? investments.length : 0,
+    // PRIORITY: Investment Analytics > Manual calculation
+    totalInvestments: investmentTotalFromAnalytics !== null
+      ? investmentTotalFromAnalytics
+      : (Array.isArray(investments) ? investments.reduce((sum, inv) => sum + getInvestmentAmount(inv), 0) : 0),
+    totalInvestmentCount: investmentCountFromAnalytics !== null
+      ? investmentCountFromAnalytics
+      : (Array.isArray(investments) ? investments.length : 0),
     totalTransactionAmount: Array.isArray(transactions) 
-      ? transactions.reduce((sum, tx) => sum + parseFloat(tx.amount || 0), 0) 
+      ? transactions.reduce((sum, tx) => sum + getTransactionAmount(tx), 0) 
       : 0,
-    activeInvestments: Array.isArray(investments) 
-      ? investments.filter(inv => inv.status === 'active' || inv.status === 'approved' || inv.status === 'confirmed').length 
-      : 0,
-    pendingInvestments: Array.isArray(investments) 
-      ? investments.filter(inv => inv.status === 'pending').length 
-      : 0,
+    activeInvestments: activeInvestmentsFromAnalytics !== null
+      ? activeInvestmentsFromAnalytics
+      : (Array.isArray(investments) ? investments.filter(inv => inv.status === 'active' || inv.status === 'approved' || inv.status === 'confirmed').length : 0),
+    pendingInvestments: pendingInvestmentsFromAnalytics !== null
+      ? pendingInvestmentsFromAnalytics
+      : (Array.isArray(investments) ? investments.filter(inv => inv.status === 'pending').length : 0),
     totalPropertyValue: Array.isArray(properties) 
-      ? properties.reduce((sum, prop) => sum + parseFloat(prop.totalValueUSDT || prop.price || prop.totalValue || 0), 0) 
+      ? properties.reduce((sum, prop) => sum + getPropertyValue(prop), 0) 
       : 0,
     liquidityData: liquidityData?.data?.data || liquidityData?.data || null,
     organizationDetails: null
   };
   
+  // Additional debugging: Show detailed breakdown
+  console.log(`💵 ${organizationName} Investment Amounts Breakdown:`, {
+    investments: Array.isArray(investments) ? investments.map(inv => ({
+      id: inv.id || inv.displayCode,
+      amountUSDT: inv.amountUSDT,
+      amount: inv.amount,
+      tokensPurchased: inv.tokensPurchased,
+      extractedAmount: getInvestmentAmount(inv)
+    })) : [],
+    totalCalculated: stats.totalInvestments
+  });
+
+  console.log(`💳 ${organizationName} Transaction Amounts Breakdown:`, {
+    transactions: Array.isArray(transactions) ? transactions.map(tx => ({
+      id: tx.id || tx.displayCode,
+      amountUSDT: tx.amountUSDT,
+      amount: tx.amount,
+      extractedAmount: getTransactionAmount(tx)
+    })) : [],
+    totalCalculated: stats.totalTransactionAmount
+  });
+
+  console.log(`🏢 ${organizationName} Property Values Breakdown:`, {
+    properties: Array.isArray(properties) ? properties.map(prop => ({
+      id: prop.id || prop.displayCode,
+      title: prop.title,
+      totalValueUSDT: prop.totalValueUSDT,
+      price: prop.price,
+      extractedValue: getPropertyValue(prop)
+    })) : [],
+    totalCalculated: stats.totalPropertyValue
+  });
+
   console.log(`📈 ${organizationName} (${organizationId}) - Final ORGANIZATION-SPECIFIC Stats (using ${dashboardStats ? 'DASHBOARD' : 'INDIVIDUAL'} endpoints):`, {
     ...stats,
     note: `⚠️ These are ONLY for ${organizationName}, NOT totals across all organizations!`,
@@ -598,8 +727,8 @@ const OrgDashboard = () => {
             <div className="text-sm font-bold text-gray-900">
               {stats.totalProperties} {organizationName} properties
             </div>
-            <div className="text-xs text-gray-500 mt-1 font-mono truncate">
-              {dashboardStats ? 'Dashboard' : 'GET /admin/users?orgId=...'}
+            <div className="text-xs text-gray-500 mt-1 font-mono truncate" title={dashboardStats ? 'From Dashboard API' : `GET /properties?org=${organizationId}`}>
+              {dashboardStats ? 'Dashboard API' : `GET /properties?org=...`}
             </div>
           </div>
 
@@ -613,8 +742,8 @@ const OrgDashboard = () => {
             <div className="text-sm font-bold text-gray-900">
               {stats.totalUsers} {organizationName} investors
             </div>
-            <div className="text-xs text-gray-500 mt-1 font-mono truncate">
-              {dashboardStats ? 'Dashboard' : 'GET /admin/users?orgId=...'}
+            <div className="text-xs text-gray-500 mt-1 font-mono truncate" title={dashboardStats ? 'From Dashboard API' : `GET /admin/users?org=${organizationId}`}>
+              {dashboardStats ? 'Dashboard API' : `GET /admin/users?org=...`}
             </div>
           </div>
 
@@ -628,8 +757,8 @@ const OrgDashboard = () => {
             <div className="text-sm font-bold text-gray-900">
               {stats.totalInvestmentCount} {organizationName} investments
             </div>
-            <div className="text-xs text-gray-500 mt-1 font-mono truncate">
-              {dashboardStats ? 'Dashboard' : 'GET /admin/inv?orgId=...'}
+            <div className="text-xs text-gray-500 mt-1 font-mono truncate" title={dashboardStats ? 'From Dashboard API' : `GET /investments?org=${organizationId}`}>
+              {dashboardStats ? 'Dashboard API' : `GET /investments?org=...`}
             </div>
           </div>
 
@@ -643,8 +772,8 @@ const OrgDashboard = () => {
             <div className="text-sm font-bold text-gray-900">
               {stats.totalTransactions} {organizationName} transactions
             </div>
-            <div className="text-xs text-gray-500 mt-1 font-mono truncate">
-              GET /orgs/{organizationId}/tx
+            <div className="text-xs text-gray-500 mt-1 font-mono truncate" title={`GET /organizations/${organizationId}/transactions`}>
+              GET /organizations/:id/tx
             </div>
           </div>
         </div>

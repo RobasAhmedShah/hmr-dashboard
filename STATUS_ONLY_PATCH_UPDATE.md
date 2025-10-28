@@ -395,3 +395,4 @@ PATCH /properties/:id
 **Status:** Ready for Backend Implementation
 
 
+

@@ -18,7 +18,7 @@ import { organizationsAPI, adminAPI } from '../../services/api';
 import { useOrganizationAuth } from '../../components/organization/OrganizationAuth';
 
 const OrgInvestmentsManagement = ({ organizationId }) => {
-  const { isAuthenticated } = useOrganizationAuth();
+  const { isAuthenticated, organizationName } = useOrganizationAuth();
   
   const [filters, setFilters] = useState({
     search: '',
@@ -53,10 +53,82 @@ const OrgInvestmentsManagement = ({ organizationId }) => {
     }
   );
 
+  // ALSO fetch Investment Analytics for accurate totals
+  const { data: analyticsData } = useQuery(
+    ['org-investment-analytics', organizationId],
+    async () => {
+      try {
+        console.log('📊 Fetching investment analytics for organization:', organizationId);
+        const response = await organizationsAPI.getInvestmentAnalytics(organizationId);
+        console.log('✅ Investment Analytics Response:', response);
+        return response;
+      } catch (error) {
+        console.error('❌ Investment Analytics fetch error:', error);
+        return null;
+      }
+    },
+    {
+      retry: 1,
+      enabled: isAuthenticated && !!organizationId
+    }
+  );
+
   const investments = investmentsData?.data?.data?.investments || 
                      investmentsData?.data?.investments || 
                      investmentsData?.data || 
                      (Array.isArray(investmentsData) ? investmentsData : []);
+
+  const analytics = analyticsData?.data?.analytics || analyticsData?.data?.data?.analytics || {};
+  
+  // Debug: Log first investment structure
+  React.useEffect(() => {
+    if (investments.length > 0) {
+      console.log('📊 First Investment Structure:', investments[0]);
+      console.log('💰 Investment Analytics:', analytics);
+    }
+  }, [investments, analytics]);
+
+  // Helper functions for field extraction
+  const getInvestmentAmount = (inv) => {
+    return parseFloat(
+      inv.amountUSDT || 
+      inv.amount_usdt || 
+      inv.amount || 
+      inv.invested_amount || 
+      inv.investmentAmount || 
+      0
+    );
+  };
+
+  const getTokenCount = (inv) => {
+    return parseFloat(
+      inv.tokensPurchased ||
+      inv.tokens_purchased ||
+      inv.tokensToBuy || 
+      inv.tokens_bought || 
+      inv.tokens || 
+      inv.tokensBought ||
+      0
+    );
+  };
+
+  const getInvestorName = (inv) => {
+    // Try nested user object first
+    if (inv.user && (inv.user.fullName || inv.user.name)) {
+      return inv.user.fullName || inv.user.name;
+    }
+    // Fallback to flat fields
+    return inv.user_name || inv.investor_name || inv.fullName || 'Unknown';
+  };
+
+  const getPropertyName = (inv) => {
+    // Try nested property object first
+    if (inv.property && inv.property.title) {
+      return inv.property.title;
+    }
+    // Fallback to flat fields
+    return inv.property_name || inv.propertyName || inv.property?.name || 'N/A';
+  };
 
   // Frontend filtering
   const filteredInvestments = useMemo(() => {
@@ -64,10 +136,15 @@ const OrgInvestmentsManagement = ({ organizationId }) => {
     
     if (filters.search) {
       const searchLower = filters.search.toLowerCase();
-      filtered = filtered.filter(inv =>
-        (inv.property_name || '').toLowerCase().includes(searchLower) ||
-        (inv.user_name || inv.investor_name || '').toLowerCase().includes(searchLower)
-      );
+      filtered = filtered.filter(inv => {
+        const propertyName = getPropertyName(inv).toLowerCase();
+        const investorName = getInvestorName(inv).toLowerCase();
+        const displayCode = (inv.displayCode || inv.id || '').toLowerCase();
+        
+        return propertyName.includes(searchLower) ||
+               investorName.includes(searchLower) ||
+               displayCode.includes(searchLower);
+      });
     }
     
     if (filters.status) {
@@ -134,19 +211,52 @@ const OrgInvestmentsManagement = ({ organizationId }) => {
   };
 
   // Calculate summary statistics
+  // PRIORITY: Use Analytics API totals > Manual calculation
   const summary = useMemo(() => {
-    const totalInvestment = filteredInvestments.reduce((sum, inv) => 
-      sum + parseFloat(inv.amount || inv.invested_amount || 0), 0
-    );
-    const totalTokens = filteredInvestments.reduce((sum, inv) => 
-      sum + parseFloat(inv.tokensToBuy || inv.tokens_bought || inv.tokens || 0), 0
-    );
-    const activeInvestments = filteredInvestments.filter(inv => 
-      (inv.status || '').toLowerCase() === 'active'
-    ).length;
+    // Use Analytics API if available (more accurate, backend-calculated)
+    const totalInvestment = analytics.totalAmountUSDT 
+      ? parseFloat(analytics.totalAmountUSDT)
+      : filteredInvestments.reduce((sum, inv) => sum + getInvestmentAmount(inv), 0);
     
-    return { totalInvestment, totalTokens, activeInvestments };
-  }, [filteredInvestments]);
+    const totalTokens = analytics.totalTokensPurchased
+      ? parseFloat(analytics.totalTokensPurchased)
+      : filteredInvestments.reduce((sum, inv) => sum + getTokenCount(inv), 0);
+    
+    const activeInvestments = analytics.activeInvestments 
+      ? analytics.activeInvestments
+      : filteredInvestments.filter(inv => 
+          (inv.status || '').toLowerCase() === 'active' || 
+          (inv.status || '').toLowerCase() === 'confirmed'
+        ).length;
+
+    const pendingInvestments = analytics.pendingInvestments
+      ? analytics.pendingInvestments
+      : filteredInvestments.filter(inv => 
+          (inv.status || '').toLowerCase() === 'pending'
+        ).length;
+
+    const averageInvestment = analytics.averageInvestmentAmount
+      ? parseFloat(analytics.averageInvestmentAmount)
+      : (filteredInvestments.length > 0 ? totalInvestment / filteredInvestments.length : 0);
+    
+    console.log(`💰 ${organizationName} Investment Summary (using ${analytics.totalAmountUSDT ? 'ANALYTICS API' : 'MANUAL CALC'}):`, {
+      totalInvestment,
+      totalTokens,
+      activeInvestments,
+      pendingInvestments,
+      averageInvestment,
+      totalCount: filteredInvestments.length,
+      dataSource: analytics.totalAmountUSDT ? 'Investment Analytics API' : 'Manual Calculation'
+    });
+    
+    return { 
+      totalInvestment, 
+      totalTokens, 
+      activeInvestments, 
+      pendingInvestments,
+      averageInvestment 
+    };
+  }, [filteredInvestments, analytics, organizationName]);
 
   if (isLoading) {
     return (
@@ -186,13 +296,16 @@ const OrgInvestmentsManagement = ({ organizationId }) => {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card className="p-6 border-l-4 border-blue-500">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">Total Investments</p>
               <p className="text-2xl font-bold text-gray-900 mt-1">
                 {formatCurrency(summary.totalInvestment)}
+              </p>
+              <p className="text-xs text-gray-500 mt-1">
+                {filteredInvestments.length} investments
               </p>
             </div>
             <div className="p-3 bg-blue-100 rounded-lg">
@@ -208,6 +321,9 @@ const OrgInvestmentsManagement = ({ organizationId }) => {
               <p className="text-2xl font-bold text-gray-900 mt-1">
                 {summary.totalTokens.toLocaleString()}
               </p>
+              <p className="text-xs text-gray-500 mt-1">
+                Avg: {(filteredInvestments.length > 0 ? summary.totalTokens / filteredInvestments.length : 0).toFixed(2)} per investment
+              </p>
             </div>
             <div className="p-3 bg-purple-100 rounded-lg">
               <TrendingUp className="w-6 h-6 text-purple-600" />
@@ -222,9 +338,29 @@ const OrgInvestmentsManagement = ({ organizationId }) => {
               <p className="text-2xl font-bold text-gray-900 mt-1">
                 {summary.activeInvestments}
               </p>
+              <p className="text-xs text-gray-500 mt-1">
+                {summary.pendingInvestments} pending
+              </p>
             </div>
             <div className="p-3 bg-green-100 rounded-lg">
               <CheckCircle className="w-6 h-6 text-green-600" />
+            </div>
+          </div>
+        </Card>
+
+        <Card className="p-6 border-l-4 border-orange-500">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600">Avg Investment</p>
+              <p className="text-2xl font-bold text-gray-900 mt-1">
+                {formatCurrency(summary.averageInvestment)}
+              </p>
+              <p className="text-xs text-gray-500 mt-1">
+                per investor
+              </p>
+            </div>
+            <div className="p-3 bg-orange-100 rounded-lg">
+              <TrendingUp className="w-6 h-6 text-orange-600" />
             </div>
           </div>
         </Card>
@@ -301,37 +437,52 @@ const OrgInvestmentsManagement = ({ organizationId }) => {
                 </tr>
               ) : (
                 filteredInvestments.map((investment) => {
-                  const tokens = parseFloat(
-                    investment.tokensToBuy || 
-                    investment.tokens_bought || 
-                    investment.tokens || 
-                    investment.tokensBought ||
-                    investment.tokensPurchased ||
-                    0
-                  );
+                  const amount = getInvestmentAmount(investment);
+                  const tokens = getTokenCount(investment);
+                  const investorName = getInvestorName(investment);
+                  const propertyName = getPropertyName(investment);
                   
                   return (
-                    <tr key={investment.id} className="hover:bg-gray-50">
+                    <tr key={investment.id || investment.displayCode} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
                           <User className="w-4 h-4 text-gray-400 mr-2" />
-                          <span className="text-sm font-medium text-gray-900">
-                            {investment.user_name || investment.investor_name || 'Unknown'}
-                          </span>
+                          <div>
+                            <div className="text-sm font-medium text-gray-900">
+                              {investorName}
+                            </div>
+                            {investment.user?.email && (
+                              <div className="text-xs text-gray-500">
+                                {investment.user.email}
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
                           <Building2 className="w-4 h-4 text-gray-400 mr-2" />
-                          <span className="text-sm text-gray-900">
-                            {investment.property_name || 'N/A'}
-                          </span>
+                          <div>
+                            <div className="text-sm text-gray-900">
+                              {propertyName}
+                            </div>
+                            {investment.property?.displayCode && (
+                              <div className="text-xs text-gray-500">
+                                {investment.property.displayCode}
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="text-sm font-semibold text-gray-900">
-                          {formatCurrency(investment.amount || investment.invested_amount)}
-                        </span>
+                        <div className="text-sm font-semibold text-green-600">
+                          {formatCurrency(amount)}
+                        </div>
+                        {investment.displayCode && (
+                          <div className="text-xs text-gray-500 font-mono">
+                            {investment.displayCode}
+                          </div>
+                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className="text-sm font-semibold text-purple-600">

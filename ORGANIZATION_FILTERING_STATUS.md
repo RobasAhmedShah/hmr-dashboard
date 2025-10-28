@@ -13,7 +13,7 @@ All frontend components now support organization filtering:
 
 #### 2. **AdminDashboard.js** ✅
 - Shows organization indicator banner at top
-- Purple banner for Admin Mode (all orgs)
+- Purple banner for Admin Mode (all orgs) 
 - Blue banner for specific organizations
 
 #### 3. **UsersManagement.js** ✅
