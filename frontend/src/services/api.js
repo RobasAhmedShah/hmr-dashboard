@@ -151,6 +151,20 @@ export const organizationsAPI = {
   getInvestmentAnalytics: (id) => api.get(`/investments/analytics/organization/${id}`),
 };
 
+// Organization Admin Management API
+export const orgAdminAPI = {
+  // Admin endpoints (for main admin to manage organizations)
+  getAllOrganizations: () => api.get('/admin/organizations'),
+  createOrganization: (data) => api.post('/admin/organizations', data),
+  updateOrganization: (id, data) => api.patch(`/admin/organizations/${id}`, data),
+  deleteOrganization: (id) => api.delete(`/admin/organizations/${id}`),
+  resetOrgPassword: (id, data) => api.post(`/admin/organizations/${id}/reset-password`, data),
+  
+  // Org admin auth endpoints
+  orgAdminLogin: (credentials) => api.post('/org/auth/login', credentials),
+  changeOrgAdminPassword: (adminId, data) => api.patch(`/org/auth/change-password/${adminId}`, data),
+};
+
 // Admin API (Updated to match actual backend)
 export const adminAPI = {
   // Dashboard

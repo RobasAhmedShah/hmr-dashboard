@@ -11,7 +11,8 @@ import {
   Shield,
   LogOut,
   ArrowUpRight,
-  Calendar
+  Calendar,
+  User
 } from 'lucide-react';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
@@ -22,6 +23,7 @@ import OrgPropertiesManagement from './OrgPropertiesManagement';
 import OrgUsersManagement from './OrgUsersManagement';
 import OrgTransactionsManagement from './OrgTransactionsManagement';
 import OrgInvestmentsManagement from './OrgInvestmentsManagement';
+import OrgProfile from './OrgProfile';
 
 const OrgDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
@@ -466,7 +468,8 @@ const OrgDashboard = () => {
     { id: 'properties', label: 'Properties', icon: Building2 },
     { id: 'users', label: 'Users', icon: Users },
     { id: 'transactions', label: 'Transactions', icon: DollarSign },
-    { id: 'investments', label: 'Investments', icon: TrendingUp }
+    { id: 'investments', label: 'Investments', icon: TrendingUp },
+    { id: 'profile', label: 'Profile', icon: User }
   ];
 
   // Format currency
@@ -508,6 +511,8 @@ const OrgDashboard = () => {
         return <OrgTransactionsManagement organizationId={organizationId} />;
       case 'investments':
         return <OrgInvestmentsManagement organizationId={organizationId} />;
+      case 'profile':
+        return <OrgProfile />;
       default:
         return renderOverview();
     }
