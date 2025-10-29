@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { 
   Building2, 
@@ -10,7 +10,8 @@ import {
   Calendar,
   Users,
   TrendingUp,
-  Home
+  Home,
+  Search
 } from 'lucide-react';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
@@ -28,6 +29,7 @@ const OrganizationsManagement = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedOrg, setSelectedOrg] = useState(null);
   const [createdCredentials, setCreatedCredentials] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Fetch all organizations (combine new admin API + existing organizations API)
   const { data: orgsData, isLoading } = useQuery(
@@ -74,6 +76,18 @@ const OrganizationsManagement = () => {
   );
 
   const organizations = orgsData?.data?.organizations || [];
+
+  // Filter organizations by search query
+  const filteredOrganizations = useMemo(() => {
+    if (!searchQuery.trim()) return organizations;
+    
+    const query = searchQuery.toLowerCase().trim();
+    return organizations.filter(org => 
+      org.name?.toLowerCase().includes(query) ||
+      org.description?.toLowerCase().includes(query) ||
+      org.displayCode?.toLowerCase().includes(query)
+    );
+  }, [organizations, searchQuery]);
 
   // Delete mutation
   const deleteMutation = useMutation(
@@ -126,7 +140,7 @@ const OrganizationsManagement = () => {
           <p className="text-gray-600">
             Manage organizations and their admin credentials
             <span className="ml-2 text-blue-600 font-medium">
-              ({organizations.length} {organizations.length === 1 ? 'organization' : 'organizations'})
+              ({filteredOrganizations.length} of {organizations.length} {organizations.length === 1 ? 'organization' : 'organizations'})
             </span>
           </p>
         </div>
@@ -139,9 +153,21 @@ const OrganizationsManagement = () => {
         </Button>
       </div>
 
+      {/* Search Bar */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+        <input
+          type="text"
+          placeholder="Search organizations by name, description, or ID..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        />
+      </div>
+
       {/* Organizations Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {organizations.map((org) => (
+        {filteredOrganizations.map((org) => (
           <Card key={org.id} className="p-6">
             <div className="flex items-start justify-between mb-4">
               <div className="flex items-center gap-3">
@@ -257,15 +283,29 @@ const OrganizationsManagement = () => {
       </div>
 
       {/* Empty State */}
-      {organizations.length === 0 && (
+      {filteredOrganizations.length === 0 && (
         <Card className="p-12 text-center">
           <Building2 className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No organizations yet</h3>
-          <p className="text-gray-500 mb-6">Create your first organization to get started</p>
-          <Button onClick={() => setShowCreateModal(true)}>
-            <Plus className="w-4 h-4 mr-2" />
-            Create Organization
-          </Button>
+          {searchQuery ? (
+            <>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No organizations found</h3>
+              <p className="text-gray-500 mb-6">
+                No organizations match your search "{searchQuery}"
+              </p>
+              <Button variant="outline" onClick={() => setSearchQuery('')}>
+                Clear Search
+              </Button>
+            </>
+          ) : (
+            <>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No organizations yet</h3>
+              <p className="text-gray-500 mb-6">Create your first organization to get started</p>
+              <Button onClick={() => setShowCreateModal(true)}>
+                <Plus className="w-4 h-4 mr-2" />
+                Create Organization
+              </Button>
+            </>
+          )}
         </Card>
       )}
 

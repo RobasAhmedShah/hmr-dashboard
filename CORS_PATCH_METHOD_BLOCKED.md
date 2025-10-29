@@ -535,3 +535,4 @@ updatePropertyStatus: (id, data) => api.patch(`/properties/${id}/status`, data)
 
 
 
+

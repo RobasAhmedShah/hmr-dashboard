@@ -47,9 +47,9 @@ const ResetPasswordModal = ({ org, onClose }) => {
 
   if (resetSuccess) {
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-lg max-w-lg w-full">
-          <div className="bg-gradient-to-r from-green-500 to-green-600 px-6 py-4 flex items-center justify-between rounded-t-lg">
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+        <div className="bg-white rounded-lg max-w-lg w-full max-h-[90vh] my-auto flex flex-col">
+          <div className="bg-gradient-to-r from-green-500 to-green-600 px-6 py-4 flex items-center justify-between rounded-t-lg flex-shrink-0">
             <div className="flex items-center gap-3 text-white">
               <CheckCircle className="w-6 h-6" />
               <h2 className="text-xl font-bold">Password Reset Successful!</h2>
@@ -59,7 +59,7 @@ const ResetPasswordModal = ({ org, onClose }) => {
             </button>
           </div>
 
-          <div className="p-6 space-y-6">
+          <div className="p-6 space-y-6 overflow-y-auto flex-1">
             {/* Important Warning */}
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 flex gap-3">
               <AlertTriangle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
@@ -132,12 +132,13 @@ const ResetPasswordModal = ({ org, onClose }) => {
               </div>
             </div>
 
-            {/* Actions */}
-            <div className="flex justify-end pt-4 border-t">
-              <Button onClick={onClose}>
-                Done
-              </Button>
-            </div>
+          </div>
+
+          {/* Actions - Sticky Footer */}
+          <div className="flex justify-end p-6 border-t bg-white rounded-b-lg flex-shrink-0">
+            <Button onClick={onClose}>
+              Done
+            </Button>
           </div>
         </div>
       </div>
@@ -145,9 +146,9 @@ const ResetPasswordModal = ({ org, onClose }) => {
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg max-w-lg w-full">
-        <div className="px-6 py-4 flex items-center justify-between border-b">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+      <div className="bg-white rounded-lg max-w-lg w-full max-h-[90vh] my-auto flex flex-col">
+        <div className="px-6 py-4 flex items-center justify-between border-b flex-shrink-0">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-orange-100 rounded-lg">
               <Key className="w-5 h-5 text-orange-600" />
@@ -159,7 +160,7 @@ const ResetPasswordModal = ({ org, onClose }) => {
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+        <form id="reset-form" onSubmit={handleSubmit} className="p-6 space-y-6 overflow-y-auto flex-1">
           {/* Organization Info */}
           <div className="bg-gray-50 rounded-lg p-4">
             <h3 className="font-semibold text-gray-900 mb-3">Organization: {org.name}</h3>
@@ -200,16 +201,17 @@ const ResetPasswordModal = ({ org, onClose }) => {
             </p>
           </div>
 
-          {/* Actions */}
-          <div className="flex gap-3 justify-end pt-4 border-t">
-            <Button type="button" variant="outline" onClick={onClose}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={resetMutation.isLoading}>
-              {resetMutation.isLoading ? 'Resetting...' : 'Reset Password'}
-            </Button>
-          </div>
         </form>
+
+        {/* Actions - Sticky Footer */}
+        <div className="flex gap-3 justify-end p-6 border-t bg-white rounded-b-lg flex-shrink-0">
+          <Button type="button" variant="outline" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button type="submit" form="reset-form" disabled={resetMutation.isLoading}>
+            {resetMutation.isLoading ? 'Resetting...' : 'Reset Password'}
+          </Button>
+        </div>
       </div>
     </div>
   );

@@ -61,9 +61,9 @@ const CreateOrganizationModal = ({ onClose, onSuccess }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 bg-white border-b px-6 py-4 flex items-center justify-between">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+      <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] my-auto flex flex-col">
+        <div className="bg-white border-b px-6 py-4 flex items-center justify-between flex-shrink-0">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-blue-100 rounded-lg">
               <Building2 className="w-5 h-5 text-blue-600" />
@@ -75,7 +75,7 @@ const CreateOrganizationModal = ({ onClose, onSuccess }) => {
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+        <form id="create-org-form" onSubmit={handleSubmit} className="p-6 space-y-6 overflow-y-auto flex-1">
           {/* Organization Details */}
           <div className="space-y-4">
             <h3 className="text-sm font-semibold text-gray-900 uppercase">Organization Details</h3>
@@ -207,16 +207,17 @@ const CreateOrganizationModal = ({ onClose, onSuccess }) => {
             )}
           </div>
 
-          {/* Actions */}
-          <div className="flex gap-3 justify-end pt-4 border-t">
-            <Button type="button" variant="outline" onClick={onClose}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={createMutation.isLoading}>
-              {createMutation.isLoading ? 'Creating...' : 'Create Organization'}
-            </Button>
-          </div>
         </form>
+
+        {/* Actions - Sticky Footer */}
+        <div className="flex gap-3 justify-end p-6 border-t bg-white rounded-b-lg flex-shrink-0">
+          <Button type="button" variant="outline" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button type="submit" form="create-org-form" disabled={createMutation.isLoading}>
+            {createMutation.isLoading ? 'Creating...' : 'Create Organization'}
+          </Button>
+        </div>
       </div>
     </div>
   );
