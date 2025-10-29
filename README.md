@@ -1,784 +1,607 @@
-# 🏢 HMR Dashboard - Real Estate Investment Platform
+# HMR Builders - Real Estate Tokenization Platform
 
-A comprehensive admin dashboard and user portal for managing real estate investments, built with React and integrated with a NestJS backend.
+A modern React-based frontend for the HMR Builders Real Estate Tokenization Platform with multi-organization support, admin dashboards, and comprehensive property investment management.
 
-![Status](https://img.shields.io/badge/status-active-success.svg)
-![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
-![License](https://img.shields.io/badge/license-MIT-blue.svg)
+## 🚀 Project Overview
+
+This platform enables:
+- **Property Browsing**: Browse and filter real estate properties
+- **Investment Management**: Track investments and portfolio performance
+- **Multi-Organization Support**: Organizations can manage their own properties and investors
+- **Admin Dashboard**: Super admin can manage all organizations, properties, users, and transactions
+- **Organization Dashboard**: Organization-specific admins can view and manage their own data
+- **Authentication**: Secure authentication system for admins and organization admins
+- **Payment Integration**: Manage wallet deposits and transactions
 
 ---
 
 ## 📋 Table of Contents
 
-- [Overview](#overview)
-- [Features](#features)
-- [Tech Stack](#tech-stack)
-- [Project Structure](#project-structure)
-- [Backend Integration](#backend-integration)
-- [Getting Started](#getting-started)
-- [Available Scripts](#available-scripts)
-- [API Integration](#api-integration)
-- [Admin Dashboard](#admin-dashboard)
-- [User Portal](#user-portal)
-- [Environment Variables](#environment-variables)
-- [Documentation](#documentation)
-- [Contributing](#contributing)
-- [License](#license)
+1. [Getting Started](#getting-started)
+2. [Project Structure](#project-structure)
+3. [Tech Stack](#tech-stack)
+4. [API Integration](#api-integration)
+5. [Organization Management](#organization-management)
+6. [Admin Dashboards](#admin-dashboards)
+7. [Deployment](#deployment)
+8. [Backend API Reference](#backend-api-reference)
+9. [Development](#development)
 
 ---
 
-## 🎯 Overview
+## 🏁 Getting Started
 
-HMR Dashboard is a modern real estate investment platform that enables:
-- **Investors** to browse properties, make investments, track portfolios, and manage wallets
-- **Admins** to manage properties, users, transactions, investments, and analytics
-- **Organizations** to list properties and track liquidity
+### Prerequisites
 
-The platform uses **tokenization** where properties are divided into tokens that investors can purchase, with automatic ROI distribution.
+- Node.js 18.0.0 or higher
+- npm or yarn package manager
 
----
+### Installation
 
-## ✨ Features
+1. **Install dependencies:**
+   ```bash
+   npm install
+   ```
 
-### 🔐 Admin Features
-- **Dashboard Overview** - Real-time statistics and analytics
-- **Property Management** - Create, view, edit properties with tokenization
-- **User Management** - Manage users with auto-wallet/KYC/portfolio creation
-- **Transaction Monitoring** - Track all deposits, withdrawals, and investments
-- **Investment Tracking** - Monitor all investments across properties
-- **Analytics** - Growth metrics and performance indicators
+2. **Create environment file (if needed):**
+   ```bash
+   cp .env.example .env.local
+   ```
 
-### 👥 User Features
-- **Property Browsing** - View available properties with filtering
-- **Investment** - Purchase property tokens with wallet balance
-- **Portfolio** - Track investments, returns, and performance
-- **Wallet Management** - Deposit funds, view balance, transaction history
-- **KYC Verification** - Submit documents for verification
-- **Payment Methods** - Add cards, bank accounts for deposits
-- **ROI Tracking** - Automatic reward distribution and tracking
+3. **Configure environment variables in `.env.local` (if needed):**
+   ```env
+   REACT_APP_API_URL=https://hmr-backend.vercel.app
+   ```
 
-### 🏗️ Core Capabilities
-- **Tokenization** - Properties divided into purchasable tokens
-- **Auto-Creation** - User creation auto-generates wallet, KYC, portfolio
-- **Event-Driven** - Async operations with event emitters
-- **Pessimistic Locking** - Race condition prevention on investments
-- **Transaction Traceability** - Full audit trail with entity tracking
-- **Display Codes** - Human-readable IDs (USR-000001, PROP-000001)
+4. **Start the development server:**
+   ```bash
+   npm start
+   ```
 
----
+The application will open at [http://localhost:3000](http://localhost:3000).
 
-## 🛠️ Tech Stack
+### Production Build
 
-### Frontend
-- **React** 18.x - UI framework
-- **React Router** 6.x - Navigation
-- **React Query** - Server state management
-- **Tailwind CSS** - Styling
-- **Lucide React** - Icons
-- **Axios** - HTTP client
+```bash
+npm run build
+```
 
-### Backend
-- **NestJS** - Node.js framework
-- **PostgreSQL** - Database
-- **Prisma** - ORM
-- **TypeScript** - Language
-- **Decimal.js** - Precise calculations
-- **class-validator** - Validation
-- **Vercel** - Hosting
+This creates an optimized production build in the `build/` directory.
 
 ---
 
 ## 📁 Project Structure
 
 ```
-hmr-dashboard/
-├── frontend/
-│   ├── public/
-│   │   └── index.html
-│   ├── src/
-│   │   ├── components/          # Reusable UI components
-│   │   │   ├── admin/           # Admin-specific components
-│   │   │   │   ├── AdminAuth.js
-│   │   │   │   ├── PropertyForm.js
-│   │   │   │   └── UserForm.js
-│   │   │   ├── Layout/
-│   │   │   │   ├── Header.js
-│   │   │   │   └── Layout.js
-│   │   │   └── ui/              # UI primitives
-│   │   │       ├── Button.js
-│   │   │       ├── Card.js
-│   │   │       ├── Input.js
-│   │   │       └── Badge.js
-│   │   ├── contexts/            # React contexts
-│   │   │   ├── AuthContext.js
-│   │   │   └── UserContext.js
-│   │   ├── pages/               # Page components
-│   │   │   ├── admin/           # Admin pages
-│   │   │   │   ├── AdminDashboard.js
-│   │   │   │   ├── AdminLogin.js
-│   │   │   │   ├── PropertiesManagement.js
-│   │   │   │   ├── UsersManagement.js
-│   │   │   │   ├── TransactionsManagement.js
-│   │   │   │   └── InvestmentsManagement.js
-│   │   │   ├── Dashboard.js
-│   │   │   ├── Home.js
-│   │   │   ├── Login.js
-│   │   │   ├── Portfolio.js
-│   │   │   ├── Properties.js
-│   │   │   └── Wallet.js
-│   │   ├── services/            # API integration
-│   │   │   ├── api.js           # API client
-│   │   │   └── demoData.js
-│   │   ├── utils/               # Utility functions
-│   │   ├── App.js               # Root component
-│   │   ├── index.js             # Entry point
-│   │   └── index.css            # Global styles
-│   ├── package.json
-│   └── tailwind.config.js
-├── API_INTEGRATION_GUIDE.md     # Detailed API integration guide
-├── BACKEND_INTEGRATION_STATUS.md # Current integration status
-├── BACKEND_API_REQUIREMENTS.md  # Backend requirements
-├── QUICK_API_REFERENCE.md       # Quick API reference
-└── README.md                    # This file
+src/
+├── components/              # Reusable UI components
+│   ├── admin/              # Admin-specific components
+│   │   ├── AdminAuth.js
+│   │   ├── PropertyForm.js
+│   │   ├── UserForm.js
+│   │   ├── CreateOrganizationModal.js
+│   │   ├── EditOrganizationModal.js
+│   │   ├── CredentialsModal.js
+│   │   └── ResetPasswordModal.js
+│   ├── organization/       # Organization-specific components
+│   │   └── OrganizationAuth.js
+│   ├── ui/                 # Basic UI components (Button, Input, Card, Badge, Select)
+│   └── Layout/             # Layout components (Header, Layout)
+├── contexts/               # React contexts
+│   ├── AuthContext.js      # User authentication context
+│   └── UserContext.js      # User data context
+├── pages/                  # Page components
+│   ├── admin/              # Admin dashboard pages
+│   │   ├── AdminLogin.js
+│   │   ├── AdminDashboard.js
+│   │   ├── PropertiesManagement.js
+│   │   ├── UsersManagement.js
+│   │   ├── InvestmentsManagement.js
+│   │   ├── TransactionsManagement.js
+│   │   ├── OrganizationsManagement.js
+│   │   └── PropertyDetail.js
+│   ├── organization/       # Organization dashboard pages
+│   │   ├── OrgLogin.js
+│   │   ├── OrgDashboard.js
+│   │   ├── OrgPropertiesManagement.js
+│   │   ├── OrgUsersManagement.js
+│   │   ├── OrgInvestmentsManagement.js
+│   │   ├── OrgTransactionsManagement.js
+│   │   └── OrgProfile.js
+│   ├── Home.js             # Landing page
+│   ├── Properties.js        # Public properties listing
+│   ├── Login.js            # User login
+│   ├── Register.js         # User registration
+│   ├── Dashboard.js        # User dashboard
+│   ├── Portfolio.js        # User portfolio
+│   ├── Wallet.js           # User wallet
+│   └── Profile.js          # User profile
+├── services/               # API services
+│   ├── api.js             # API client configuration and endpoints
+│   └── demoData.js        # Demo data for development
+├── utils/                 # Utility functions
+│   ├── cn.js              # Class name utility (Tailwind merge)
+│   └── formatLocation.js  # Location formatting utility
+├── App.js                 # Main app component
+└── index.js               # App entry point
 ```
 
 ---
 
-## 🔗 Backend Integration
+## 🛠️ Tech Stack
 
-### Backend Repository
-- **Repository**: [https://github.com/robasahmedshah/hmr-backend](https://github.com/robasahmedshah/hmr-backend)
-- **Deployed URL**: [https://hmr-backend.vercel.app](https://hmr-backend.vercel.app)
-- **Framework**: NestJS with TypeScript
-- **Database**: PostgreSQL with Prisma ORM
-
-### Available Backend Endpoints
-
-#### ✅ Fully Implemented & Working
-
-**Organizations**
-- `POST /organizations` - Create organization
-- `GET /organizations` - List all organizations
-- `GET /organizations/:id` - Get organization details
-- `GET /organizations/:id/liquidity` - Get liquidity analytics
-- `GET /organizations/:id/transactions` - Get organization transactions
-
-**Users**
-- `POST /admin/users` - Create user (auto-creates wallet, KYC, portfolio)
-- `GET /admin/users` - List all users
-
-**Properties**
-- `POST /properties` - Create property with tokenization
-- `GET /properties` - List all properties
-- `GET /properties/:id` - Get property by ID or displayCode
-- `GET /properties?slug=:slug` - Get property by slug
-- `GET /properties?displayCode=:code` - Get property by display code
-
-**Investments**
-- `POST /investments` - Create investment (legacy)
-- `POST /investments/invest` - Create investment (token-based)
-- `GET /investments` - List all investments
-- `GET /investments?userId=:id` - Get user investments
-- `GET /investments/:id` - Get investment details
-
-**Transactions**
-- `GET /transactions` - List all transactions
-- `GET /transactions/user/:userId` - Get user transactions
-
-**Wallet**
-- `POST /wallet/deposit` - Deposit funds
-- `GET /wallet/user/:userId` - Get user wallet
-- `GET /wallet` - List all wallets
-
-**Portfolio**
-- `GET /portfolio/user/:userId/detailed` - Get detailed portfolio
-
-**Payment Methods**
-- `POST /payment-methods` - Add payment method
-- `GET /payment-methods?userId=:id` - Get user payment methods
-- `GET /payment-methods/:id` - Get payment method
-- `PATCH /payment-methods/:id/verify` - Verify payment method
-- `PATCH /payment-methods/:id/default` - Set default payment method
-- `DELETE /payment-methods/:id` - Delete payment method
-- `POST /payment-methods/deposit` - Deposit via payment method
-
-**KYC**
-- `POST /kyc` - Submit/update KYC
-- `GET /kyc` - List all KYC verifications
-- `GET /kyc/user/:userId` - Get user KYC
-- `GET /kyc/:id` - Get KYC by ID
-- `PATCH /kyc/:id` - Update KYC status
-
-**Rewards**
-- `POST /rewards/distribute` - Distribute ROI to investors
-- `GET /rewards` - List all rewards
-- `GET /rewards?userId=:id` - Get user rewards
-- `GET /rewards/:id` - Get reward details
-
-#### ⚠️ Backend Endpoints Needed
-
-**Admin Dashboard**
-- `GET /admin/dashboard` - Dashboard statistics (frontend ready with fallback)
-- `GET /admin/analytics` - Growth metrics (frontend fully implemented)
-
-**User CRUD**
-- `GET /admin/users/:id` - Get single user ⚠️
-- `PUT /admin/users/:id` - Update user ⚠️
-- `DELETE /admin/users/:id` - Delete user ⚠️
-- `PATCH /admin/users/:id/status` - Update user status ⚠️
-
-**Property CRUD**
-- `PUT /properties/:id` - Update property ⚠️
-- `DELETE /properties/:id` - Delete property ⚠️
-- `PATCH /properties/:id/status` - Update property status ⚠️
-
-**Response Format**
-- Pagination metadata on list endpoints ⚠️
-- Transaction summary statistics ⚠️
-
----
-
-## 🚀 Getting Started
-
-### Prerequisites
-- Node.js 16.x or higher
-- npm or yarn
-- Backend deployed at [https://hmr-backend.vercel.app](https://hmr-backend.vercel.app)
-
-### Installation
-
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/afrazalamjr/hmr-dashboard.git
-   cd hmr-dashboard
-   ```
-
-2. **Install dependencies**
-   ```bash
-   cd frontend
-   npm install
-   ```
-
-3. **Configure environment**
-   Create `frontend/.env` file:
-   ```env
-   REACT_APP_API_URL=https://hmr-backend.vercel.app
-   ```
-
-4. **Start development server**
-   ```bash
-   npm start
-   ```
-
-5. **Open browser**
-   ```
-   http://localhost:3000
-   ```
-
-### Admin Access
-- Navigate to `/admin/login`
-- Use admin credentials (configure in AdminAuth.js)
-- Default demo admin: 
-  - Username: `admin`
-  - Password: `admin123`
-
----
-
-## 📜 Available Scripts
-
-```bash
-# Start development server
-npm start
-
-# Build for production
-npm run build
-
-# Run tests
-npm test
-
-# Run linter
-npm run lint
-
-# Format code
-npm run format
-```
+- **React 18** - Frontend framework
+- **React Router 6** - Client-side routing
+- **React Query 3** - Data fetching and caching
+- **React Hook Form** - Form handling
+- **Tailwind CSS** - Utility-first CSS framework
+- **Axios** - HTTP client
+- **Lucide React** - Icon library
+- **React Hot Toast** - Toast notifications
+- **clsx & tailwind-merge** - Class name utilities
 
 ---
 
 ## 🔌 API Integration
 
-### API Client Configuration
+### Backend Base URL
 
-The frontend uses Axios with a centralized API client (`frontend/src/services/api.js`):
+**Production Backend**: `https://hmr-backend.vercel.app`
+
+All API calls are centralized in `src/services/api.js`.
+
+### Key API Modules
+
+1. **Admin API** (`adminAPI`)
+   - User management (CRUD)
+   - Properties management
+   - Investments and transactions
+   - Dashboard statistics
+
+2. **Organization Admin API** (`orgAdminAPI`)
+   - Organization management (CRUD)
+   - Organization admin authentication
+   - Password reset
+   - Password change
+
+3. **Properties API** (`propertiesAPI`)
+   - Get all properties
+   - Get property by ID
+   - Create property
+
+4. **Organizations API** (`organizationsAPI`)
+   - Get all organizations
+   - Get organization by ID
+   - Get organization liquidity
+
+5. **Investments API** (`investmentsAPI`)
+   - Create investment
+   - Get investments
+   - Get investment analytics
+
+6. **Wallet Transactions API** (`walletTransactionsAPI`)
+   - Create deposit
+   - Get user transactions
+
+7. **Portfolio API** (`portfolioAPI`)
+   - Get detailed portfolio
+   - Get portfolio summary
+
+---
+
+## 🏢 Organization Management
+
+### Overview
+
+The platform supports a multi-organization architecture:
+
+1. **Super Admin** (`admin@hmrbuilders.com`)
+   - Can create, edit, delete organizations
+   - Views ALL organizations' data
+   - Manages organization admin credentials
+   - Can reset organization admin passwords
+
+2. **Organization Admin** (e.g., `admin@hmr.com`)
+   - Views ONLY their organization's data
+   - Manages their organization's properties
+   - Views their organization's investors
+   - Can change their own password
+
+### Organization Creation Flow
+
+1. **Super Admin** creates organization via Admin Dashboard → Organizations tab
+2. System auto-generates admin credentials (or allows manual entry)
+3. Credentials are displayed to super admin
+4. Organization admin can log in at `/org/login`
+5. Organization admin sees filtered data for their organization only
+
+### Organization Management Features
+
+- ✅ Create organization with auto-generated or manual credentials
+- ✅ Edit organization details (name, description, website, logo)
+- ✅ Reset organization admin password
+- ✅ Delete organization (cascades to admin)
+- ✅ View organization statistics (properties, investments, users)
+- ✅ Display admin information (email, full name, last login)
+
+### Organization Admin Features
+
+- ✅ Login with organization-specific credentials
+- ✅ View organization dashboard with filtered data
+- ✅ Manage organization's properties
+- ✅ View organization's investors
+- ✅ View organization's investments and transactions
+- ✅ Change password from profile page
+
+---
+
+## 👨‍💼 Admin Dashboards
+
+### Super Admin Dashboard (`/admin`)
+
+**Routes:**
+- `/admin/login` - Admin login
+- `/admin` - Main dashboard (overview)
+- `/admin/properties` - All properties management
+- `/admin/users` - All users management
+- `/admin/investments` - All investments management
+- `/admin/transactions` - All transactions management
+- `/admin/organizations` - Organizations management
+- `/admin/property/:id` - Property detail view
+
+**Features:**
+- View statistics for ALL organizations
+- Manage all properties
+- Manage all users
+- Create and manage organizations
+- View all investments and transactions
+- Property detail page with comprehensive data
+
+### Organization Dashboard (`/orgdashboard`)
+
+**Routes:**
+- `/org/login` - Organization admin login
+- `/orgdashboard` - Organization dashboard (overview)
+- `/orgdashboard/properties` - Organization's properties
+- `/orgdashboard/users` - Organization's investors
+- `/orgdashboard/investments` - Organization's investments
+- `/orgdashboard/transactions` - Organization's transactions
+- `/orgdashboard/profile` - Organization admin profile
+
+**Features:**
+- View statistics for OWN organization only
+- Manage organization's properties
+- View organization's investors
+- View organization's investments and transactions
+- Change password
+
+---
+
+## 🌐 Backend API Reference
+
+### Working APIs
+
+#### Admin Endpoints
+- `GET /admin/users` - List all users
+- `POST /admin/users` - Create user
+- `GET /admin/investments` - List all investments
+- `GET /admin/transactions` - List all transactions
+
+#### Organization Admin Endpoints
+- `POST /admin/organizations` - Create organization and admin
+- `GET /admin/organizations` - List all organizations with admin info
+- `PATCH /admin/organizations/:id` - Update organization
+- `DELETE /admin/organizations/:id` - Delete organization
+- `POST /admin/organizations/:id/reset-password` - Reset org admin password
+- `POST /org/auth/login` - Organization admin login
+- `PATCH /org/auth/change-password/:adminId` - Change org admin password
+
+#### Properties Endpoints
+- `GET /properties` - List all properties
+- `GET /properties/:id` - Get property by ID
+- `POST /properties` - Create property
+- `GET /properties?org=ORG-000001` - Filter by organization
+
+#### Investments Endpoints
+- `GET /investments` - List all investments
+- `POST /investments/invest` - Create investment
+- `GET /investments/analytics/organization/:orgId` - Get org investment analytics
+
+#### Transactions Endpoints
+- `GET /transactions` - List all transactions
+- `GET /transactions/user/:userId` - Get user transactions
+- `GET /organizations/:id/transactions` - Get organization transactions
+
+#### Wallet Endpoints
+- `POST /wallet/deposit` - Create wallet deposit
+- `GET /wallet/user/:userId` - Get user wallet
+
+#### Portfolio Endpoints
+- `GET /portfolio/user/:userId/detailed` - Get detailed portfolio
+
+### API Response Handling
+
+The frontend includes helper functions to handle various field name variations:
 
 ```javascript
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://hmr-backend.vercel.app';
+// Investment amounts
+getInvestmentAmount(investment) {
+  return investment.amountUSDT || investment.amount_usdt || 
+         investment.amount || investment.invested_amount || 0;
+}
 
-const api = axios.create({
-  baseURL: API_BASE_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
-```
+// Transaction amounts
+getTransactionAmount(transaction) {
+  return transaction.amountUSDT || transaction.amount_usdt || 
+         transaction.amount || 0;
+}
 
-### API Modules
-
-**Admin API**
-```javascript
-import { adminAPI } from './services/api';
-
-// Get all properties
-const properties = await adminAPI.getProperties({ page: 1, limit: 10 });
-
-// Create user (auto-creates wallet, KYC, portfolio)
-const user = await adminAPI.createUser({
-  fullName: 'John Doe',
-  email: 'john@example.com',
-  phone: '+1234567890',
-  role: 'user'
-});
-
-// Get transactions
-const transactions = await adminAPI.getTransactions({ page: 1 });
-
-// Get investments
-const investments = await adminAPI.getInvestments({ page: 1 });
-```
-
-**Properties API**
-```javascript
-import { propertiesAPI } from './services/api';
-
-// List properties
-const properties = await propertiesAPI.getAll();
-
-// Get property by ID or displayCode
-const property = await propertiesAPI.getById('PROP-000001');
-
-// Create property
-const newProperty = await propertiesAPI.create({
-  organizationId: 'ORG-000001',
-  title: 'Marina View Residences',
-  slug: 'marina-view',
-  type: 'residential',
-  status: 'active',
-  totalValueUSDT: 1000000,
-  totalTokens: 1000,
-  expectedROI: 10,
-  city: 'Karachi',
-  country: 'Pakistan'
-});
-```
-
-**Investments API**
-```javascript
-import { investmentsAPI } from './services/api';
-
-// Create investment
-const investment = await investmentsAPI.create({
-  userId: 'USR-000001',
-  propertyId: 'PROP-000001',
-  tokensToBuy: 2.5
-});
-```
-
-**Wallet API**
-```javascript
-import { walletTransactionsAPI } from './services/api';
-
-// Deposit funds
-await walletTransactionsAPI.createDeposit({
-  userId: 'USR-000001',
-  amountUSDT: 5000
-});
-
-// Get user wallet
-const wallet = await usersAPI.getWalletById('USR-000001');
-```
-
-### Data Flow Example
-
-**Creating an Investment**
-```
-1. User selects property (PROP-000001)
-2. Frontend calls: investmentsAPI.create({
-     userId: 'USR-000001',
-     propertyId: 'PROP-000001', 
-     tokensToBuy: 2.5
-   })
-3. Backend (POST /investments/invest):
-   - Locks wallet + property (pessimistic)
-   - Validates available tokens & wallet balance
-   - Calculates amount (2.5 * pricePerToken)
-   - Decrements property.availableTokens
-   - Decrements wallet.balanceUSDT
-   - Credits organization.liquidityUSDT
-   - Creates investment record (INV-000001)
-   - Creates transaction record (TXN-000001)
-   - Updates portfolio
-   - Emits events
-4. Frontend receives investment data
-5. React Query refetches wallet, portfolio, property
-6. UI updates automatically
+// Property values
+getPropertyValue(property) {
+  return property.totalValueUSDT || property.price || 
+         property.purchasePriceUSDT || 0;
+}
 ```
 
 ---
 
-## 👨‍💼 Admin Dashboard
+## 🔐 Authentication
 
-### Features
+### Admin Authentication
 
-**Overview Tab**
-- ✅ Total users, properties, investments, transactions with growth metrics
-- ✅ Period filtering (7d, 30d, 90d, 1y)
-- ✅ Peak performance cards (best days for users, investments, transactions)
-- ✅ Time-series charts for all metrics
-- ✅ Period-over-period comparison with percentage changes
-- ✅ KYC verification trends
-- ✅ Interactive stat cards (click to navigate)
-- ✅ Real-time analytics dashboard
+**Location**: `src/components/admin/AdminAuth.js`
 
-**Properties Management**
-- ✅ List all properties with search, filter, sort
-- ✅ Create new properties
-- ✅ View property details
-- ✅ Property count display
-- ⚠️ Edit property (backend endpoint missing)
-- ⚠️ Delete property (backend endpoint missing)
-- ⚠️ Update status (backend endpoint missing)
+**Flow:**
+1. Admin logs in at `/admin/login`
+2. Credentials stored in localStorage
+3. Protected routes check for admin session
+4. Auto-redirect to login if not authenticated
 
-**Users Management**
-- ✅ List all users
-- ✅ Create new users (auto-creates wallet, KYC, portfolio)
-- ✅ View user details
-- ⚠️ Edit user (backend endpoint missing)
-- ⚠️ Delete user (backend endpoint missing)
-- ⚠️ Update status (backend endpoint missing)
+### Organization Admin Authentication
 
-**Transactions Management**
-- ✅ List all transactions with filters
-- ✅ Search transactions
-- ✅ Transaction count display
-- ✅ View user details per transaction
-- ⚠️ Summary statistics (needs backend response format)
+**Location**: `src/components/organization/OrganizationAuth.js`
 
-**Investments Management**
-- ✅ List all investments
-- ✅ View investment details
-- ✅ Filter by status
-- ⚠️ Update status (backend endpoint missing)
+**Flow:**
+1. Organization admin logs in at `/org/login`
+2. Backend validates credentials
+3. Organization details fetched and stored
+4. Session stored in localStorage
+5. Protected routes check for organization session
+6. Data filtered by organization ID
 
-### Access Control
+**Quick Login Buttons:**
+- HMR Company: `admin@hmr.com`
+- Saima Company: `admin@saima.com`
 
-Admin routes are protected by `AdminAuth` context:
+---
+
+## 🎨 UI Components
+
+### Reusable Components
+
+All components are located in `src/components/ui/`:
+
+- **Button** - Primary, secondary, outline variants
+- **Input** - Text input with icon support
+- **Card** - Container component
+- **Badge** - Status badges (success, warning, error, info)
+- **Select** - Dropdown select component
+
+### Styling
+
+- **Tailwind CSS** for utility-first styling
+- **Custom color palette** for consistent theming
+- **Responsive design** for mobile and desktop
+- **Gradient backgrounds** for modern UI
+- **Icon integration** using Lucide React
+
+---
+
+## 📊 Data Filtering
+
+### Organization-Specific Filtering
+
+Organization dashboards automatically filter data by `organizationId`:
+
 ```javascript
-import { useAdminAuth } from '../../components/admin/AdminAuth';
+// Properties
+GET /properties?org=ORG-000001
 
-const { isAuthenticated, adminUser, logout } = useAdminAuth();
+// Users (via investments analytics)
+GET /investments/analytics/organization/ORG-000001
+
+// Investments
+GET /investments/analytics/organization/ORG-000001
+
+// Transactions
+GET /organizations/:orgId/transactions
+```
+
+### Admin Views
+
+Admin dashboards fetch ALL data without filters:
+
+```javascript
+// All properties
+GET /properties?limit=1000
+
+// All users
+GET /admin/users?limit=1000
+
+// All investments
+GET /investments?limit=1000
+
+// All transactions
+GET /transactions?limit=1000
 ```
 
 ---
 
-## 👤 User Portal
+## 🚀 Deployment
 
-### Features
+### Vercel Deployment
 
-**Home Page**
-- Featured properties
-- Platform overview
-- Call-to-action
+The backend is deployed on Vercel at: `https://hmr-backend.vercel.app`
 
-**Properties**
-- Browse all properties
-- Filter by type, location, price
-- Search properties
-- View property details with tokenization info
+### Build Configuration
 
-**Portfolio**
-- Total investment value
-- Current value & ROI
-- Active investments list
-- Rewards history
-- Performance metrics
+The project uses Create React App with the following scripts:
 
-**Wallet**
-- Current balance
-- Deposit funds
-- Transaction history
-- Payment methods management
+- `npm start` - Development server
+- `npm run build` - Production build
+- `npm test` - Run tests
+- `npm run eject` - Eject from CRA (not recommended)
 
-**Profile**
-- Personal information
-- KYC verification status
-- Settings
-- Activity history
+### Environment Variables
 
----
-
-## 🔐 Environment Variables
-
-Create `frontend/.env`:
+If needed, create `.env.local` with:
 
 ```env
-# Backend API URL
 REACT_APP_API_URL=https://hmr-backend.vercel.app
-
-# Optional: Analytics
-REACT_APP_GA_TRACKING_ID=your-tracking-id
-
-# Optional: Feature Flags
-REACT_APP_ENABLE_KYC=true
-REACT_APP_ENABLE_PAYMENTS=true
 ```
 
 ---
 
-## 📚 Documentation
+## 🧪 Development
 
-This repository includes comprehensive documentation:
+### Available Scripts
 
-### Core Documentation
-- **[README.md](./README.md)** (this file) - Project overview and setup
-- **[API_INTEGRATION_GUIDE.md](./API_INTEGRATION_GUIDE.md)** - Detailed API integration guide
-- **[BACKEND_INTEGRATION_STATUS.md](./BACKEND_INTEGRATION_STATUS.md)** - Current integration status
-- **[QUICK_API_REFERENCE.md](./QUICK_API_REFERENCE.md)** - Quick API reference
+- `npm start` - Start development server on port 3000
+- `npm run build` - Build for production (creates `build/` folder)
+- `npm test` - Run tests in watch mode
+- `npm run eject` - Eject from Create React App
 
-### Backend Documentation
-- **Backend Repo**: [https://github.com/robasahmedshah/hmr-backend](https://github.com/robasahmedshah/hmr-backend)
-- **API Endpoints**: See `API_ENDPOINTS.md` in backend repo
-- **Event-Driven Architecture**: See `EVENT_DRIVEN_ARCHITECTURE.md` in backend repo
-- **Transaction Traceability**: See `TRANSACTION_TRACEABILITY.md` in backend repo
+### Development Workflow
 
-### Key Concepts
+1. Start development server: `npm start`
+2. Make changes to source files
+3. Hot reload will update the browser automatically
+4. Test features in development
+5. Build for production: `npm run build`
 
-**Display Codes**
-- Human-readable IDs for all entities
-- Format: `PREFIX-XXXXXX` (e.g., USR-000001, PROP-000001)
-- Auto-generated via PostgreSQL sequences
-- Used interchangeably with UUIDs in API calls
+### Code Organization
 
-**Tokenization**
-- Properties divided into purchasable tokens
-- `totalValueUSDT / totalTokens = pricePerTokenUSDT`
-- `availableTokens` decrements on each investment
-- Investors own `tokens` worth `tokens * pricePerTokenUSDT`
-
-**Auto-Creation Flow**
-- Creating a user automatically creates:
-  1. User record (USR-XXXXXX)
-  2. Wallet (balance: 0)
-  3. KYC record (status: pending)
-  4. Portfolio (all zeros)
-- All in a single transaction
-
-**Event-Driven Operations**
-- Investments emit events for portfolio updates
-- Deposits emit events for wallet updates
-- Rewards emit events for balance updates
-- Async processing with event emitters
-
-**Pessimistic Locking**
-- Critical operations lock database rows
-- Prevents race conditions on investments
-- Ensures data consistency
+- **Components**: Reusable UI components
+- **Pages**: Full page components
+- **Services**: API calls and data fetching
+- **Contexts**: Global state management
+- **Utils**: Helper functions
 
 ---
 
-## 🔄 Workflow Examples
+## 📝 Important Notes
 
-### Creating a Property Investment
+### Field Name Variations
 
-```javascript
-// 1. Create organization (one-time)
-POST /organizations
-{
-  "name": "HMR Builders",
-  "description": "Leading developer",
-  "website": "https://hmrbuilders.com"
-}
-// Returns: ORG-000001
+The backend may return data with different field names. The frontend includes fallback logic to handle:
+- `amountUSDT`, `amount_usdt`, `amount`
+- `pricePerTokenUSDT`, `pricePerToken`, `price_per_token`
+- `totalValueUSDT`, `totalValue`, `price`
+- `property.title` vs `property.name`
+- `property.city` vs `property.location`
 
-// 2. Create property
-POST /properties
-{
-  "organizationId": "ORG-000001",
-  "title": "Marina View Residences",
-  "slug": "marina-view",
-  "type": "residential",
-  "status": "active",
-  "totalValueUSDT": 1000000,
-  "totalTokens": 1000,
-  "expectedROI": 10,
-  "city": "Karachi",
-  "country": "Pakistan"
-}
-// Returns: PROP-000001
-// Computed: pricePerTokenUSDT = 1000
+### Status Values
 
-// 3. Create user (auto-creates wallet, KYC, portfolio)
-POST /admin/users
-{
-  "fullName": "Ali Khan",
-  "email": "ali@example.com",
-  "phone": "+92300123456",
-  "role": "user"
-}
-// Returns: USR-000001
-// Auto-creates: Wallet, KYC, Portfolio
+**Property Status:**
+- `planning`, `construction`, `active`, `coming-soon`, `on-hold`, `sold-out`, `completed`
 
-// 4. Deposit funds
-POST /wallet/deposit
-{
-  "userId": "USR-000001",
-  "amountUSDT": 5000
-}
-// Wallet balance: 5000
+**Investment Status:**
+- `pending`, `completed`, `cancelled`
 
-// 5. Make investment
-POST /investments/invest
-{
-  "userId": "USR-000001",
-  "propertyId": "PROP-000001",
-  "tokensToBuy": 2.5
-}
-// Investment created: INV-000001
-// Tokens purchased: 2.5
-// Amount deducted: 2500 (2.5 * 1000)
-// Wallet balance: 2500 (5000 - 2500)
-// Property availableTokens: 997.5 (1000 - 2.5)
+**Transaction Status:**
+- `pending`, `completed`, `failed`
 
-// 6. Distribute ROI
-POST /rewards/distribute
-{
-  "propertyId": "PROP-000001",
-  "totalRoiUSDT": 100000
-}
-// User reward: 250 USDT (2.5/1000 * 100000)
-// Wallet balance: 2750 (2500 + 250)
-```
+**Transaction Types:**
+- `Inflow`, `Outflow`, `Deposit`, `Withdrawal`, `Investment`, `Reward`
+
+### Currency
+
+- Backend uses **USDT** (Tether)
+- Display can be in PKR (Pakistan Rupees) with conversion
+- Conversion rate: ~280 PKR per USDT (approximate)
 
 ---
 
-## 🤝 Contributing
+## 🔧 Troubleshooting
 
-Contributions are welcome! Please follow these steps:
+### Build Errors
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+If you encounter build errors:
 
-### Development Guidelines
+1. **Clear cache and reinstall:**
+   ```bash
+   rm -rf node_modules package-lock.json
+   npm install
+   ```
 
-- Follow React best practices
-- Use functional components with hooks
-- Implement proper error handling
-- Add PropTypes or TypeScript types
-- Write meaningful commit messages
-- Update documentation for new features
+2. **Check Node.js version:**
+   ```bash
+   node --version  # Should be 18.0.0 or higher
+   ```
 
----
+3. **Check for missing dependencies:**
+   ```bash
+   npm install
+   ```
 
-## 🐛 Known Issues & Limitations
+### API Connection Issues
 
-### Current Limitations
+1. Verify backend is running: `https://hmr-backend.vercel.app`
+2. Check network tab in browser DevTools
+3. Verify API base URL in `src/services/api.js`
+4. Check CORS configuration on backend
 
-1. **Admin Dashboard Overview** - Statistics not showing (backend endpoint missing)
-2. **Property Edit/Delete** - Buttons disabled (backend CRUD endpoints missing)
-3. **User Edit/Delete** - Buttons disabled (backend CRUD endpoints missing)
-4. **Pagination** - Limited functionality (backend needs pagination metadata)
-5. **Transaction Summary** - No summary stats (backend response format)
+### Organization Data Not Showing
 
-### See Also
-- [BACKEND_INTEGRATION_STATUS.md](./BACKEND_INTEGRATION_STATUS.md) for complete status
-- [API_INTEGRATION_GUIDE.md](./API_INTEGRATION_GUIDE.md) for integration details
-
----
-
-## 🔮 Roadmap
-
-### Phase 1: Backend Completion (In Progress)
-- [ ] Implement `/admin/dashboard` endpoint (frontend ready)
-- [ ] Implement `/admin/analytics` endpoint (frontend ready)
-- [ ] Add property CRUD operations (PUT, DELETE, PATCH)
-- [ ] Add user CRUD operations (GET/:id, PUT, DELETE, PATCH)
-- [ ] Add pagination metadata to all list endpoints
-- [ ] Add transaction summary statistics
-
-**Frontend Status**: ✅ All dashboard features fully implemented and ready for backend integration!
-
-### Phase 2: Frontend Enhancement
-- [ ] Add real-time notifications
-- [ ] Implement advanced charts and analytics
-- [ ] Add export functionality (CSV, PDF)
-- [ ] Implement dark mode
-- [ ] Add mobile responsiveness improvements
-
-### Phase 3: Features
-- [ ] Multi-language support
-- [ ] Advanced filtering and search
-- [ ] Property comparison tool
-- [ ] Investment calculator
-- [ ] Email notifications
-- [ ] Document management system
+1. Verify organization admin is logged in
+2. Check `organizationId` in localStorage
+3. Verify API calls include organization filter
+4. Check backend API responses in network tab
 
 ---
 
-## 📊 System Requirements
+## 📚 Additional Resources
 
-### Development
-- Node.js 16.x or higher
-- npm 8.x or higher
-- 4GB RAM minimum
-- Modern browser (Chrome, Firefox, Safari, Edge)
+- **React Documentation**: https://react.dev
+- **React Router**: https://reactrouter.com
+- **React Query**: https://tanstack.com/query
+- **Tailwind CSS**: https://tailwindcss.com
+- **Lucide Icons**: https://lucide.dev
 
-### Production
-- Static hosting (Vercel, Netlify, etc.)
-- CDN for assets
-- HTTPS enabled
-- Backend at https://hmr-backend.vercel.app
+---
+
+## 🎯 Future Enhancements
+
+- [ ] JWT token-based authentication
+- [ ] User authentication system
+- [ ] Role-based permissions
+- [ ] Two-factor authentication
+- [ ] Real-time notifications
+- [ ] Advanced analytics and reporting
+- [ ] KYC system integration
+- [ ] Payment gateway integration
+- [ ] Dark mode support
 
 ---
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the MIT License.
 
 ---
 
-## 👥 Team
+## 👥 Support
 
-- **Frontend Developer**: [Afraz Alam](https://github.com/afrazalamjr)
-- **Backend Developer**: [Robas Ahmed Shah](https://github.com/RobasAhmedShah)
-- **Backend Contributor**: [Abdul Samad](https://github.com/itxsamad1)
-
----
-
-## 🙏 Acknowledgments
-
-- NestJS team for the amazing framework
-- React team for React and related libraries
-- Tailwind CSS for the utility-first CSS framework
-- All contributors and supporters
+For issues or questions:
+1. Check this README for common solutions
+2. Review the API documentation
+3. Check browser console for errors
+4. Verify backend API status
 
 ---
 
-## 📞 Support
+**Last Updated**: October 2025
 
-For support, email your-email@example.com or open an issue in the repository.
+**Version**: 1.0.0
 
----
-
-## 🔗 Links
-
-- **Frontend Repository**: [https://github.com/afrazalamjr/hmr-dashboard](https://github.com/afrazalamjr/hmr-dashboard)
-- **Backend Repository**: [https://github.com/robasahmedshah/hmr-backend](https://github.com/robasahmedshah/hmr-backend)
-- **Live Backend**: [https://hmr-backend.vercel.app](https://hmr-backend.vercel.app)
-- **Documentation**: [API Integration Guide](./API_INTEGRATION_GUIDE.md)
-
----
-
-**Made with ❤️ by the HMR Team**
-
+**Status**: ✅ Production Ready
