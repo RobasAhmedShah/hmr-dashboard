@@ -1,27 +1,19 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { organizationsAPI } from '../../services/api';
+import { organizationsAPI, orgAdminAPI } from '../../services/api';
 
 const OrganizationAuthContext = createContext(null);
 
-// Organization credentials (will fetch actual IDs from backend)
+// Quick login credentials (for convenience - actual auth goes through backend)
 const ORGANIZATION_CREDENTIALS = {
   'hmr': {
     email: 'admin@hmr.com',
     password: 'hmr123',
-    organizationName: 'HMR Company', // Display name override
-    organizationSlug: 'hmr',
-    displayNameOverride: true, // Use this name instead of backend name
-    backendOrgId: 'ORG-000001', // Explicit ID from backend
-    backendOrgName: 'HMR Builders', // Expected backend name
+    displayName: 'HMR Company',
   },
   'saima': {
     email: 'admin@saima.com',
     password: 'saima123',
-    organizationName: 'Saima Company', // Display name override
-    organizationSlug: 'saima',
-    displayNameOverride: true, // Use this name instead of backend name
-    backendOrgId: 'ORG-000008', // Explicit ID from backend (Saima)
-    backendOrgName: 'Saima', // Expected backend name
+    displayName: 'Saima Company',
   }
 };
 
@@ -50,106 +42,55 @@ export const OrganizationAuthProvider = ({ children }) => {
   }, []);
 
   const login = async (email, password) => {
-    // Find matching organization credentials
-    const orgEntry = Object.entries(ORGANIZATION_CREDENTIALS).find(
-      ([key, org]) => org.email === email && org.password === password
-    );
-
-    if (!orgEntry) {
-      throw new Error('Invalid credentials');
-    }
-
-    const [orgKey, orgData] = orgEntry;
-
     try {
-      // Fetch all organizations from backend
-      const response = await organizationsAPI.getAll();
-      const organizations = response.data?.data?.organizations || response.data?.organizations || response.data || [];
-      
-      console.log('📋 Fetched organizations from backend:', organizations);
-      console.log('🔍 Looking for organization:', {
-        displayName: orgData.organizationName,
-        backendOrgId: orgData.backendOrgId,
-        backendOrgName: orgData.backendOrgName
-      });
+      console.log('🔐 Organization Admin Login:', { email });
 
-      // PRIORITY MATCHING: Try explicit ID first, then name matching
-      let matchedOrg = null;
+      // Use new org admin login API
+      const response = await orgAdminAPI.orgAdminLogin({ email, password });
       
-      // STEP 1: Try exact ID match first (MOST RELIABLE) ⭐
-      if (orgData.backendOrgId) {
-        matchedOrg = organizations.find(org => {
-          const orgId = (org.id || org._id || org.organizationId || org.displayCode || '').toUpperCase().trim();
-          const targetId = orgData.backendOrgId.toUpperCase().trim();
-          console.log('🔍 ID Check:', { orgId, targetId, matches: orgId === targetId });
-          return orgId === targetId;
-        });
-        
-        if (matchedOrg) {
-          console.log('✅ MATCHED by EXPLICIT ID:', orgData.backendOrgId, matchedOrg);
-        }
-      }
-      
-      // STEP 2: Fallback to name matching (if no explicit ID or ID not found)
-      if (!matchedOrg) {
-        console.log('⚠️ No ID match, trying name matching...');
-        matchedOrg = organizations.find(org => {
-          const orgName = (org.name || '').toLowerCase().trim();
-          const orgSlug = (org.slug || '').toLowerCase().trim();
-          const searchName = (orgData.backendOrgName || orgData.organizationName).toLowerCase().trim();
-          const searchSlug = orgData.organizationSlug.toLowerCase().trim();
-          
-          console.log('🔍 Name Check:', {
-            backendOrg: { name: orgName, slug: orgSlug },
-            searching: { name: searchName, slug: searchSlug }
-          });
-          
-          // Match by exact name or slug first
-          if (orgName === searchName || orgSlug === searchSlug) {
-            return true;
-          }
-          
-          // Fallback to contains matching
-          return orgName.includes(searchName) || searchName.includes(orgName);
-        });
-        
-        if (matchedOrg) {
-          console.log('✅ MATCHED by NAME:', matchedOrg);
+      console.log('✅ Login API response:', response);
+
+      const loginData = response.data || response;
+      const { organizationId, admin, organization } = loginData;
+
+      // If organization details not included in login response, fetch them
+      let orgDetails = organization;
+      if (!orgDetails && organizationId) {
+        try {
+          const orgResponse = await organizationsAPI.getById(organizationId);
+          orgDetails = orgResponse.data?.organization || orgResponse.data;
+          console.log('✅ Fetched organization details:', orgDetails);
+        } catch (err) {
+          console.warn('⚠️ Could not fetch organization details:', err);
         }
       }
 
-      if (!matchedOrg) {
-        console.warn('⚠️ Organization not found in backend!');
-        console.warn('Available organizations:', organizations.map(o => ({ 
-          name: o.name, 
-          slug: o.slug, 
-          id: o.id || o._id 
-        })));
-      }
+      // Check for quick login display name override
+      const quickLoginEntry = Object.values(ORGANIZATION_CREDENTIALS).find(
+        cred => cred.email === email
+      );
+      const displayName = quickLoginEntry?.displayName || orgDetails?.name || admin?.organizationName || 'Organization';
 
-      // Use the actual ID from backend (like ORG-000014, ORG-000001)
-      const organizationId = matchedOrg?.id || matchedOrg?._id || matchedOrg?.organizationId || `${orgData.organizationSlug}-company`;
-
-      // Use display name override if specified, otherwise use backend name
-      const displayName = orgData.displayNameOverride 
-        ? orgData.organizationName 
-        : (matchedOrg?.name || orgData.organizationName);
-
+      // Store auth data
       const userData = {
-        email: orgData.email,
-        organizationName: displayName, // Use display name (overridden or from backend)
-        backendOrganizationName: matchedOrg?.name, // Store backend name separately
-        organizationId: organizationId, // This will be ORG-000014 or ORG-000001
-        organizationSlug: matchedOrg?.slug || orgData.organizationSlug,
+        email: admin?.email || email,
+        organizationName: displayName,
+        backendOrganizationName: orgDetails?.name,
+        organizationId: orgDetails?.id || orgDetails?._id || organizationId,
+        displayCode: orgDetails?.displayCode || orgDetails?.display_code,
+        organizationSlug: orgDetails?.slug,
+        adminId: admin?.id || admin?._id,
+        adminFullName: admin?.fullName || admin?.full_name,
         role: 'organization_admin',
         loginTime: new Date().toISOString(),
-        organizationData: matchedOrg // Store full org data
+        organizationData: orgDetails
       };
 
       console.log('✅ Organization login successful!');
-      console.log('📌 Organization ID:', organizationId);
-      console.log('📌 Display Name:', displayName);
-      console.log('📌 Backend Name:', matchedOrg?.name);
+      console.log('📌 Organization ID:', userData.organizationId);
+      console.log('📌 Display Name:', userData.organizationName);
+      console.log('📌 Backend Name:', userData.backendOrganizationName);
+      console.log('📌 Admin ID:', userData.adminId);
       console.log('📌 Full user data:', userData);
 
       setOrganizationUser(userData);
@@ -159,27 +100,9 @@ export const OrganizationAuthProvider = ({ children }) => {
 
       return userData;
     } catch (error) {
-      console.error('❌ Failed to fetch organizations:', error);
-      
-      // Fallback: use default IDs if backend fails
-      const fallbackOrgId = `${orgData.organizationSlug}-company`;
-      const userData = {
-        email: orgData.email,
-        organizationName: orgData.organizationName,
-        organizationId: fallbackOrgId,
-        organizationSlug: orgData.organizationSlug,
-        role: 'organization_admin',
-        loginTime: new Date().toISOString()
-      };
-
-      console.warn('⚠️ Using fallback organization ID:', fallbackOrgId);
-
-      setOrganizationUser(userData);
-      setIsAuthenticated(true);
-      localStorage.setItem('orgSession', 'true');
-      localStorage.setItem('orgUser', JSON.stringify(userData));
-
-      return userData;
+      console.error('❌ Login error:', error);
+      const errorMessage = error.response?.data?.message || 'Login failed. Please check your credentials.';
+      throw new Error(errorMessage);
     }
   };
 
@@ -197,7 +120,14 @@ export const OrganizationAuthProvider = ({ children }) => {
         isAuthenticated, 
         loading, 
         login, 
-        logout 
+        logout,
+        // Convenience accessors
+        organizationId: organizationUser?.organizationId,
+        organizationName: organizationUser?.organizationName,
+        displayCode: organizationUser?.displayCode,
+        adminId: organizationUser?.adminId,
+        adminEmail: organizationUser?.email,
+        adminFullName: organizationUser?.adminFullName
       }}
     >
       {children}

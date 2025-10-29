@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from 'react-query';
 import { 
@@ -24,7 +24,7 @@ import {
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import Badge from '../../components/ui/Badge';
-import { adminAPI } from '../../services/api';
+import { adminAPI, propertiesAPI, investmentsAPI, walletTransactionsAPI } from '../../services/api';
 import { useAdminAuth } from '../../components/admin/AdminAuth';
 
 const PropertyDetail = () => {
@@ -33,20 +33,84 @@ const PropertyDetail = () => {
   const { isAuthenticated } = useAdminAuth();
   const [activeTab, setActiveTab] = useState('overview');
 
-  // Fetch comprehensive property data
-  const { data: propertyData, isLoading, error } = useQuery(
-    ['property-detail', propertyId],
-    () => adminAPI.getPropertyDetail(propertyId),
+  // Fetch property details
+  const { data: propertyData, isLoading: propertyLoading, error: propertyError } = useQuery(
+    ['property', propertyId],
+    () => propertiesAPI.getById(propertyId),
     {
       enabled: Boolean(isAuthenticated && propertyId)
     }
   );
 
-  const property = propertyData?.data?.data || propertyData?.data || {};
-  const metrics = property.metrics || {};
-  const investments = property.investments || [];
-  const tokenPurchases = property.tokenPurchases || [];
-  const tokenTransactions = property.tokenTransactions || [];
+  // Fetch investments for this property
+  const { data: investmentsData, isLoading: investmentsLoading } = useQuery(
+    ['property-investments', propertyId],
+    () => adminAPI.getInvestments({ limit: 1000 }),
+    {
+      enabled: Boolean(isAuthenticated && propertyId)
+    }
+  );
+
+  // Fetch transactions for this property
+  const { data: transactionsData, isLoading: transactionsLoading } = useQuery(
+    ['property-transactions', propertyId],
+    () => walletTransactionsAPI.getAll({ limit: 1000 }),
+    {
+      enabled: Boolean(isAuthenticated && propertyId)
+    }
+  );
+
+  const property = propertyData?.data || propertyData || {};
+  const allInvestments = investmentsData?.data?.investments || investmentsData?.data || (Array.isArray(investmentsData) ? investmentsData : []);
+  const allTransactions = transactionsData?.data?.transactions || transactionsData?.data || (Array.isArray(transactionsData) ? transactionsData : []);
+
+  // Filter investments and transactions for this property
+  const investments = allInvestments.filter(inv => 
+    (inv.propertyId === propertyId || inv.property_id === propertyId || inv.property?.id === propertyId)
+  );
+  
+  const transactions = allTransactions.filter(txn => 
+    (txn.propertyId === propertyId || txn.property_id === propertyId || txn.property?.id === propertyId)
+  );
+
+  // Calculate metrics from the data
+  const metrics = useMemo(() => {
+    const totalInvestment = investments.reduce((sum, inv) => {
+      const amount = parseFloat(inv.amountUSDT || inv.amount || inv.investment_amount || 0);
+      return sum + amount;
+    }, 0);
+
+    const uniqueBuyers = new Set();
+    investments.forEach(inv => {
+      const userId = inv.userId || inv.user_id || inv.user?.id;
+      if (userId) uniqueBuyers.add(userId);
+    });
+
+    const totalTokens = parseFloat(property.totalTokens || property.total_tokens || 0);
+    const availableTokens = parseFloat(property.availableTokens || property.available_tokens || 0);
+    const tokensSold = totalTokens - availableTokens;
+    const tokensLeft = availableTokens;
+    
+    const pricePerToken = parseFloat(property.pricePerTokenUSDT || property.price_per_token_usdt || property.pricePerToken || 0);
+    const totalValueUSDT = parseFloat(property.totalValueUSDT || property.total_value_usdt || property.pricing_total_value || 0);
+    
+    const fundingProgress = totalValueUSDT > 0 ? (totalInvestment / totalValueUSDT) * 100 : 0;
+    const expectedROI = parseFloat(property.expectedROI || property.expected_roi || 0);
+
+    return {
+      totalInvestment,
+      totalBuyers: uniqueBuyers.size,
+      tokensLeft,
+      tokensSold,
+      totalTokens,
+      pricePerToken,
+      roi: expectedROI,
+      fundingProgress: Math.min(fundingProgress, 100)
+    };
+  }, [investments, property]);
+
+  const isLoading = propertyLoading || investmentsLoading || transactionsLoading;
+  const error = propertyError;
 
   const formatPrice = (amount, currency = 'PKR') => {
     const num = parseFloat(amount);
@@ -166,30 +230,48 @@ const PropertyDetail = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Property Name</label>
-            <p className="text-sm text-gray-900">{property.title}</p>
+            <p className="text-sm text-gray-900">{property.title || property.name || 'N/A'}</p>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
-            <p className="text-sm text-gray-900 capitalize">{property.property_type}</p>
+            <p className="text-sm text-gray-900 capitalize">{property.type || property.property_type || 'N/A'}</p>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-            <Badge variant={getStatusBadge(property.status).variant}>
-              {getStatusBadge(property.status).text}
-            </Badge>
+            {property.status ? (
+              <Badge variant={getStatusBadge(property.status).variant}>
+                {getStatusBadge(property.status).text}
+              </Badge>
+            ) : (
+              <p className="text-sm text-gray-500">N/A</p>
+            )}
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
-            <p className="text-sm text-gray-900">{property.location_city}</p>
+            <p className="text-sm text-gray-900">{property.city || property.location_city || property.location || 'N/A'}</p>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Total Value</label>
-            <p className="text-sm text-gray-900">{formatPrice(property.pricing_total_value)}</p>
+            <p className="text-sm text-gray-900">{formatPrice(property.totalValueUSDT || property.total_value_usdt || property.pricing_total_value || 0)}</p>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Min Investment</label>
-            <p className="text-sm text-gray-900">{formatPrice(property.pricing_min_investment)}</p>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Price Per Token</label>
+            <p className="text-sm text-gray-900">{formatPrice(property.pricePerTokenUSDT || property.price_per_token_usdt || property.pricePerToken || 0)}</p>
           </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Total Tokens</label>
+            <p className="text-sm text-gray-900">{(property.totalTokens || property.total_tokens || 0).toLocaleString()}</p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Available Tokens</label>
+            <p className="text-sm text-gray-900">{(property.availableTokens || property.available_tokens || 0).toLocaleString()}</p>
+          </div>
+          {property.description && (
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+              <p className="text-sm text-gray-900">{property.description}</p>
+            </div>
+          )}
         </div>
       </Card>
     </div>
@@ -213,39 +295,58 @@ const PropertyDetail = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {investments.map((investment) => (
-                <tr key={investment.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <div className="flex-shrink-0 h-8 w-8">
-                        <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center">
-                          <Users className="w-4 h-4 text-gray-600" />
-                        </div>
-                      </div>
-                      <div className="ml-3">
-                        <div className="text-sm font-medium text-gray-900">
-                          {investment.user_name || 'Unknown User'}
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          {investment.user_email}
-                        </div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {formatPrice(investment.investment_amount)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {investment.tokens_purchased?.toLocaleString()}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {formatDate(investment.created_at)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <Badge variant="success">Completed</Badge>
+              {investments.length === 0 ? (
+                <tr>
+                  <td colSpan="5" className="px-6 py-12 text-center text-gray-500">
+                    No investments found for this property
                   </td>
                 </tr>
-              ))}
+              ) : (
+                investments.map((investment) => {
+                  const user = investment.user || {};
+                  const userName = user.fullName || user.full_name || user.name || 'Unknown User';
+                  const userEmail = user.email || 'N/A';
+                  const amount = investment.amountUSDT || investment.amount || investment.investment_amount || 0;
+                  const tokens = investment.tokensToBuy || investment.tokensPurchased || investment.tokens_purchased || investment.tokens_to_buy || 0;
+                  const createdAt = investment.createdAt || investment.created_at || investment.date;
+                  
+                  return (
+                    <tr key={investment.id || investment._id || Math.random()} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <div className="flex-shrink-0 h-8 w-8">
+                            <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center">
+                              <Users className="w-4 h-4 text-gray-600" />
+                            </div>
+                          </div>
+                          <div className="ml-3">
+                            <div className="text-sm font-medium text-gray-900">
+                              {userName}
+                            </div>
+                            <div className="text-sm text-gray-500">
+                              {userEmail}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {formatPrice(amount)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {parseFloat(tokens).toLocaleString()}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {createdAt ? formatDate(createdAt) : 'N/A'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <Badge variant={investment.status === 'pending' ? 'warning' : 'success'}>
+                          {investment.status || 'completed'}
+                        </Badge>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
             </tbody>
           </table>
         </div>
@@ -292,24 +393,40 @@ const PropertyDetail = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {tokenPurchases.map((purchase) => (
-                <tr key={purchase.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">
-                      {purchase.user_name || 'Unknown User'}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {purchase.tokens_purchased?.toLocaleString()}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {formatPrice(purchase.amount)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {formatDate(purchase.created_at)}
+              {investments.length === 0 ? (
+                <tr>
+                  <td colSpan="4" className="px-6 py-12 text-center text-gray-500">
+                    No token purchases found for this property
                   </td>
                 </tr>
-              ))}
+              ) : (
+                investments.map((purchase) => {
+                  const user = purchase.user || {};
+                  const userName = user.fullName || user.full_name || user.name || 'Unknown User';
+                  const tokens = purchase.tokensToBuy || purchase.tokensPurchased || purchase.tokens_purchased || purchase.tokens_to_buy || 0;
+                  const amount = purchase.amountUSDT || purchase.amount || purchase.investment_amount || 0;
+                  const createdAt = purchase.createdAt || purchase.created_at || purchase.date;
+                  
+                  return (
+                    <tr key={purchase.id || purchase._id || Math.random()} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-900">
+                          {userName}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {parseFloat(tokens).toLocaleString()}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {formatPrice(amount)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {createdAt ? formatDate(createdAt) : 'N/A'}
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
             </tbody>
           </table>
         </div>
@@ -335,27 +452,45 @@ const PropertyDetail = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {tokenTransactions.map((transaction) => (
-                <tr key={transaction.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">
-                      {transaction.id.slice(0, 8)}...
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <Badge variant="info">{transaction.transaction_type}</Badge>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {formatPrice(transaction.amount)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {formatDate(transaction.created_at)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <Badge variant="success">Completed</Badge>
+              {transactions.length === 0 ? (
+                <tr>
+                  <td colSpan="5" className="px-6 py-12 text-center text-gray-500">
+                    No transactions found for this property
                   </td>
                 </tr>
-              ))}
+              ) : (
+                transactions.map((transaction) => {
+                  const txnId = transaction.id || transaction._id || 'N/A';
+                  const txnType = transaction.type || transaction.transaction_type || transaction.transactionType || 'N/A';
+                  const amount = transaction.amountUSDT || transaction.amount || transaction.amount_in_pkr || 0;
+                  const createdAt = transaction.createdAt || transaction.created_at || transaction.date;
+                  const status = transaction.status || 'completed';
+                  
+                  return (
+                    <tr key={txnId} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-900">
+                          {typeof txnId === 'string' && txnId.length > 8 ? txnId.slice(0, 8) + '...' : txnId}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <Badge variant="info">{txnType}</Badge>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {formatPrice(amount)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {createdAt ? formatDate(createdAt) : 'N/A'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <Badge variant={status === 'pending' ? 'warning' : 'success'}>
+                          {status}
+                        </Badge>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
             </tbody>
           </table>
         </div>
@@ -422,8 +557,8 @@ const PropertyDetail = () => {
                 <span>Back to Admin</span>
               </Button>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">{property.title}</h1>
-                <p className="text-sm text-gray-600">{property.location_city}</p>
+                <h1 className="text-2xl font-bold text-gray-900">{property.title || property.name || 'Property Details'}</h1>
+                <p className="text-sm text-gray-600">{property.city || property.location_city || property.location || 'Location not specified'}</p>
               </div>
             </div>
             <div className="flex items-center space-x-4">
