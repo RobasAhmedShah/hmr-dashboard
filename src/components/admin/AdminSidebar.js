@@ -49,10 +49,11 @@ const AdminSidebar = ({ activeTab, setActiveTab }) => {
         {/* Main Menu */}
         <nav className="space-y-1">
           {mainMenuItems.map((item) => (
-            <a
+            <button
               key={item.id}
+              type="button"
               onClick={() => setActiveTab(item.id)}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer ${
+              className={`w-full text-left flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
                 activeTab === item.id
                   ? 'bg-sidebar-accent text-sidebar-primary shadow-md'
                   : 'text-sidebar-foreground/80 hover:text-sidebar-foreground hover:bg-sidebar-accent/50'
@@ -60,7 +61,7 @@ const AdminSidebar = ({ activeTab, setActiveTab }) => {
             >
               <item.icon className="w-4 h-4 flex-shrink-0" />
               <span>{item.label}</span>
-            </a>
+            </button>
           ))}
         </nav>
 
@@ -71,10 +72,11 @@ const AdminSidebar = ({ activeTab, setActiveTab }) => {
           </p>
           <nav className="space-y-1">
             {documentItems.map((item) => (
-              <a
+              <button
                 key={item.id}
+                type="button"
                 onClick={() => setActiveTab(item.id)}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer ${
+                className={`w-full text-left flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
                   activeTab === item.id
                     ? 'bg-sidebar-accent text-sidebar-primary shadow-md'
                     : 'text-sidebar-foreground/80 hover:text-sidebar-foreground hover:bg-sidebar-accent/50'
@@ -82,7 +84,7 @@ const AdminSidebar = ({ activeTab, setActiveTab }) => {
               >
                 <item.icon className="w-4 h-4 flex-shrink-0" />
                 <span>{item.label}</span>
-              </a>
+              </button>
             ))}
           </nav>
         </div>
@@ -90,13 +92,13 @@ const AdminSidebar = ({ activeTab, setActiveTab }) => {
 
       {/* Bottom Section - Fixed */}
       <div className="border-t border-sidebar-border/50 p-6 space-y-3">
-        <a
-          href="#"
-          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-sidebar-foreground/80 hover:text-sidebar-foreground hover:bg-sidebar-accent/50 transition-all duration-200"
+        <button
+          type="button"
+          className="w-full text-left flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-sidebar-foreground/80 hover:text-sidebar-foreground hover:bg-sidebar-accent/50 transition-all duration-200"
         >
           <HelpCircle className="w-4 h-4 flex-shrink-0" />
           <span>Get Help</span>
-        </a>
+        </button>
 
         {/* User Profile */}
         <div className="border-t border-sidebar-border/50 pt-3 mt-3">
