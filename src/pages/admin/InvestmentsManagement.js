@@ -364,32 +364,32 @@ const InvestmentsManagement = () => {
 
       {/* Investments Table */}
       <Card className="overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
+        <div>
+          <table className="w-full table-fixed text-sm">
             <thead className="bg-accent">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider w-[10rem]">
                   Investment
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider w-[18rem]">
                   Investor
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider w-[16rem]">
                   Property
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider w-[8rem]">
                   Amount
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider w-[7rem]">
                   Tokens
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider w-[8rem]">
                   Status
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider w-[10rem]">
                   Date
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider w-[6rem]">
                   Actions
                 </th>
               </tr>
@@ -450,14 +450,14 @@ const InvestmentsManagement = () => {
 
                   return (
                     <tr key={investment.id} className="hover:bg-accent">
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-3 py-2 whitespace-nowrap">
                       <div className="flex items-center">
                         <div className="flex-shrink-0 h-10 w-10">
                           <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center">
                             <TrendingUp className="w-5 h-5 text-muted-foreground" />
                           </div>
                         </div>
-                        <div className="ml-4">
+                        <div className="ml-3 min-w-0">
                           <div className="text-sm font-medium text-card-foreground">
                             {investment.displayCode || investment.id?.slice(0, 8) + '...'}
                           </div>
@@ -467,40 +467,40 @@ const InvestmentsManagement = () => {
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-3 py-2 whitespace-nowrap">
                       <div className="flex items-center">
                         <div className="flex-shrink-0 h-8 w-8">
                           <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
                             <User className="w-4 h-4 text-muted-foreground" />
                           </div>
                         </div>
-                        <div className="ml-3">
-                          <div className="text-sm font-medium text-card-foreground">
+                        <div className="ml-2 min-w-0">
+                          <div className="text-sm font-medium text-card-foreground truncate">
                             {mappedInvestment.user_name}
                           </div>
-                          <div className="text-sm text-muted-foreground">
+                          <div className="text-xs text-muted-foreground truncate max-w-[14rem]">
                             {mappedInvestment.user_email}
                           </div>
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-3 py-2 whitespace-nowrap">
                       <div className="flex items-center">
                         <Building2 className="w-4 h-4 mr-2 text-muted-foreground" />
-                        <div>
-                          <div className="text-sm font-medium text-card-foreground">
+                        <div className="min-w-0">
+                          <div className="text-sm font-medium text-card-foreground truncate">
                             {mappedInvestment.property_title}
                           </div>
-                          <div className="text-sm text-muted-foreground">
+                          <div className="text-xs text-muted-foreground truncate max-w-[14rem]">
                             {investment.property?.displayCode || investment.property?.slug || ''}
                           </div>
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-card-foreground">
+                    <td className="px-3 py-2 whitespace-nowrap text-sm text-card-foreground">
                       {formatPrice(mappedInvestment.amount_invested, 'USDT')}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-card-foreground">
+                    <td className="px-3 py-2 whitespace-nowrap text-sm text-card-foreground">
                       <div className="flex items-center">
                         <span className="font-medium">
                           {parseFloat(mappedInvestment.tokens_bought || 0).toLocaleString(undefined, {
@@ -513,22 +513,22 @@ const InvestmentsManagement = () => {
                         )}
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <Badge variant={statusInfo.variant} className="flex items-center">
+                    <td className="px-3 py-2 whitespace-nowrap">
+                      <Badge variant={statusInfo.variant} className="flex items-center text-[10px] px-2 py-0.5">
                         <StatusIcon className="w-3 h-3 mr-1" />
                         {statusInfo.text}
                       </Badge>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
+                    <td className="px-3 py-2 whitespace-nowrap text-xs text-muted-foreground">
                       <div className="flex items-center">
                         <Calendar className="w-3 h-3 mr-2 text-muted-foreground" />
                         {formatDate(mappedInvestment.created_at)}
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <td className="px-3 py-2 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex items-center space-x-2">
-                        <Button variant="outline" size="sm">
-                          <Eye className="w-4 h-4" />
+                        <Button variant="outline" size="sm" className="h-7 w-7 p-0">
+                          <Eye className="w-3.5 h-3.5" />
                         </Button>
                       </div>
                     </td>

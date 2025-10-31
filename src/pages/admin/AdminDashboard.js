@@ -30,6 +30,7 @@ import UsersManagement from './UsersManagement';
 import TransactionsManagement from './TransactionsManagement';
 import InvestmentsManagement from './InvestmentsManagement';
 import OrganizationsManagement from './OrganizationsManagement';
+import AdminSettings from './AdminSettings';
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
@@ -521,6 +522,8 @@ const AdminDashboard = () => {
         return <InvestmentsManagement />;
       case 'organizations':
         return <OrganizationsManagement />;
+      case 'settings':
+        return <AdminSettings />;
       default:
         return renderOverview();
     }
