@@ -526,26 +526,26 @@ const UsersManagement = () => {
 
       {/* Users Table */}
       <Card className="overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
+        <div>
+          <table className="w-full table-fixed text-sm">
             <thead className="bg-accent">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider w-[16rem]">
                   User
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider w-[20rem]">
                   Contact
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider w-[7rem]">
                   Status
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider w-[9rem]">
                   KYC Status
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider w-[9rem]">
                   Joined
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider w-[8rem]">
                   Actions
                 </th>
               </tr>
@@ -566,7 +566,7 @@ const UsersManagement = () => {
                     key={user.id} 
                     className={`hover:bg-accent ${isDeleted ? 'bg-red-50 opacity-60' : ''}`}
                   >
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-3 py-2 whitespace-nowrap overflow-hidden">
                       <div className="flex items-center">
                         <div className="flex-shrink-0 h-10 w-10">
                           <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
@@ -575,7 +575,7 @@ const UsersManagement = () => {
                             </span>
                           </div>
                         </div>
-                        <div className="ml-4">
+                        <div className="ml-3 min-w-0">
                           <div className="flex items-center space-x-2">
                             <button
                               onClick={async () => {
@@ -666,91 +666,93 @@ const UsersManagement = () => {
                                   setLoadingFinancialData(false);
                                 }
                               }}
-                              className="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline cursor-pointer"
+                              className="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline cursor-pointer truncate max-w-[10rem]"
                             >
                               {user.fullName || user.name || 'Unknown User'}
                             </button>
                             {user.displayCode && (
-                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                              <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-blue-100 text-blue-800">
                                 {user.displayCode}
                             </span>
                             )}
                             {isDeleted && (
-                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                              <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-red-100 text-red-800">
                                 <Trash2 className="w-3 h-3 mr-1" />
                                 Deleted
                               </span>
                             )}
                           </div>
-                          <div className="text-sm text-muted-foreground">
+                          <div className="text-xs text-muted-foreground truncate max-w-[10rem]">
                             ID: {user.id?.slice(0, 8)}...
                           </div>
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-3 py-2 whitespace-nowrap overflow-hidden">
                       <div className="space-y-1">
-                        <div className="flex items-center text-sm text-card-foreground">
+                        <div className="flex items-center text-sm text-card-foreground truncate max-w-[14rem]">
                           <Mail className="w-3 h-3 mr-2 text-muted-foreground" />
-                          {user.email}
+                          <span className="truncate">{user.email}</span>
                         </div>
                         {user.phone && (
-                          <div className="flex items-center text-sm text-muted-foreground">
+                          <div className="flex items-center text-xs text-muted-foreground truncate max-w-[14rem]">
                             <Phone className="w-3 h-3 mr-2 text-muted-foreground" />
-                            {user.phone}
+                            <span className="truncate">{user.phone}</span>
                           </div>
                         )}
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <Badge variant={statusInfo.variant} className="flex items-center">
+                    <td className="px-3 py-2 whitespace-nowrap">
+                      <Badge variant={statusInfo.variant} className="flex items-center text-[10px] px-2 py-0.5">
                         <StatusIcon className="w-3 h-3 mr-1" />
                         {statusInfo.text}
                       </Badge>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-3 py-2 whitespace-nowrap">
                       <button 
                         onClick={() => handleKYCStatusUpdate(user)}
                         className="cursor-pointer hover:opacity-80 transition-opacity"
                         title="Click to update KYC status"
                       >
-                      <Badge variant={kycInfo.variant} className="flex items-center">
+                      <Badge variant={kycInfo.variant} className="flex items-center text-[10px] px-2 py-0.5">
                         <KycIcon className="w-3 h-3 mr-1" />
                         {kycInfo.text}
                       </Badge>
                       </button>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
+                    <td className="px-3 py-2 whitespace-nowrap text-xs text-muted-foreground">
                       <div className="flex items-center">
                         <Calendar className="w-3 h-3 mr-2 text-muted-foreground" />
                         {formatDate(user.createdAt || user.created_at)}
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <td className="px-3 py-2 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex items-center space-x-2">
                         <Button
                           variant="outline"
                           size="sm"
+                          className="h-7 w-7 p-0"
                           onClick={() => handleEditUser(user)}
                         >
-                          <Edit className="w-4 h-4" />
+                          <Edit className="w-3.5 h-3.5" />
                         </Button>
                         <Button 
                           variant="outline" 
                           size="sm"
+                          className="h-7 w-7 p-0"
                           onClick={() => handleStatusUpdate(user)}
                         >
-                          <Shield className="w-4 h-4" />
+                          <Shield className="w-3.5 h-3.5" />
                         </Button>
                         <Button 
                           variant="outline" 
                           size="sm" 
-                          className={`${isDeleted ? 'text-muted-foreground cursor-not-allowed opacity-50' : 'text-red-600 hover:text-red-700 hover:bg-red-50'}`}
+                          className={`h-7 w-7 p-0 ${isDeleted ? 'text-muted-foreground cursor-not-allowed opacity-50' : 'text-red-600 hover:text-red-700 hover:bg-red-50'}`}
                           onClick={() => isDeleted ? null : handleDeleteUser(user)}
                           title={isDeleted ? 'User already deleted' : `Delete ${user.fullName || user.name}`}
                           disabled={isDeleted}
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <Trash2 className="w-3.5 h-3.5" />
                         </Button>
                       </div>
                     </td>
