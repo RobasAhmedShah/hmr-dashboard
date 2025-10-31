@@ -33,19 +33,19 @@ const SimpleMap = ({ latitude, longitude, onLocationChange, height = '400px' }) 
   };
 
   return (
-    <div className="w-full border border-gray-300 rounded-lg overflow-hidden" style={{ height }}>
+    <div className="w-full border border-input rounded-lg overflow-hidden" style={{ height }}>
       {/* Map Preview */}
-      <div className="bg-gray-100 h-3/4 flex items-center justify-center relative">
+      <div className="bg-muted h-3/4 flex items-center justify-center relative">
         <div className="text-center">
           <MapPin className="w-12 h-12 text-blue-600 mx-auto mb-2" />
-          <p className="text-sm text-gray-600 mb-2">Property Location</p>
+          <p className="text-sm text-muted-foreground mb-2">Property Location</p>
           <p className="text-xs text-gray-500">
             {lat.toFixed(6)}, {lng.toFixed(6)}
           </p>
         </div>
         
         {/* Interactive Controls */}
-        <div className="absolute top-2 right-2 bg-white rounded-lg shadow-lg p-2">
+        <div className="absolute top-2 right-2 bg-card rounded-lg shadow-lg p-2">
           <div className="flex space-x-2">
             <a
               href={getGoogleMapsUrl()}
@@ -70,10 +70,10 @@ const SimpleMap = ({ latitude, longitude, onLocationChange, height = '400px' }) 
       </div>
 
       {/* Coordinate Inputs */}
-      <div className="bg-white p-4 border-t">
+      <div className="bg-card p-4 border-t">
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">
+            <label className="block text-xs font-medium text-foreground mb-1">
               Latitude
             </label>
             <input
@@ -81,12 +81,12 @@ const SimpleMap = ({ latitude, longitude, onLocationChange, height = '400px' }) 
               step="any"
               value={lat}
               onChange={handleLatChange}
-              className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-2 py-1 text-sm border border-input rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
               placeholder="24.8607"
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">
+            <label className="block text-xs font-medium text-foreground mb-1">
               Longitude
             </label>
             <input
@@ -94,7 +94,7 @@ const SimpleMap = ({ latitude, longitude, onLocationChange, height = '400px' }) 
               step="any"
               value={lng}
               onChange={handleLngChange}
-              className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-2 py-1 text-sm border border-input rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
               placeholder="67.0011"
             />
           </div>

@@ -32,13 +32,13 @@ const ProfileSwitcher = () => {
         <div className="absolute top-full right-0 mt-2 w-64 z-50">
           <Card className="p-4 shadow-lg">
             <div className="space-y-2">
-              <h3 className="font-semibold text-sm text-gray-700 mb-3">
+              <h3 className="font-semibold text-sm text-foreground mb-3">
                 Switch Profile
               </h3>
               {usersLoading ? (
                 <div className="flex items-center justify-center py-4">
                   <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-                  <span className="ml-2 text-sm text-gray-600">Loading users...</span>
+                  <span className="ml-2 text-sm text-muted-foreground">Loading users...</span>
                 </div>
               ) : usersError ? (
                 <div className="text-center py-4">
@@ -47,7 +47,7 @@ const ProfileSwitcher = () => {
                 </div>
               ) : users.length === 0 ? (
                 <div className="text-center py-4">
-                  <p className="text-sm text-gray-600">No users found</p>
+                  <p className="text-sm text-muted-foreground">No users found</p>
                 </div>
               ) : (
                 users.map((user) => (
@@ -57,7 +57,7 @@ const ProfileSwitcher = () => {
                   className={`w-full flex items-center justify-between p-3 rounded-lg text-left transition-colors ${
                     currentUser?.id === user.id
                       ? 'bg-blue-50 border border-blue-200'
-                      : 'hover:bg-gray-50'
+                      : 'hover:bg-accent'
                   }`}
                 >
                   <div className="flex items-center gap-3">

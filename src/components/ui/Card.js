@@ -10,7 +10,7 @@ const Card = ({
   return (
     <div
       className={cn(
-        'bg-white rounded-lg shadow-sm border border-gray-200 p-6',
+        'bg-card text-card-foreground rounded-lg shadow-sm border border-border p-6',
         hover && 'hover:shadow-md transition-shadow duration-200',
         className
       )}
@@ -31,7 +31,7 @@ const CardHeader = ({ children, className = '', ...props }) => {
 
 const CardTitle = ({ children, className = '', ...props }) => {
   return (
-    <h3 className={cn('text-lg font-semibold text-gray-900', className)} {...props}>
+    <h3 className={cn('text-lg font-semibold text-card-foreground', className)} {...props}>
       {children}
     </h3>
   );
@@ -39,7 +39,7 @@ const CardTitle = ({ children, className = '', ...props }) => {
 
 const CardDescription = ({ children, className = '', ...props }) => {
   return (
-    <p className={cn('text-sm text-gray-600', className)} {...props}>
+    <p className={cn('text-sm text-muted-foreground', className)} {...props}>
       {children}
     </p>
   );
@@ -55,7 +55,7 @@ const CardContent = ({ children, className = '', ...props }) => {
 
 const CardFooter = ({ children, className = '', ...props }) => {
   return (
-    <div className={cn('mt-4 pt-4 border-t border-gray-200', className)} {...props}>
+    <div className={cn('mt-4 pt-4 border-t border-border', className)} {...props}>
       {children}
     </div>
   );

@@ -90,16 +90,16 @@ const AdminLogin = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-accent flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
           <div className="mx-auto h-12 w-12 bg-blue-100 rounded-full flex items-center justify-center">
             <Shield className="h-6 w-6 text-blue-600" />
           </div>
-          <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
+          <h2 className="mt-6 text-3xl font-extrabold text-card-foreground">
             Admin Login
           </h2>
-          <p className="mt-2 text-sm text-gray-600">
+          <p className="mt-2 text-sm text-muted-foreground">
             Sign in to access the admin dashboard
           </p>
         </div>
@@ -113,7 +113,7 @@ const AdminLogin = () => {
             )}
 
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="email" className="block text-sm font-medium text-foreground">
                 Email Address
               </label>
               <input
@@ -123,13 +123,13 @@ const AdminLogin = () => {
                 required
                 value={formData.email}
                 onChange={handleChange}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                className="mt-1 block w-full px-3 py-2 border border-input rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 placeholder="Enter your email"
               />
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="password" className="block text-sm font-medium text-foreground">
                 Password
               </label>
               <div className="mt-1 relative">
@@ -140,7 +140,7 @@ const AdminLogin = () => {
                   required
                   value={formData.password}
                   onChange={handleChange}
-                  className="block w-full px-3 py-2 pr-10 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  className="block w-full px-3 py-2 pr-10 border border-input rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                   placeholder="Enter your password"
                 />
                 <button

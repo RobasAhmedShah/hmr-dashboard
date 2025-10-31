@@ -193,7 +193,7 @@ const InvestmentsManagement = () => {
   if (!isAuthenticated) {
     return (
       <div className="text-center py-12">
-        <p className="text-gray-600">Please log in to view investments.</p>
+        <p className="text-muted-foreground">Please log in to view investments.</p>
       </div>
     );
   }
@@ -202,7 +202,7 @@ const InvestmentsManagement = () => {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        <span className="ml-2 text-gray-600">Loading investments...</span>
+        <span className="ml-2 text-muted-foreground">Loading investments...</span>
       </div>
     );
   }
@@ -223,8 +223,8 @@ const InvestmentsManagement = () => {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Investments Management</h2>
-          <p className="text-gray-600">Monitor all property investments</p>
+          <h2 className="text-2xl font-bold text-card-foreground">Investments Management</h2>
+          <p className="text-muted-foreground">Monitor all property investments</p>
         </div>
       </div>
 
@@ -236,8 +236,8 @@ const InvestmentsManagement = () => {
               <TrendingUp className="w-6 h-6 text-green-600" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Total Investments</p>
-              <p className="text-2xl font-bold text-gray-900">
+              <p className="text-sm font-medium text-muted-foreground">Total Investments</p>
+              <p className="text-2xl font-bold text-card-foreground">
                 {formatPrice(summary.totalInvestments)}
               </p>
             </div>
@@ -250,8 +250,8 @@ const InvestmentsManagement = () => {
               <Building2 className="w-6 h-6 text-blue-600" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Active Investments</p>
-              <p className="text-2xl font-bold text-gray-900">
+              <p className="text-sm font-medium text-muted-foreground">Active Investments</p>
+              <p className="text-2xl font-bold text-card-foreground">
                 {summary.activeInvestments}
               </p>
             </div>
@@ -264,8 +264,8 @@ const InvestmentsManagement = () => {
               <Clock className="w-6 h-6 text-yellow-600" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Pending</p>
-              <p className="text-2xl font-bold text-gray-900">
+              <p className="text-sm font-medium text-muted-foreground">Pending</p>
+              <p className="text-2xl font-bold text-card-foreground">
                 {summary.pendingInvestments}
               </p>
             </div>
@@ -278,8 +278,8 @@ const InvestmentsManagement = () => {
               <User className="w-6 h-6 text-purple-600" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Total Investors</p>
-              <p className="text-2xl font-bold text-gray-900">
+              <p className="text-sm font-medium text-muted-foreground">Total Investors</p>
+              <p className="text-2xl font-bold text-card-foreground">
                 {summary.totalInvestors}
               </p>
             </div>
@@ -291,25 +291,25 @@ const InvestmentsManagement = () => {
       <Card className="p-6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Search</label>
+            <label className="block text-sm font-medium text-foreground mb-1">Search</label>
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <input
                 type="text"
                 placeholder="Search investments..."
                 value={filters.search}
                 onChange={(e) => handleFilterChange('search', e.target.value)}
-                className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full pl-10 pr-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+            <label className="block text-sm font-medium text-foreground mb-1">Status</label>
             <select
               value={filters.status}
               onChange={(e) => handleFilterChange('status', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
             >
               <option value="">All Status</option>
               <option value="active">Active</option>
@@ -321,11 +321,11 @@ const InvestmentsManagement = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Property</label>
+            <label className="block text-sm font-medium text-foreground mb-1">Property</label>
             <select
               value={filters.property}
               onChange={(e) => handleFilterChange('property', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
             >
               <option value="">All Properties</option>
               <option value="hmr-waterfront-towers">HMR Waterfront Towers</option>
@@ -335,11 +335,11 @@ const InvestmentsManagement = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Sort By</label>
+            <label className="block text-sm font-medium text-foreground mb-1">Sort By</label>
             <select
               value={filters.sort_by}
               onChange={(e) => handleFilterChange('sort_by', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
             >
               <option value="created_at">Date</option>
               <option value="investment_amount">Amount</option>
@@ -349,11 +349,11 @@ const InvestmentsManagement = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Order</label>
+            <label className="block text-sm font-medium text-foreground mb-1">Order</label>
             <select
               value={filters.sort_order}
               onChange={(e) => handleFilterChange('sort_order', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
             >
               <option value="desc">Descending</option>
               <option value="asc">Ascending</option>
@@ -366,40 +366,40 @@ const InvestmentsManagement = () => {
       <Card className="overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50">
+            <thead className="bg-accent">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Investment
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Investor
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Property
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Amount
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Tokens
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Status
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Date
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-card divide-y divide-gray-200">
               {investments.length === 0 ? (
                 <tr>
-                  <td colSpan="6" className="px-6 py-12 text-center text-gray-500">
+                  <td colSpan="6" className="px-6 py-12 text-center text-muted-foreground">
                     <div className="flex flex-col items-center">
-                      <TrendingUp className="w-12 h-12 text-gray-400 mb-4" />
+                      <TrendingUp className="w-12 h-12 text-muted-foreground mb-4" />
                       <p className="text-lg font-medium">No investments found</p>
                       <p className="text-sm">Investments will appear here once users start investing in properties</p>
                     </div>
@@ -449,19 +449,19 @@ const InvestmentsManagement = () => {
                   const StatusIcon = statusInfo.icon;
 
                   return (
-                    <tr key={investment.id} className="hover:bg-gray-50">
+                    <tr key={investment.id} className="hover:bg-accent">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <div className="flex-shrink-0 h-10 w-10">
-                          <div className="h-10 w-10 rounded-lg bg-gray-200 flex items-center justify-center">
-                            <TrendingUp className="w-5 h-5 text-gray-600" />
+                          <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center">
+                            <TrendingUp className="w-5 h-5 text-muted-foreground" />
                           </div>
                         </div>
                         <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">
+                          <div className="text-sm font-medium text-card-foreground">
                             {investment.displayCode || investment.id?.slice(0, 8) + '...'}
                           </div>
-                          <div className="text-sm text-gray-500">
+                          <div className="text-sm text-muted-foreground">
                             Investment
                           </div>
                         </div>
@@ -470,15 +470,15 @@ const InvestmentsManagement = () => {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <div className="flex-shrink-0 h-8 w-8">
-                          <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center">
-                            <User className="w-4 h-4 text-gray-600" />
+                          <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
+                            <User className="w-4 h-4 text-muted-foreground" />
                           </div>
                         </div>
                         <div className="ml-3">
-                          <div className="text-sm font-medium text-gray-900">
+                          <div className="text-sm font-medium text-card-foreground">
                             {mappedInvestment.user_name}
                           </div>
-                          <div className="text-sm text-gray-500">
+                          <div className="text-sm text-muted-foreground">
                             {mappedInvestment.user_email}
                           </div>
                         </div>
@@ -486,21 +486,21 @@ const InvestmentsManagement = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
-                        <Building2 className="w-4 h-4 mr-2 text-gray-400" />
+                        <Building2 className="w-4 h-4 mr-2 text-muted-foreground" />
                         <div>
-                          <div className="text-sm font-medium text-gray-900">
+                          <div className="text-sm font-medium text-card-foreground">
                             {mappedInvestment.property_title}
                           </div>
-                          <div className="text-sm text-gray-500">
+                          <div className="text-sm text-muted-foreground">
                             {investment.property?.displayCode || investment.property?.slug || ''}
                           </div>
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-card-foreground">
                       {formatPrice(mappedInvestment.amount_invested, 'USDT')}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-card-foreground">
                       <div className="flex items-center">
                         <span className="font-medium">
                           {parseFloat(mappedInvestment.tokens_bought || 0).toLocaleString(undefined, {
@@ -509,7 +509,7 @@ const InvestmentsManagement = () => {
                           })}
                         </span>
                         {mappedInvestment.tokens_bought > 0 && (
-                          <span className="ml-1 text-xs text-gray-500">tokens</span>
+                          <span className="ml-1 text-xs text-muted-foreground">tokens</span>
                         )}
                       </div>
                     </td>
@@ -519,9 +519,9 @@ const InvestmentsManagement = () => {
                         {statusInfo.text}
                       </Badge>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
                       <div className="flex items-center">
-                        <Calendar className="w-3 h-3 mr-2 text-gray-400" />
+                        <Calendar className="w-3 h-3 mr-2 text-muted-foreground" />
                         {formatDate(mappedInvestment.created_at)}
                       </div>
                     </td>
@@ -542,7 +542,7 @@ const InvestmentsManagement = () => {
 
         {/* Pagination */}
         {pagination.totalPages > 1 && (
-          <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+          <div className="bg-card px-4 py-3 flex items-center justify-between border-t border-border sm:px-6">
             <div className="flex-1 flex justify-between sm:hidden">
               <Button
                 variant="outline"
@@ -561,7 +561,7 @@ const InvestmentsManagement = () => {
             </div>
             <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
               <div>
-                <p className="text-sm text-gray-700">
+                <p className="text-sm text-foreground">
                   Showing{' '}
                   <span className="font-medium">
                     {((currentPage - 1) * 10) + 1}
@@ -584,7 +584,7 @@ const InvestmentsManagement = () => {
                       className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
                         page === currentPage
                           ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
-                          : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                          : 'bg-card border-input text-muted-foreground hover:bg-accent'
                       }`}
                     >
                       {page}

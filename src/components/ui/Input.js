@@ -11,24 +11,24 @@ const Input = forwardRef(({
   return (
     <div className="w-full">
       {label && (
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className="block text-sm font-medium text-foreground mb-1">
           {label}
         </label>
       )}
       <input
         ref={ref}
         className={cn(
-          'input',
-          error && 'border-red-300 focus:ring-red-500 focus:border-red-500',
+          'input w-full px-3 py-2 border border-input bg-card text-card-foreground rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent',
+          error && 'border-destructive focus:ring-destructive focus:border-destructive',
           className
         )}
         {...props}
       />
       {error && (
-        <p className="mt-1 text-sm text-red-600">{error}</p>
+        <p className="mt-1 text-sm text-destructive">{error}</p>
       )}
       {helperText && !error && (
-        <p className="mt-1 text-sm text-gray-500">{helperText}</p>
+        <p className="mt-1 text-sm text-muted-foreground">{helperText}</p>
       )}
     </div>
   );

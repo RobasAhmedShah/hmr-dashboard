@@ -62,15 +62,15 @@ const CreateOrganizationModal = ({ onClose, onSuccess }) => {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-      <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] my-auto flex flex-col">
-        <div className="bg-white border-b px-6 py-4 flex items-center justify-between flex-shrink-0">
+      <div className="bg-card rounded-lg max-w-2xl w-full max-h-[90vh] my-auto flex flex-col">
+        <div className="bg-card border-b px-6 py-4 flex items-center justify-between flex-shrink-0">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-blue-100 rounded-lg">
               <Building2 className="w-5 h-5 text-blue-600" />
             </div>
-            <h2 className="text-xl font-bold text-gray-900">Create New Organization</h2>
+            <h2 className="text-xl font-bold text-card-foreground">Create New Organization</h2>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg transition">
+          <button onClick={onClose} className="p-2 hover:bg-accent rounded-lg transition">
             <X className="w-5 h-5 text-gray-500" />
           </button>
         </div>
@@ -78,17 +78,17 @@ const CreateOrganizationModal = ({ onClose, onSuccess }) => {
         <form id="create-org-form" onSubmit={handleSubmit} className="p-6 space-y-6 overflow-y-auto flex-1">
           {/* Organization Details */}
           <div className="space-y-4">
-            <h3 className="text-sm font-semibold text-gray-900 uppercase">Organization Details</h3>
+            <h3 className="text-sm font-semibold text-card-foreground uppercase">Organization Details</h3>
             
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Organization Name</label>
+              <label className="block text-sm font-medium text-foreground mb-1">Organization Name</label>
               <div className="relative">
                 <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   placeholder="e.g., HMR Builders"
-                  className="w-full pl-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full pl-10 px-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   required
                 />
               </div>
@@ -96,18 +96,18 @@ const CreateOrganizationModal = ({ onClose, onSuccess }) => {
 
             <div className="relative">
               <FileText className="absolute left-3 top-9 w-5 h-5 text-gray-400" />
-              <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+              <label className="block text-sm font-medium text-foreground mb-1">Description</label>
               <textarea
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                className="w-full pl-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full pl-10 px-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 rows={3}
                 placeholder="Brief description of the organization..."
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Website</label>
+              <label className="block text-sm font-medium text-foreground mb-1">Website</label>
               <div className="relative">
                 <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
@@ -115,13 +115,13 @@ const CreateOrganizationModal = ({ onClose, onSuccess }) => {
                   onChange={(e) => setFormData({ ...formData, website: e.target.value })}
                   placeholder="https://example.com"
                   type="url"
-                  className="w-full pl-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full pl-10 px-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Logo URL</label>
+              <label className="block text-sm font-medium text-foreground mb-1">Logo URL</label>
               <div className="relative">
                 <Image className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
@@ -129,7 +129,7 @@ const CreateOrganizationModal = ({ onClose, onSuccess }) => {
                   onChange={(e) => setFormData({ ...formData, logoUrl: e.target.value })}
                   placeholder="https://example.com/logo.png"
                   type="url"
-                  className="w-full pl-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full pl-10 px-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
             </div>
@@ -138,15 +138,15 @@ const CreateOrganizationModal = ({ onClose, onSuccess }) => {
           {/* Admin Credentials Section */}
           <div className="border-t pt-6 space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-gray-900 uppercase">Admin Credentials</h3>
+              <h3 className="text-sm font-semibold text-card-foreground uppercase">Admin Credentials</h3>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={autoGenerate}
                   onChange={(e) => setAutoGenerate(e.target.checked)}
-                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                  className="w-4 h-4 text-blue-600 border-input rounded focus:ring-blue-500"
                 />
-                <span className="text-sm text-gray-700">Auto-generate credentials</span>
+                <span className="text-sm text-foreground">Auto-generate credentials</span>
               </label>
             </div>
 
@@ -160,7 +160,7 @@ const CreateOrganizationModal = ({ onClose, onSuccess }) => {
             ) : (
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Admin Email</label>
+                  <label className="block text-sm font-medium text-foreground mb-1">Admin Email</label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                     <input
@@ -168,28 +168,28 @@ const CreateOrganizationModal = ({ onClose, onSuccess }) => {
                       onChange={(e) => setFormData({ ...formData, adminEmail: e.target.value })}
                       placeholder="admin@organization.com"
                       type="email"
-                      className="w-full pl-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full pl-10 px-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       required={!autoGenerate}
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Admin Full Name</label>
+                  <label className="block text-sm font-medium text-foreground mb-1">Admin Full Name</label>
                   <div className="relative">
                     <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                     <input
                       value={formData.adminFullName}
                       onChange={(e) => setFormData({ ...formData, adminFullName: e.target.value })}
                       placeholder="John Doe"
-                      className="w-full pl-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full pl-10 px-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       required={!autoGenerate}
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Admin Password</label>
+                  <label className="block text-sm font-medium text-foreground mb-1">Admin Password</label>
                   <div className="relative">
                     <Key className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                     <input
@@ -197,7 +197,7 @@ const CreateOrganizationModal = ({ onClose, onSuccess }) => {
                       onChange={(e) => setFormData({ ...formData, adminPassword: e.target.value })}
                       placeholder="Secure password (min 8 characters)"
                       type="password"
-                      className="w-full pl-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full pl-10 px-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       required={!autoGenerate}
                       minLength={8}
                     />
@@ -210,7 +210,7 @@ const CreateOrganizationModal = ({ onClose, onSuccess }) => {
         </form>
 
         {/* Actions - Sticky Footer */}
-        <div className="flex gap-3 justify-end p-6 border-t bg-white rounded-b-lg flex-shrink-0">
+        <div className="flex gap-3 justify-end p-6 border-t bg-card rounded-b-lg flex-shrink-0">
           <Button type="button" variant="outline" onClick={onClose}>
             Cancel
           </Button>

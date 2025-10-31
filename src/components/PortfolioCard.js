@@ -12,7 +12,7 @@ const PortfolioCard = ({ investment }) => {
     const roiValue = typeof roi === 'string' ? parseFloat(roi.replace('%', '')) : roi;
     if (roiValue > 0) return 'text-green-600';
     if (roiValue < 0) return 'text-red-600';
-    return 'text-gray-600';
+    return 'text-muted-foreground';
   };
 
   const getROIIcon = (roi) => {
@@ -26,7 +26,7 @@ const PortfolioCard = ({ investment }) => {
     <Card hover className="h-full">
       <div className="flex justify-between items-start mb-4">
         <div className="flex-1">
-          <h3 className="text-lg font-semibold text-gray-900 mb-1">
+          <h3 className="text-lg font-semibold text-card-foreground mb-1">
             {investment.property?.title}
           </h3>
           <div className="flex items-center text-gray-500 text-sm mb-2">
@@ -69,14 +69,14 @@ const PortfolioCard = ({ investment }) => {
         </div>
       </div>
 
-      <div className="bg-gray-50 rounded-lg p-3 mb-4">
+      <div className="bg-accent rounded-lg p-3 mb-4">
         <div className="flex justify-between text-sm">
-          <span className="text-gray-600">Token Ownership</span>
+          <span className="text-muted-foreground">Token Ownership</span>
           <span className="font-medium">
             {((investment.tokens / investment.totalTokens) * 100).toFixed(2)}%
           </span>
         </div>
-        <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
+        <div className="w-full bg-muted rounded-full h-2 mt-2">
           <div
             className="bg-primary-600 h-2 rounded-full transition-all duration-300"
             style={{ width: `${(investment.tokens / investment.totalTokens) * 100}%` }}

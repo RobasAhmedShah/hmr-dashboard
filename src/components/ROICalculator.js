@@ -58,7 +58,7 @@ const ROICalculator = ({ propertyId, onClose }) => {
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-gray-900 flex items-center">
+          <h2 className="text-2xl font-bold text-card-foreground flex items-center">
             <Calculator className="w-6 h-6 mr-2" />
             ROI Calculator
           </h2>
@@ -69,7 +69,7 @@ const ROICalculator = ({ propertyId, onClose }) => {
 
         <div className="space-y-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-foreground mb-2">
               Investment Amount (PKR)
             </label>
             <Input
@@ -117,23 +117,23 @@ const ROICalculator = ({ propertyId, onClose }) => {
                 </div>
               </div>
 
-              <div className="bg-gray-50 rounded-lg p-4">
-                <h4 className="font-semibold text-gray-900 mb-3">Cost Breakdown</h4>
+              <div className="bg-accent rounded-lg p-4">
+                <h4 className="font-semibold text-card-foreground mb-3">Cost Breakdown</h4>
                 <div className="space-y-2">
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Purchase Fee (2%)</span>
+                    <span className="text-muted-foreground">Purchase Fee (2%)</span>
                     <span className="font-medium">
                       {formatCurrency(calculation.costBreakdown.purchaseFee)}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Running Fee (1%)</span>
+                    <span className="text-muted-foreground">Running Fee (1%)</span>
                     <span className="font-medium">
                       {formatCurrency(calculation.costBreakdown.runningFee)}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Transaction Fee (0.5%)</span>
+                    <span className="text-muted-foreground">Transaction Fee (0.5%)</span>
                     <span className="font-medium">
                       {formatCurrency(calculation.costBreakdown.transactionFee)}
                     </span>
@@ -159,19 +159,19 @@ const ROICalculator = ({ propertyId, onClose }) => {
               </div>
 
               {calculation.property && (
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <h4 className="font-semibold text-gray-900 mb-2">Property Details</h4>
+                <div className="bg-accent rounded-lg p-4">
+                  <h4 className="font-semibold text-card-foreground mb-2">Property Details</h4>
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
-                      <span className="text-gray-600">Property:</span>
+                      <span className="text-muted-foreground">Property:</span>
                       <p className="font-medium">{calculation.property.title}</p>
                     </div>
                     <div>
-                      <span className="text-gray-600">Expected ROI:</span>
+                      <span className="text-muted-foreground">Expected ROI:</span>
                       <p className="font-medium">{calculation.property.expectedROI}</p>
                     </div>
                     <div>
-                      <span className="text-gray-600">Price per Token:</span>
+                      <span className="text-muted-foreground">Price per Token:</span>
                       <p className="font-medium">
                         {formatCurrency(calculation.property.pricePerToken)}
                       </p>

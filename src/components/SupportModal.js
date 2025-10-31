@@ -84,18 +84,18 @@ const SupportModal = ({ onClose }) => {
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <Card className="w-full max-w-4xl max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-gray-900">Support Center</h2>
+          <h2 className="text-2xl font-bold text-card-foreground">Support Center</h2>
           <Button variant="outline" onClick={onClose}>
             <X className="w-4 h-4" />
           </Button>
         </div>
 
-        <div className="flex border-b border-gray-200 mb-6">
+        <div className="flex border-b border-border mb-6">
           <button
             className={`px-4 py-2 font-medium text-sm ${
               activeTab === 'contact'
                 ? 'border-b-2 border-primary-600 text-primary-600'
-                : 'text-gray-500 hover:text-gray-700'
+                : 'text-gray-500 hover:text-foreground'
             }`}
             onClick={() => setActiveTab('contact')}
           >
@@ -105,7 +105,7 @@ const SupportModal = ({ onClose }) => {
             className={`px-4 py-2 font-medium text-sm ${
               activeTab === 'faq'
                 ? 'border-b-2 border-primary-600 text-primary-600'
-                : 'text-gray-500 hover:text-gray-700'
+                : 'text-gray-500 hover:text-foreground'
             }`}
             onClick={() => setActiveTab('faq')}
           >
@@ -124,37 +124,37 @@ const SupportModal = ({ onClose }) => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <Card className="p-4 text-center hover:shadow-md transition-shadow cursor-pointer" onClick={handleWhatsAppClick}>
                 <MessageCircle className="w-8 h-8 text-green-600 mx-auto mb-2" />
-                <h3 className="font-semibold text-gray-900 mb-1">WhatsApp</h3>
-                <p className="text-sm text-gray-600 mb-2">{contactInfo?.whatsapp?.number}</p>
+                <h3 className="font-semibold text-card-foreground mb-1">WhatsApp</h3>
+                <p className="text-sm text-muted-foreground mb-2">{contactInfo?.whatsapp?.number}</p>
                 <p className="text-xs text-gray-500">Quick response</p>
               </Card>
 
               <Card className="p-4 text-center hover:shadow-md transition-shadow cursor-pointer" onClick={handlePhoneClick}>
                 <Phone className="w-8 h-8 text-blue-600 mx-auto mb-2" />
-                <h3 className="font-semibold text-gray-900 mb-1">Phone Call</h3>
-                <p className="text-sm text-gray-600 mb-2">{contactInfo?.phone?.number}</p>
+                <h3 className="font-semibold text-card-foreground mb-1">Phone Call</h3>
+                <p className="text-sm text-muted-foreground mb-2">{contactInfo?.phone?.number}</p>
                 <p className="text-xs text-gray-500">{contactInfo?.phone?.hours}</p>
               </Card>
 
               <Card className="p-4 text-center hover:shadow-md transition-shadow cursor-pointer" onClick={handleEmailClick}>
                 <Mail className="w-8 h-8 text-purple-600 mx-auto mb-2" />
-                <h3 className="font-semibold text-gray-900 mb-1">Email</h3>
-                <p className="text-sm text-gray-600 mb-2">{contactInfo?.email?.address}</p>
+                <h3 className="font-semibold text-card-foreground mb-1">Email</h3>
+                <p className="text-sm text-muted-foreground mb-2">{contactInfo?.email?.address}</p>
                 <p className="text-xs text-gray-500">{contactInfo?.email?.responseTime}</p>
               </Card>
             </div>
 
-            <div className="bg-gray-50 rounded-lg p-4">
-              <h3 className="font-semibold text-gray-900 mb-4">Send us a message</h3>
+            <div className="bg-accent rounded-lg p-4">
+              <h3 className="font-semibold text-card-foreground mb-4">Send us a message</h3>
               <form onSubmit={handleContactSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-foreground mb-2">
                     Contact Type
                   </label>
                   <select
                     value={contactForm.type}
                     onChange={(e) => setContactForm({ ...contactForm, type: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
                   >
                     <option value="whatsapp">WhatsApp</option>
                     <option value="call">Phone Call</option>
@@ -163,7 +163,7 @@ const SupportModal = ({ onClose }) => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-foreground mb-2">
                     Subject
                   </label>
                   <Input
@@ -175,7 +175,7 @@ const SupportModal = ({ onClose }) => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-foreground mb-2">
                     Message
                   </label>
                   <textarea
@@ -183,7 +183,7 @@ const SupportModal = ({ onClose }) => {
                     onChange={(e) => setContactForm({ ...contactForm, message: e.target.value })}
                     placeholder="Enter your message"
                     rows={4}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
                     required
                   />
                 </div>
@@ -200,9 +200,9 @@ const SupportModal = ({ onClose }) => {
           <div className="space-y-4">
             {faqs.map((faq) => (
               <Card key={faq.id} className="p-4">
-                <h3 className="font-semibold text-gray-900 mb-2">{faq.question}</h3>
-                <p className="text-gray-600 text-sm">{faq.answer}</p>
-                <span className="inline-block mt-2 px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded">
+                <h3 className="font-semibold text-card-foreground mb-2">{faq.question}</h3>
+                <p className="text-muted-foreground text-sm">{faq.answer}</p>
+                <span className="inline-block mt-2 px-2 py-1 bg-muted text-muted-foreground text-xs rounded">
                   {faq.category}
                 </span>
               </Card>

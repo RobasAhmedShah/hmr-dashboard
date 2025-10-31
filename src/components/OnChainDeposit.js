@@ -114,8 +114,8 @@ const OnChainDeposit = ({ userId, onDepositSuccess, onClose }) => {
   const renderBlockchainSelection = () => (
     <div className="space-y-6">
       <div className="text-center">
-        <h3 className="text-lg font-semibold text-gray-900 mb-2">Select Blockchain Network</h3>
-        <p className="text-gray-600">Choose your preferred blockchain for on-chain deposits</p>
+        <h3 className="text-lg font-semibold text-card-foreground mb-2">Select Blockchain Network</h3>
+        <p className="text-muted-foreground">Choose your preferred blockchain for on-chain deposits</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -124,14 +124,14 @@ const OnChainDeposit = ({ userId, onDepositSuccess, onClose }) => {
             key={blockchain.id}
             onClick={() => handleBlockchainSelect(blockchain.id)}
             disabled={loading}
-            className="p-4 border border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors disabled:opacity-50"
+            className="p-4 border border-border rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors disabled:opacity-50"
           >
             <div className="flex items-center space-x-3">
               <div className={`w-10 h-10 ${blockchain.color} rounded-full flex items-center justify-center`}>
                 <Coins className="h-5 w-5 text-white" />
               </div>
               <div className="text-left">
-                <h4 className="font-medium text-gray-900">{blockchain.name}</h4>
+                <h4 className="font-medium text-card-foreground">{blockchain.name}</h4>
                 <p className="text-sm text-gray-500">{blockchain.symbol}</p>
               </div>
             </div>
@@ -142,7 +142,7 @@ const OnChainDeposit = ({ userId, onDepositSuccess, onClose }) => {
       {loading && (
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="text-gray-600 mt-2">Generating deposit address...</p>
+          <p className="text-muted-foreground mt-2">Generating deposit address...</p>
         </div>
       )}
     </div>
@@ -151,13 +151,13 @@ const OnChainDeposit = ({ userId, onDepositSuccess, onClose }) => {
   const renderOnChainDeposit = () => (
     <div className="space-y-4">
       <div className="text-center">
-        <h3 className="text-lg font-semibold text-gray-900 mb-2">On-Chain Deposit</h3>
-        <p className="text-gray-600">Send funds to the address below</p>
+        <h3 className="text-lg font-semibold text-card-foreground mb-2">On-Chain Deposit</h3>
+        <p className="text-muted-foreground">Send funds to the address below</p>
       </div>
 
       {/* QR Code */}
       <div className="text-center">
-        <div className="inline-block p-3 bg-white border border-gray-200 rounded-lg">
+        <div className="inline-block p-3 bg-card border border-border rounded-lg">
           <img 
             src={onChainData.qrCode} 
             alt="QR Code" 
@@ -168,7 +168,7 @@ const OnChainDeposit = ({ userId, onDepositSuccess, onClose }) => {
 
       {/* Contract Address */}
       <div className="space-y-2">
-        <label className="block text-sm font-medium text-gray-700">Contract Address</label>
+        <label className="block text-sm font-medium text-foreground">Contract Address</label>
         <div className="flex items-center space-x-2">
           <Input
             value={onChainData.depositAddress || '0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6'}
@@ -217,8 +217,8 @@ const OnChainDeposit = ({ userId, onDepositSuccess, onClose }) => {
   const renderThirdPartyDeposit = () => (
     <div className="space-y-6">
       <div className="text-center">
-        <h3 className="text-lg font-semibold text-gray-900 mb-2">Binance Pay Deposit</h3>
-        <p className="text-gray-600">Connect your Binance account for instant deposits</p>
+        <h3 className="text-lg font-semibold text-card-foreground mb-2">Binance Pay Deposit</h3>
+        <p className="text-muted-foreground">Connect your Binance account for instant deposits</p>
       </div>
 
       {/* Binance Connect Button */}
@@ -245,8 +245,8 @@ const OnChainDeposit = ({ userId, onDepositSuccess, onClose }) => {
   const renderBinanceForm = () => (
     <div className="space-y-6">
       <div className="text-center">
-        <h3 className="text-lg font-semibold text-gray-900 mb-2">Deposit via Binance Pay</h3>
-        <p className="text-gray-600">Enter the amount you want to deposit</p>
+        <h3 className="text-lg font-semibold text-card-foreground mb-2">Deposit via Binance Pay</h3>
+        <p className="text-muted-foreground">Enter the amount you want to deposit</p>
       </div>
 
       <div>
@@ -294,11 +294,11 @@ const OnChainDeposit = ({ userId, onDepositSuccess, onClose }) => {
   return (
     <Card className="p-4">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-semibold text-gray-900">On-Chain & Third-Party Deposit</h2>
+        <h2 className="text-xl font-semibold text-card-foreground">On-Chain & Third-Party Deposit</h2>
         <Button
           onClick={onClose}
           variant="outline"
-          className="text-gray-500 hover:text-gray-700"
+          className="text-gray-500 hover:text-foreground"
         >
           ✕
         </Button>
@@ -317,13 +317,13 @@ const OnChainDeposit = ({ userId, onDepositSuccess, onClose }) => {
       )}
 
       {/* Step Navigation */}
-      <div className="flex space-x-1 mb-6 bg-gray-100 p-1 rounded-lg">
+      <div className="flex space-x-1 mb-6 bg-muted p-1 rounded-lg">
         <button
           onClick={() => setStep('select')}
           className={`flex-1 py-2 px-3 text-sm font-medium rounded-md transition-colors ${
             step === 'select' 
-              ? 'bg-white text-gray-900 shadow-sm' 
-              : 'text-gray-500 hover:text-gray-700'
+              ? 'bg-card text-card-foreground shadow-sm' 
+              : 'text-gray-500 hover:text-foreground'
           }`}
         >
           Select Network
@@ -333,8 +333,8 @@ const OnChainDeposit = ({ userId, onDepositSuccess, onClose }) => {
           disabled={!onChainData}
           className={`flex-1 py-2 px-3 text-sm font-medium rounded-md transition-colors ${
             step === 'onchain' 
-              ? 'bg-white text-gray-900 shadow-sm' 
-              : 'text-gray-500 hover:text-gray-700'
+              ? 'bg-card text-card-foreground shadow-sm' 
+              : 'text-gray-500 hover:text-foreground'
           }`}
         >
           On-Chain
@@ -343,8 +343,8 @@ const OnChainDeposit = ({ userId, onDepositSuccess, onClose }) => {
           onClick={() => setStep('thirdparty')}
           className={`flex-1 py-2 px-3 text-sm font-medium rounded-md transition-colors ${
             step === 'thirdparty' 
-              ? 'bg-white text-gray-900 shadow-sm' 
-              : 'text-gray-500 hover:text-gray-700'
+              ? 'bg-card text-card-foreground shadow-sm' 
+              : 'text-gray-500 hover:text-foreground'
           }`}
         >
           Binance Pay
