@@ -481,7 +481,7 @@ const PropertiesManagement = () => {
       'commercial': 'bg-green-100 text-green-800',
       'mixed-use': 'bg-purple-100 text-purple-800'
     };
-    return typeMap[type] || 'bg-gray-100 text-gray-800';
+    return typeMap[type] || 'bg-muted text-muted-foreground';
   };
 
   const formatPrice = (price) => {
@@ -511,7 +511,7 @@ const PropertiesManagement = () => {
   if (!isAuthenticated) {
     return (
       <div className="text-center py-12">
-        <p className="text-gray-600">Please log in to view properties.</p>
+        <p className="text-muted-foreground">Please log in to view properties.</p>
       </div>
     );
   }
@@ -520,7 +520,7 @@ const PropertiesManagement = () => {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        <span className="ml-2 text-gray-600">Loading properties...</span>
+        <span className="ml-2 text-muted-foreground">Loading properties...</span>
       </div>
     );
   }
@@ -561,8 +561,8 @@ const PropertiesManagement = () => {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Properties Management</h2>
-          <p className="text-gray-600">
+          <h2 className="text-2xl font-bold text-card-foreground">Properties Management</h2>
+          <p className="text-muted-foreground">
             Manage all properties in your platform
             {properties.length > 0 && (
               <span className="ml-2 text-blue-600 font-semibold">
@@ -581,8 +581,8 @@ const PropertiesManagement = () => {
       <Card className="p-6">
         <div className="flex justify-between items-center mb-4">
           <div className="flex items-center space-x-2">
-            <Filter className="w-5 h-5 text-gray-600" />
-            <h3 className="text-lg font-semibold text-gray-900">Filters</h3>
+            <Filter className="w-5 h-5 text-muted-foreground" />
+            <h3 className="text-lg font-semibold text-card-foreground">Filters</h3>
             {activeFiltersCount > 0 && (
               <Badge variant="info" className="ml-2">
                 {activeFiltersCount} active
@@ -603,34 +603,34 @@ const PropertiesManagement = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-foreground mb-1">
               Search
               {filters.search && <span className="ml-1 text-blue-600">*</span>}
             </label>
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <input
                 type="text"
                 placeholder="Search properties..."
                 value={filters.search}
                 onChange={(e) => handleFilterChange('search', e.target.value)}
-                className={`w-full pl-10 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                  filters.search ? 'border-blue-500 bg-blue-50' : 'border-gray-300'
+                className={`w-full pl-10 pr-3 py-2 border rounded-lg bg-card text-card-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-ring focus:border-ring ${
+                  filters.search ? 'border-primary bg-accent' : 'border-input'
                 }`}
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-foreground mb-1">
               Status
               {filters.status && <span className="ml-1 text-blue-600">*</span>}
             </label>
             <select
               value={filters.status}
               onChange={(e) => handleFilterChange('status', e.target.value)}
-              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                filters.status ? 'border-blue-500 bg-blue-50 font-semibold' : 'border-gray-300'
+              className={`w-full px-3 py-2 border rounded-lg bg-card text-card-foreground focus:ring-2 focus:ring-ring focus:border-ring ${
+                filters.status ? 'border-primary bg-accent font-semibold' : 'border-input'
               }`}
             >
               <option value="">All Status</option>
@@ -644,15 +644,15 @@ const PropertiesManagement = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-foreground mb-1">
               Property Type
               {filters.property_type && <span className="ml-1 text-blue-600">*</span>}
             </label>
             <select
               value={filters.property_type}
               onChange={(e) => handleFilterChange('property_type', e.target.value)}
-              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                filters.property_type ? 'border-blue-500 bg-blue-50 font-semibold' : 'border-gray-300'
+              className={`w-full px-3 py-2 border rounded-lg bg-card text-card-foreground focus:ring-2 focus:ring-ring focus:border-ring ${
+                filters.property_type ? 'border-primary bg-accent font-semibold' : 'border-input'
               }`}
             >
               <option value="">All Types</option>
@@ -663,11 +663,11 @@ const PropertiesManagement = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Sort By</label>
+            <label className="block text-sm font-medium text-foreground mb-1">Sort By</label>
             <select
               value={filters.sort_by}
               onChange={(e) => handleFilterChange('sort_by', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border border-input bg-card text-card-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
             >
               <option value="created_at">Date Created</option>
               <option value="title">Title</option>
@@ -677,11 +677,11 @@ const PropertiesManagement = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Order</label>
+            <label className="block text-sm font-medium text-foreground mb-1">Order</label>
             <select
               value={filters.sort_order}
               onChange={(e) => handleFilterChange('sort_order', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border border-input bg-card text-card-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
             >
               <option value="desc">Descending ↓</option>
               <option value="asc">Ascending ↑</option>
@@ -691,9 +691,9 @@ const PropertiesManagement = () => {
 
         {/* Active Filters Display */}
         {activeFiltersCount > 0 && (
-          <div className="mt-4 pt-4 border-t border-gray-200">
+          <div className="mt-4 pt-4 border-t border-border">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-sm font-medium text-gray-700">Active Filters:</span>
+              <span className="text-sm font-medium text-foreground">Active Filters:</span>
               
               {filters.search && (
                 <Badge variant="info" className="flex items-center space-x-1">
@@ -747,37 +747,37 @@ const PropertiesManagement = () => {
       <Card className="overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50">
+            <thead className="bg-accent">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Property
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Type
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Status
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Total Value
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Funding
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   ROI
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-card divide-y divide-gray-200">
               {properties.length === 0 ? (
                 <tr>
-                  <td colSpan="7" className="px-6 py-12 text-center text-gray-500">
+                  <td colSpan="7" className="px-6 py-12 text-center text-muted-foreground">
                     <div className="flex flex-col items-center">
-                      <Building2 className="w-12 h-12 text-gray-400 mb-4" />
+                      <Building2 className="w-12 h-12 text-muted-foreground mb-4" />
                       <p className="text-lg font-medium">No properties found</p>
                       <p className="text-sm">Try adjusting your filters or add a new property</p>
                     </div>
@@ -850,16 +850,16 @@ const PropertiesManagement = () => {
                 const statusInfo = getStatusBadge(mappedProperty.status);
 
                 return (
-                  <tr key={mappedProperty.id} className="hover:bg-gray-50">
+                  <tr key={mappedProperty.id} className="hover:bg-accent">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <div className="flex-shrink-0 h-10 w-10">
-                          <div className="h-10 w-10 rounded-lg bg-gray-200 flex items-center justify-center">
-                            <Building2 className="w-5 h-5 text-gray-600" />
+                          <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center">
+                            <Building2 className="w-5 h-5 text-muted-foreground" />
                           </div>
                         </div>
                         <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">
+                          <div className="text-sm font-medium text-card-foreground">
                             <button
                               onClick={() => handleViewProperty(mappedProperty)}
                               className="text-blue-600 hover:text-blue-800 hover:underline cursor-pointer text-left"
@@ -867,7 +867,7 @@ const PropertiesManagement = () => {
                               {mappedProperty.title}
                             </button>
                           </div>
-                          <div className="text-sm text-gray-500 flex items-center">
+                          <div className="text-sm text-muted-foreground flex items-center">
                             <MapPin className="w-3 h-3 mr-1" />
                             {mappedProperty.location_city}
                           </div>
@@ -892,18 +892,18 @@ const PropertiesManagement = () => {
                         {statusInfo.text}
                       </Badge>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-card-foreground">
                       {formatPrice(mappedProperty.pricing_total_value)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
-                        <div className="w-16 bg-gray-200 rounded-full h-2 mr-2">
+                        <div className="w-16 bg-muted rounded-full h-2 mr-2">
                           <div
                             className={`h-2 rounded-full ${isDisabled ? 'bg-green-600' : 'bg-gray-400'}`}
                             style={{ width: `${Math.max(fundingPercentage, 0.1)}%` }}
                           ></div>
                         </div>
-                        <span className={`text-sm ${isDisabled ? 'text-green-600 font-medium' : 'text-gray-600'}`}>
+                        <span className={`text-sm ${isDisabled ? 'text-green-600 font-medium' : 'text-muted-foreground'}`}>
                           {fundingPercentage < 0.01 ? fundingPercentage.toFixed(5) : Math.round(fundingPercentage)}%
                         </span>
                         {isDisabled && (
@@ -911,7 +911,7 @@ const PropertiesManagement = () => {
                         )}
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-card-foreground">
                       {mappedProperty.pricing_expected_roi}%
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -935,7 +935,7 @@ const PropertiesManagement = () => {
                         <Button 
                           variant="outline" 
                           size="sm" 
-                          className={`${isDisabled ? 'text-gray-400 cursor-not-allowed opacity-50' : 'text-red-600 hover:text-red-700 hover:bg-red-50'}`}
+                          className={`${isDisabled ? 'text-muted-foreground cursor-not-allowed opacity-50' : 'text-red-600 hover:text-red-700 hover:bg-red-50'}`}
                           onClick={() => {
                             console.log(`Delete clicked for ${mappedProperty.title}:`, {
                               fundingPercentage,
@@ -968,7 +968,7 @@ const PropertiesManagement = () => {
 
         {/* Pagination */}
         {pagination.totalPages > 1 && (
-          <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+          <div className="bg-card px-4 py-3 flex items-center justify-between border-t border-border sm:px-6">
             <div className="flex-1 flex justify-between sm:hidden">
               <Button
                 variant="outline"
@@ -987,7 +987,7 @@ const PropertiesManagement = () => {
             </div>
             <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
               <div>
-                <p className="text-sm text-gray-700">
+                <p className="text-sm text-foreground">
                   Showing{' '}
                   <span className="font-medium">
                     {((currentPage - 1) * 10) + 1}
@@ -1010,7 +1010,7 @@ const PropertiesManagement = () => {
                       className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
                         page === currentPage
                           ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
-                          : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                          : 'bg-card border-input text-muted-foreground hover:bg-accent'
                       }`}
                     >
                       {page}
@@ -1037,22 +1037,22 @@ const PropertiesManagement = () => {
         
         return (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-            <div className="relative top-10 mx-auto p-6 border w-full max-w-4xl shadow-lg rounded-md bg-white my-10">
+            <div className="relative top-10 mx-auto p-6 border w-full max-w-4xl shadow-lg rounded-md bg-card my-10">
               {/* Close Button */}
               <button
                 onClick={() => {
                   setShowModal(false);
                   setSelectedProperty(null);
                 }}
-                className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+                className="absolute top-4 right-4 text-muted-foreground hover:text-muted-foreground"
               >
                 <X className="w-6 h-6" />
               </button>
 
               {/* Header */}
               <div className="mb-6">
-                <h2 className="text-2xl font-bold text-gray-900">{selectedProperty.title}</h2>
-                <p className="text-gray-600 flex items-center mt-1">
+                <h2 className="text-2xl font-bold text-card-foreground">{selectedProperty.title}</h2>
+                <p className="text-muted-foreground flex items-center mt-1">
                   <MapPin className="w-4 h-4 mr-1" />
                   {selectedProperty.location_city || 'Unknown City'}
                 </p>
@@ -1061,19 +1061,19 @@ const PropertiesManagement = () => {
               {/* Investment Stats Cards */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                 <Card className="p-4">
-                  <p className="text-xs text-gray-600 mb-1">Total Investment</p>
-                  <p className="text-lg font-bold text-gray-900">{formatPrice(totalInvestment)}</p>
+                  <p className="text-xs text-muted-foreground mb-1">Total Investment</p>
+                  <p className="text-lg font-bold text-card-foreground">{formatPrice(totalInvestment)}</p>
                 </Card>
                 <Card className="p-4">
-                  <p className="text-xs text-gray-600 mb-1">Total Buyers</p>
-                  <p className="text-lg font-bold text-gray-900">{totalBuyers}</p>
+                  <p className="text-xs text-muted-foreground mb-1">Total Buyers</p>
+                  <p className="text-lg font-bold text-card-foreground">{totalBuyers}</p>
                 </Card>
                 <Card className="p-4">
-                  <p className="text-xs text-gray-600 mb-1">Tokens Left</p>
-                  <p className="text-lg font-bold text-gray-900">{availableTokens.toLocaleString()}</p>
+                  <p className="text-xs text-muted-foreground mb-1">Tokens Left</p>
+                  <p className="text-lg font-bold text-card-foreground">{availableTokens.toLocaleString()}</p>
                 </Card>
                 <Card className="p-4">
-                  <p className="text-xs text-gray-600 mb-1">ROI</p>
+                  <p className="text-xs text-muted-foreground mb-1">ROI</p>
                   <p className="text-lg font-bold text-green-600">{roi}%</p>
                 </Card>
                 </div>
@@ -1081,48 +1081,48 @@ const PropertiesManagement = () => {
               {/* Second Row Stats */}
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
                 <Card className="p-4">
-                  <p className="text-xs text-gray-600 mb-1">Price Per Token</p>
-                  <p className="text-lg font-bold text-gray-900">{formatPrice(pricePerToken)}</p>
+                  <p className="text-xs text-muted-foreground mb-1">Price Per Token</p>
+                  <p className="text-lg font-bold text-card-foreground">{formatPrice(pricePerToken)}</p>
                 </Card>
                 <Card className="p-4">
-                  <p className="text-xs text-gray-600 mb-1">Total Tokens</p>
-                  <p className="text-lg font-bold text-gray-900">{totalTokens.toLocaleString()}</p>
+                  <p className="text-xs text-muted-foreground mb-1">Total Tokens</p>
+                  <p className="text-lg font-bold text-card-foreground">{totalTokens.toLocaleString()}</p>
                 </Card>
                 <Card className="p-4">
-                  <p className="text-xs text-gray-600 mb-1">Funding Progress</p>
+                  <p className="text-xs text-muted-foreground mb-1">Funding Progress</p>
                   <p className="text-lg font-bold text-blue-600">{fundingProgress.toFixed(2)}%</p>
                 </Card>
                 </div>
 
               {/* Property Information */}
               <Card className="p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Property Information</h3>
+                <h3 className="text-lg font-semibold text-card-foreground mb-4">Property Information</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                    <label className="block text-sm font-medium text-gray-600">Property Name</label>
-                    <p className="text-base text-gray-900">{selectedProperty.title}</p>
+                    <label className="block text-sm font-medium text-muted-foreground">Property Name</label>
+                    <p className="text-base text-card-foreground">{selectedProperty.title}</p>
                 </div>
                 <div>
-                    <label className="block text-sm font-medium text-gray-600">Type</label>
-                    <p className="text-base text-gray-900 capitalize">{selectedProperty.property_type || selectedProperty.type}</p>
+                    <label className="block text-sm font-medium text-muted-foreground">Type</label>
+                    <p className="text-base text-card-foreground capitalize">{selectedProperty.property_type || selectedProperty.type}</p>
                 </div>
                 <div>
-                    <label className="block text-sm font-medium text-gray-600">Status</label>
+                    <label className="block text-sm font-medium text-muted-foreground">Status</label>
                     <Badge variant={getStatusBadge(selectedProperty.status).variant}>
                       {getStatusBadge(selectedProperty.status).text}
                     </Badge>
                 </div>
                 <div>
-                    <label className="block text-sm font-medium text-gray-600">Location</label>
-                    <p className="text-base text-gray-900">{selectedProperty.location_city || 'Unknown City'}</p>
+                    <label className="block text-sm font-medium text-muted-foreground">Location</label>
+                    <p className="text-base text-card-foreground">{selectedProperty.location_city || 'Unknown City'}</p>
                 </div>
                 <div>
-                    <label className="block text-sm font-medium text-gray-600">Total Value</label>
-                    <p className="text-base text-gray-900">{formatPrice(totalValue)}</p>
+                    <label className="block text-sm font-medium text-muted-foreground">Total Value</label>
+                    <p className="text-base text-card-foreground">{formatPrice(totalValue)}</p>
                 </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-600">Min Investment</label>
-                    <p className="text-base text-gray-900">{formatPrice(selectedProperty.pricing_min_investment || 0)}</p>
+                    <label className="block text-sm font-medium text-muted-foreground">Min Investment</label>
+                    <p className="text-base text-card-foreground">{formatPrice(selectedProperty.pricing_min_investment || 0)}</p>
                   </div>
                   </div>
               </Card>
@@ -1171,22 +1171,22 @@ const PropertiesManagement = () => {
       {/* Delete Confirmation Modal */}
       {showDeleteModal && propertyToDelete && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-card">
             <div className="mt-3">
               <div className="flex items-center space-x-3 mb-4">
                 <div className="p-2 bg-red-100 rounded-lg">
                   <AlertTriangle className="w-6 h-6 text-red-600" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-medium text-gray-900">Delete Property</h3>
-                  <p className="text-sm text-gray-600">This action cannot be undone</p>
+                  <h3 className="text-lg font-medium text-card-foreground">Delete Property</h3>
+                  <p className="text-sm text-muted-foreground">This action cannot be undone</p>
                 </div>
               </div>
               
               {/* Property Info */}
-              <div className="bg-gray-50 p-4 rounded-lg mb-4">
-                <h4 className="font-medium text-gray-900 mb-2">{propertyToDelete.title}</h4>
-                <div className="text-sm text-gray-600 space-y-1">
+              <div className="bg-accent p-4 rounded-lg mb-4">
+                <h4 className="font-medium text-card-foreground mb-2">{propertyToDelete.title}</h4>
+                <div className="text-sm text-muted-foreground space-y-1">
                   <p>Type: {propertyToDelete.property_type}</p>
                   <p>Status: {propertyToDelete.status}</p>
                   <p>Location: {propertyToDelete.location_city}</p>
@@ -1198,7 +1198,7 @@ const PropertiesManagement = () => {
                 </div>
               </div>
 
-              <p className="text-sm text-gray-700 mb-6">
+              <p className="text-sm text-foreground mb-6">
                 Are you sure you want to delete this property? 
                 This will deactivate the property listing and remove it from the platform.
               </p>

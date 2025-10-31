@@ -42,8 +42,8 @@ const BuyTokens = ({ userId, onPurchaseSuccess, preselectPropertyId }) => {
   return (
     <div className="space-y-6">
       <div className="mb-6">
-        <h3 className="text-xl font-semibold text-gray-900 mb-2">Buy Property Tokens</h3>
-        <p className="text-gray-600">Invest in real estate through tokenized properties</p>
+        <h3 className="text-xl font-semibold text-card-foreground mb-2">Buy Property Tokens</h3>
+        <p className="text-muted-foreground">Invest in real estate through tokenized properties</p>
       </div>
 
       {error && (
@@ -150,7 +150,7 @@ const PropertyTokenCard = ({ property, userId, onPurchaseSuccess, idAttr, highli
       {/* Property Header */}
       <div className="mb-4">
         <div className="flex items-start justify-between mb-2">
-          <h3 className="text-lg font-semibold text-gray-900 line-clamp-2">
+          <h3 className="text-lg font-semibold text-card-foreground line-clamp-2">
             {property.title}
           </h3>
           <Badge variant="info" className="ml-2">
@@ -158,7 +158,7 @@ const PropertyTokenCard = ({ property, userId, onPurchaseSuccess, idAttr, highli
           </Badge>
         </div>
         
-        <div className="flex items-center text-sm text-gray-600 mb-2">
+        <div className="flex items-center text-sm text-muted-foreground mb-2">
           <MapPin className="h-4 w-4 mr-1" />
           {property.location_city}, {property.location_state}
         </div>
@@ -166,12 +166,12 @@ const PropertyTokenCard = ({ property, userId, onPurchaseSuccess, idAttr, highli
         <div className="grid grid-cols-2 gap-4 text-sm">
           <div className="flex items-center">
             <Coins className="h-4 w-4 mr-1 text-blue-600" />
-            <span className="text-gray-600">Price:</span>
+            <span className="text-muted-foreground">Price:</span>
             <span className="font-medium ml-1">PKR {property.tokenization_price_per_token}</span>
           </div>
           <div className="flex items-center">
             <TrendingUp className="h-4 w-4 mr-1 text-green-600" />
-            <span className="text-gray-600">ROI:</span>
+            <span className="text-muted-foreground">ROI:</span>
             <span className="font-medium ml-1">{property.pricing_expected_roi}</span>
           </div>
         </div>
@@ -193,13 +193,13 @@ const PropertyTokenCard = ({ property, userId, onPurchaseSuccess, idAttr, highli
       {/* Dual Input Section */}
       <div className="space-y-4">
         <div className="text-center">
-          <h4 className="text-sm font-medium text-gray-700 mb-1">Investment Amount</h4>
+          <h4 className="text-sm font-medium text-foreground mb-1">Investment Amount</h4>
           <p className="text-xs text-gray-500 mb-3">Buy fractional tokens with any PKR amount</p>
         </div>
 
         {/* PKR Input */}
         <div>
-          <label className="block text-xs font-medium text-gray-600 mb-1">
+          <label className="block text-xs font-medium text-muted-foreground mb-1">
             Amount in PKR
           </label>
           <div className="relative">
@@ -220,14 +220,14 @@ const PropertyTokenCard = ({ property, userId, onPurchaseSuccess, idAttr, highli
 
         {/* OR Divider */}
         <div className="flex items-center">
-          <div className="flex-1 border-t border-gray-300"></div>
-          <span className="px-3 text-xs font-medium text-gray-500 bg-white">OR</span>
-          <div className="flex-1 border-t border-gray-300"></div>
+          <div className="flex-1 border-t border-input"></div>
+          <span className="px-3 text-xs font-medium text-gray-500 bg-card">OR</span>
+          <div className="flex-1 border-t border-input"></div>
         </div>
 
         {/* Token Input */}
         <div>
-          <label className="block text-xs font-medium text-gray-600 mb-1">
+          <label className="block text-xs font-medium text-muted-foreground mb-1">
             Number of Tokens
           </label>
           <div className="relative">

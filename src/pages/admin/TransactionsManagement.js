@@ -229,7 +229,7 @@ const TransactionsManagement = () => {
   if (!isAuthenticated) {
     return (
       <div className="text-center py-12">
-        <p className="text-gray-600">Please log in to view transactions.</p>
+        <p className="text-muted-foreground">Please log in to view transactions.</p>
       </div>
     );
   }
@@ -238,7 +238,7 @@ const TransactionsManagement = () => {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        <span className="ml-2 text-gray-600">Loading transactions...</span>
+        <span className="ml-2 text-muted-foreground">Loading transactions...</span>
       </div>
     );
   }
@@ -249,7 +249,7 @@ const TransactionsManagement = () => {
         <div className="mb-4">
           <XCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
           <p className="text-red-600 font-semibold mb-2">Failed to load transactions</p>
-          <p className="text-gray-600 text-sm mb-2">{error.message}</p>
+          <p className="text-muted-foreground text-sm mb-2">{error.message}</p>
         </div>
         <Button onClick={() => window.location.reload()} className="mt-4">
           Retry
@@ -263,8 +263,8 @@ const TransactionsManagement = () => {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Transactions Management</h2>
-          <p className="text-gray-600">
+          <h2 className="text-2xl font-bold text-card-foreground">Transactions Management</h2>
+          <p className="text-muted-foreground">
             Monitor all financial transactions
             {allTransactions.length > 0 && (
               <span className="ml-2 text-blue-600 font-medium">
@@ -283,8 +283,8 @@ const TransactionsManagement = () => {
               <TrendingUp className="w-6 h-6 text-green-600" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Total Deposits</p>
-              <p className="text-2xl font-bold text-gray-900">
+              <p className="text-sm font-medium text-muted-foreground">Total Deposits</p>
+              <p className="text-2xl font-bold text-card-foreground">
                 {formatPrice(summary.totalDeposits)}
               </p>
             </div>
@@ -297,8 +297,8 @@ const TransactionsManagement = () => {
               <TrendingDown className="w-6 h-6 text-red-600" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Total Withdrawals</p>
-              <p className="text-2xl font-bold text-gray-900">
+              <p className="text-sm font-medium text-muted-foreground">Total Withdrawals</p>
+              <p className="text-2xl font-bold text-card-foreground">
                 {formatPrice(summary.totalWithdrawals)}
               </p>
             </div>
@@ -311,8 +311,8 @@ const TransactionsManagement = () => {
               <Clock className="w-6 h-6 text-yellow-600" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Pending</p>
-              <p className="text-2xl font-bold text-gray-900">
+              <p className="text-sm font-medium text-muted-foreground">Pending</p>
+              <p className="text-2xl font-bold text-card-foreground">
                 {summary.pendingCount}
               </p>
             </div>
@@ -325,8 +325,8 @@ const TransactionsManagement = () => {
               <DollarSign className="w-6 h-6 text-blue-600" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Net Volume</p>
-              <p className="text-2xl font-bold text-gray-900">
+              <p className="text-sm font-medium text-muted-foreground">Net Volume</p>
+              <p className="text-2xl font-bold text-card-foreground">
                 {formatPrice(summary.netVolume)}
               </p>
             </div>
@@ -338,25 +338,25 @@ const TransactionsManagement = () => {
       <Card className="p-6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Search</label>
+            <label className="block text-sm font-medium text-foreground mb-1">Search</label>
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <input
                 type="text"
                 placeholder="Search transactions..."
                 value={filters.search}
                 onChange={(e) => handleFilterChange('search', e.target.value)}
-                className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full pl-10 pr-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+            <label className="block text-sm font-medium text-foreground mb-1">Status</label>
             <select
               value={filters.status}
               onChange={(e) => handleFilterChange('status', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
             >
               <option value="">All Status</option>
               <option value="pending">Pending</option>
@@ -367,11 +367,11 @@ const TransactionsManagement = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
+            <label className="block text-sm font-medium text-foreground mb-1">Type</label>
             <select
               value={filters.transaction_type}
               onChange={(e) => handleFilterChange('transaction_type', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
             >
               <option value="">All Types</option>
               <option value="deposit">Deposit</option>
@@ -380,11 +380,11 @@ const TransactionsManagement = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Sort By</label>
+            <label className="block text-sm font-medium text-foreground mb-1">Sort By</label>
             <select
               value={filters.sort_by}
               onChange={(e) => handleFilterChange('sort_by', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
             >
               <option value="created_at">Date</option>
               <option value="amount_in_pkr">Amount</option>
@@ -393,11 +393,11 @@ const TransactionsManagement = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Order</label>
+            <label className="block text-sm font-medium text-foreground mb-1">Order</label>
             <select
               value={filters.sort_order}
               onChange={(e) => handleFilterChange('sort_order', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
             >
               <option value="desc">Descending ↓</option>
               <option value="asc">Ascending ↑</option>
@@ -410,37 +410,37 @@ const TransactionsManagement = () => {
       <Card className="overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50">
+            <thead className="bg-accent">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Transaction
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   User
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Type
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Amount
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Status
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Date
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-card divide-y divide-gray-200">
               {transactions.length === 0 ? (
                 <tr>
-                  <td colSpan="7" className="px-6 py-12 text-center text-gray-500">
+                  <td colSpan="7" className="px-6 py-12 text-center text-muted-foreground">
                     <div className="flex flex-col items-center">
-                      <DollarSign className="w-12 h-12 text-gray-400 mb-4" />
+                      <DollarSign className="w-12 h-12 text-muted-foreground mb-4" />
                       <p className="text-lg font-medium">No transactions found</p>
                       <p className="text-sm">Transactions will appear here once users make deposits or withdrawals</p>
                     </div>
@@ -466,19 +466,19 @@ const TransactionsManagement = () => {
                 const StatusIcon = statusInfo.icon;
 
                 return (
-                  <tr key={transaction.id} className="hover:bg-gray-50">
+                  <tr key={transaction.id} className="hover:bg-accent">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <div className="flex-shrink-0 h-10 w-10">
-                          <div className="h-10 w-10 rounded-lg bg-gray-200 flex items-center justify-center">
-                            <DollarSign className="w-5 h-5 text-gray-600" />
+                          <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center">
+                            <DollarSign className="w-5 h-5 text-muted-foreground" />
                           </div>
                         </div>
                         <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">
+                          <div className="text-sm font-medium text-card-foreground">
                             {transaction.displayCode || transaction.id?.slice(0, 8) + '...'}
                           </div>
-                          <div className="text-sm text-gray-500">
+                          <div className="text-sm text-muted-foreground">
                             {mappedTransaction.description}
                           </div>
                         </div>
@@ -487,15 +487,15 @@ const TransactionsManagement = () => {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <div className="flex-shrink-0 h-8 w-8">
-                          <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center">
-                            <User className="w-4 h-4 text-gray-600" />
+                          <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
+                            <User className="w-4 h-4 text-muted-foreground" />
                           </div>
                         </div>
                         <div className="ml-3">
-                          <div className="text-sm font-medium text-gray-900">
+                          <div className="text-sm font-medium text-card-foreground">
                             {mappedTransaction.user_name}
                           </div>
-                          <div className="text-sm text-gray-500">
+                          <div className="text-sm text-muted-foreground">
                             {mappedTransaction.user_email}
                           </div>
                         </div>
@@ -507,7 +507,7 @@ const TransactionsManagement = () => {
                         <span className="capitalize">{mappedTransaction.transaction_type}</span>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-card-foreground">
                       {formatPrice(mappedTransaction.amount_in_pkr, mappedTransaction.currency)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -516,9 +516,9 @@ const TransactionsManagement = () => {
                         {statusInfo.text}
                       </Badge>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
                       <div className="flex items-center">
-                        <Calendar className="w-3 h-3 mr-2 text-gray-400" />
+                        <Calendar className="w-3 h-3 mr-2 text-muted-foreground" />
                         {formatDate(mappedTransaction.created_at)}
                       </div>
                     </td>
@@ -539,7 +539,7 @@ const TransactionsManagement = () => {
 
         {/* Pagination */}
         {pagination.totalPages > 1 && (
-          <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+          <div className="bg-card px-4 py-3 flex items-center justify-between border-t border-border sm:px-6">
             <div className="flex-1 flex justify-between sm:hidden">
               <Button
                 variant="outline"
@@ -558,7 +558,7 @@ const TransactionsManagement = () => {
             </div>
             <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
               <div>
-                <p className="text-sm text-gray-700">
+                <p className="text-sm text-foreground">
                   Showing{' '}
                   <span className="font-medium">
                     {((currentPage - 1) * 10) + 1}
@@ -581,7 +581,7 @@ const TransactionsManagement = () => {
                       className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
                         page === currentPage
                           ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
-                          : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                          : 'bg-card border-input text-muted-foreground hover:bg-accent'
                       }`}
                     >
                       {page}

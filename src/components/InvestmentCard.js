@@ -46,7 +46,7 @@ const InvestmentCard = ({ investment }) => {
     <Card hover className="h-full">
       <div className="flex justify-between items-start mb-4">
         <div className="flex-1">
-          <h3 className="text-lg font-semibold text-gray-900 mb-1">
+          <h3 className="text-lg font-semibold text-card-foreground mb-1">
             {investment.property?.title || investment.propertyTitle}
           </h3>
           <div className="flex items-center text-gray-500 text-sm mb-2">

@@ -10,14 +10,14 @@ const Button = ({
   loading = false,
   ...props 
 }) => {
-  const baseClasses = 'btn inline-flex items-center justify-center font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed';
+  const baseClasses = 'btn inline-flex items-center justify-center font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg';
   
   const variants = {
-    primary: 'bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500',
-    secondary: 'bg-gray-200 text-gray-900 hover:bg-gray-300 focus:ring-gray-500',
-    outline: 'border border-gray-300 text-gray-700 hover:bg-gray-50 focus:ring-gray-500',
-    danger: 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500',
-    ghost: 'text-gray-700 hover:bg-gray-100 focus:ring-gray-500',
+    primary: 'bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-ring',
+    secondary: 'bg-secondary text-secondary-foreground hover:bg-secondary/80 focus:ring-ring',
+    outline: 'border border-border text-foreground hover:bg-accent focus:ring-ring',
+    danger: 'bg-destructive text-destructive-foreground hover:bg-destructive/90 focus:ring-ring',
+    ghost: 'text-foreground hover:bg-accent focus:ring-ring',
   };
   
   const sizes = {

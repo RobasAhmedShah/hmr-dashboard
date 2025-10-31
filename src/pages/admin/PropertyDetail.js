@@ -157,8 +157,8 @@ const PropertyDetail = () => {
     <Card className="p-6">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm font-medium text-gray-600">{title}</p>
-          <p className="text-2xl font-bold text-gray-900 mt-1">{value}</p>
+          <p className="text-sm font-medium text-muted-foreground">{title}</p>
+          <p className="text-2xl font-bold text-card-foreground mt-1">{value}</p>
           {change && (
             <p className={`text-sm mt-1 ${changeType === 'positive' ? 'text-green-600' : 'text-red-600'}`}>
               {changeType === 'positive' ? '+' : ''}{change}
@@ -226,18 +226,18 @@ const PropertyDetail = () => {
 
       {/* Property Information */}
       <Card className="p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Property Information</h3>
+        <h3 className="text-lg font-semibold text-card-foreground mb-4">Property Information</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Property Name</label>
-            <p className="text-sm text-gray-900">{property.title || property.name || 'N/A'}</p>
+            <label className="block text-sm font-medium text-foreground mb-1">Property Name</label>
+            <p className="text-sm text-card-foreground">{property.title || property.name || 'N/A'}</p>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
-            <p className="text-sm text-gray-900 capitalize">{property.type || property.property_type || 'N/A'}</p>
+            <label className="block text-sm font-medium text-foreground mb-1">Type</label>
+            <p className="text-sm text-card-foreground capitalize">{property.type || property.property_type || 'N/A'}</p>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+            <label className="block text-sm font-medium text-foreground mb-1">Status</label>
             {property.status ? (
               <Badge variant={getStatusBadge(property.status).variant}>
                 {getStatusBadge(property.status).text}
@@ -247,29 +247,29 @@ const PropertyDetail = () => {
             )}
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
-            <p className="text-sm text-gray-900">{property.city || property.location_city || property.location || 'N/A'}</p>
+            <label className="block text-sm font-medium text-foreground mb-1">Location</label>
+            <p className="text-sm text-card-foreground">{property.city || property.location_city || property.location || 'N/A'}</p>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Total Value</label>
-            <p className="text-sm text-gray-900">{formatPrice(property.totalValueUSDT || property.total_value_usdt || property.pricing_total_value || 0)}</p>
+            <label className="block text-sm font-medium text-foreground mb-1">Total Value</label>
+            <p className="text-sm text-card-foreground">{formatPrice(property.totalValueUSDT || property.total_value_usdt || property.pricing_total_value || 0)}</p>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Price Per Token</label>
-            <p className="text-sm text-gray-900">{formatPrice(property.pricePerTokenUSDT || property.price_per_token_usdt || property.pricePerToken || 0)}</p>
+            <label className="block text-sm font-medium text-foreground mb-1">Price Per Token</label>
+            <p className="text-sm text-card-foreground">{formatPrice(property.pricePerTokenUSDT || property.price_per_token_usdt || property.pricePerToken || 0)}</p>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Total Tokens</label>
-            <p className="text-sm text-gray-900">{(property.totalTokens || property.total_tokens || 0).toLocaleString()}</p>
+            <label className="block text-sm font-medium text-foreground mb-1">Total Tokens</label>
+            <p className="text-sm text-card-foreground">{(property.totalTokens || property.total_tokens || 0).toLocaleString()}</p>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Available Tokens</label>
-            <p className="text-sm text-gray-900">{(property.availableTokens || property.available_tokens || 0).toLocaleString()}</p>
+            <label className="block text-sm font-medium text-foreground mb-1">Available Tokens</label>
+            <p className="text-sm text-card-foreground">{(property.availableTokens || property.available_tokens || 0).toLocaleString()}</p>
           </div>
           {property.description && (
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-              <p className="text-sm text-gray-900">{property.description}</p>
+              <label className="block text-sm font-medium text-foreground mb-1">Description</label>
+              <p className="text-sm text-card-foreground">{property.description}</p>
             </div>
           )}
         </div>
@@ -280,12 +280,12 @@ const PropertyDetail = () => {
   const renderInvestments = () => (
     <div className="space-y-6">
       <Card className="overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900">Investment History</h3>
+        <div className="px-6 py-4 border-b border-border">
+          <h3 className="text-lg font-semibold text-card-foreground">Investment History</h3>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50">
+            <thead className="bg-accent">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Investor</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
@@ -294,7 +294,7 @@ const PropertyDetail = () => {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-card divide-y divide-gray-200">
               {investments.length === 0 ? (
                 <tr>
                   <td colSpan="5" className="px-6 py-12 text-center text-gray-500">
@@ -311,16 +311,16 @@ const PropertyDetail = () => {
                   const createdAt = investment.createdAt || investment.created_at || investment.date;
                   
                   return (
-                    <tr key={investment.id || investment._id || Math.random()} className="hover:bg-gray-50">
+                    <tr key={investment.id || investment._id || Math.random()} className="hover:bg-accent">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
                           <div className="flex-shrink-0 h-8 w-8">
-                            <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center">
-                              <Users className="w-4 h-4 text-gray-600" />
+                            <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
+                              <Users className="w-4 h-4 text-muted-foreground" />
                             </div>
                           </div>
                           <div className="ml-3">
-                            <div className="text-sm font-medium text-gray-900">
+                            <div className="text-sm font-medium text-card-foreground">
                               {userName}
                             </div>
                             <div className="text-sm text-gray-500">
@@ -329,10 +329,10 @@ const PropertyDetail = () => {
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-card-foreground">
                         {formatPrice(amount)}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-card-foreground">
                         {parseFloat(tokens).toLocaleString()}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -357,34 +357,34 @@ const PropertyDetail = () => {
   const renderTokens = () => (
     <div className="space-y-6">
       <Card className="p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Token Information</h3>
+        <h3 className="text-lg font-semibold text-card-foreground mb-4">Token Information</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Total Tokens</label>
-            <p className="text-2xl font-bold text-gray-900">{metrics.totalTokens || 0}</p>
+            <label className="block text-sm font-medium text-foreground mb-1">Total Tokens</label>
+            <p className="text-2xl font-bold text-card-foreground">{metrics.totalTokens || 0}</p>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Tokens Sold</label>
-            <p className="text-2xl font-bold text-gray-900">{metrics.tokensSold || 0}</p>
+            <label className="block text-sm font-medium text-foreground mb-1">Tokens Sold</label>
+            <p className="text-2xl font-bold text-card-foreground">{metrics.tokensSold || 0}</p>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Tokens Left</label>
-            <p className="text-2xl font-bold text-gray-900">{metrics.tokensLeft || 0}</p>
+            <label className="block text-sm font-medium text-foreground mb-1">Tokens Left</label>
+            <p className="text-2xl font-bold text-card-foreground">{metrics.tokensLeft || 0}</p>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Price Per Token</label>
-            <p className="text-2xl font-bold text-gray-900">{formatPrice(metrics.pricePerToken || 0)}</p>
+            <label className="block text-sm font-medium text-foreground mb-1">Price Per Token</label>
+            <p className="text-2xl font-bold text-card-foreground">{formatPrice(metrics.pricePerToken || 0)}</p>
           </div>
         </div>
       </Card>
 
       <Card className="overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900">Recent Token Purchases</h3>
+        <div className="px-6 py-4 border-b border-border">
+          <h3 className="text-lg font-semibold text-card-foreground">Recent Token Purchases</h3>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50">
+            <thead className="bg-accent">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Buyer</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tokens</th>
@@ -392,7 +392,7 @@ const PropertyDetail = () => {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-card divide-y divide-gray-200">
               {investments.length === 0 ? (
                 <tr>
                   <td colSpan="4" className="px-6 py-12 text-center text-gray-500">
@@ -408,16 +408,16 @@ const PropertyDetail = () => {
                   const createdAt = purchase.createdAt || purchase.created_at || purchase.date;
                   
                   return (
-                    <tr key={purchase.id || purchase._id || Math.random()} className="hover:bg-gray-50">
+                    <tr key={purchase.id || purchase._id || Math.random()} className="hover:bg-accent">
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">
+                        <div className="text-sm font-medium text-card-foreground">
                           {userName}
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-card-foreground">
                         {parseFloat(tokens).toLocaleString()}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-card-foreground">
                         {formatPrice(amount)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -437,12 +437,12 @@ const PropertyDetail = () => {
   const renderTransactions = () => (
     <div className="space-y-6">
       <Card className="overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900">Transaction History</h3>
+        <div className="px-6 py-4 border-b border-border">
+          <h3 className="text-lg font-semibold text-card-foreground">Transaction History</h3>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50">
+            <thead className="bg-accent">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Transaction</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
@@ -451,7 +451,7 @@ const PropertyDetail = () => {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-card divide-y divide-gray-200">
               {transactions.length === 0 ? (
                 <tr>
                   <td colSpan="5" className="px-6 py-12 text-center text-gray-500">
@@ -467,16 +467,16 @@ const PropertyDetail = () => {
                   const status = transaction.status || 'completed';
                   
                   return (
-                    <tr key={txnId} className="hover:bg-gray-50">
+                    <tr key={txnId} className="hover:bg-accent">
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">
+                        <div className="text-sm font-medium text-card-foreground">
                           {typeof txnId === 'string' && txnId.length > 8 ? txnId.slice(0, 8) + '...' : txnId}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <Badge variant="info">{txnType}</Badge>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-card-foreground">
                         {formatPrice(amount)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -516,7 +516,7 @@ const PropertyDetail = () => {
   if (!isAuthenticated) {
     return (
       <div className="text-center py-12">
-        <p className="text-gray-600">Please log in to view property details.</p>
+        <p className="text-muted-foreground">Please log in to view property details.</p>
       </div>
     );
   }
@@ -525,7 +525,7 @@ const PropertyDetail = () => {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        <span className="ml-2 text-gray-600">Loading property details...</span>
+        <span className="ml-2 text-muted-foreground">Loading property details...</span>
       </div>
     );
   }
@@ -542,9 +542,9 @@ const PropertyDetail = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-accent">
       {/* Header */}
-      <div className="bg-white shadow-sm border-b">
+      <div className="bg-card shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center space-x-4">
@@ -557,8 +557,8 @@ const PropertyDetail = () => {
                 <span>Back to Admin</span>
               </Button>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">{property.title || property.name || 'Property Details'}</h1>
-                <p className="text-sm text-gray-600">{property.city || property.location_city || property.location || 'Location not specified'}</p>
+                <h1 className="text-2xl font-bold text-card-foreground">{property.title || property.name || 'Property Details'}</h1>
+                <p className="text-sm text-muted-foreground">{property.city || property.location_city || property.location || 'Location not specified'}</p>
               </div>
             </div>
             <div className="flex items-center space-x-4">
@@ -588,7 +588,7 @@ const PropertyDetail = () => {
                   className={`flex items-center space-x-2 py-2 px-1 border-b-2 font-medium text-sm ${
                     activeTab === tab.id
                       ? 'border-blue-500 text-blue-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                      : 'border-transparent text-gray-500 hover:text-foreground hover:border-input'
                   }`}
                 >
                   <Icon className="w-4 h-4" />

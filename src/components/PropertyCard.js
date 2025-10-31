@@ -29,7 +29,7 @@ const PropertyCard = ({ property, onInvest }) => {
       'commercial': 'bg-green-100 text-green-800',
       'mixed-use': 'bg-purple-100 text-purple-800',
     };
-    return typeMap[type] || 'bg-gray-100 text-gray-800';
+    return typeMap[type] || 'bg-muted text-card-foreground';
   };
 
   // Handle mobile API format - fundingPercentage is already calculated
@@ -65,11 +65,11 @@ const PropertyCard = ({ property, onInvest }) => {
       </div>
 
       <div className="flex-1 flex flex-col">
-        <h3 className="text-xl font-semibold text-gray-900 mb-2 line-clamp-2">
+        <h3 className="text-xl font-semibold text-card-foreground mb-2 line-clamp-2">
           {property.title}
         </h3>
         
-        <p className="text-gray-600 text-sm mb-3 line-clamp-2">
+        <p className="text-muted-foreground text-sm mb-3 line-clamp-2">
           {property.shortDescription || property.description || 'No description available'}
         </p>
 
@@ -98,7 +98,7 @@ const PropertyCard = ({ property, onInvest }) => {
             <span className="text-gray-500">Funding Progress</span>
             <span className="font-medium">{Math.round(tokenPercentage)}%</span>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
+          <div className="w-full bg-muted rounded-full h-2">
             <div
               className="bg-primary-600 h-2 rounded-full transition-all duration-300"
               style={{ width: `${tokenPercentage}%` }}

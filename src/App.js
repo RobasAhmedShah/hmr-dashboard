@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from 'react-query';
 import { UserProvider } from './contexts/UserContext';
+import { ThemeProvider } from './contexts/ThemeContext';
 
 // Pages
 import Home from './pages/Home';
@@ -36,54 +37,56 @@ const queryClient = new QueryClient({
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <UserProvider>
-        <Router>
-          <div className="App">
-            <Routes>
-              {/* Public Routes */}
-              <Route path="/" element={<Home />} />
-              <Route path="/properties" element={<Properties />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/portfolio" element={<Portfolio />} />
-              <Route path="/wallet" element={<Wallet />} />
-              <Route path="/profile" element={<Profile />} />
-              
-              {/* Admin Routes */}
-              <Route path="/admin/login" element={
-                <AdminAuthProvider>
-                  <AdminLogin />
-                </AdminAuthProvider>
-              } />
-              <Route path="/admin" element={
-                <AdminAuthProvider>
-                  <AdminDashboard />
-                </AdminAuthProvider>
-              } />
-              <Route path="/admin/property/:propertyId" element={
-                <AdminAuthProvider>
-                  <PropertyDetail />
-                </AdminAuthProvider>
-              } />
-              
-              {/* Organization Routes */}
-              <Route path="/org/login" element={
-                <OrganizationAuthProvider>
-                  <OrgLogin />
-                </OrganizationAuthProvider>
-              } />
-              <Route path="/orgdashboard" element={
-                <OrganizationAuthProvider>
-                  <OrgDashboard />
-                </OrganizationAuthProvider>
-              } />
-              
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-          </div>
-        </Router>
-      </UserProvider>
+      <ThemeProvider>
+        <UserProvider>
+          <Router>
+            <div className="App">
+              <Routes>
+                {/* Public Routes */}
+                <Route path="/" element={<Home />} />
+                <Route path="/properties" element={<Properties />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/portfolio" element={<Portfolio />} />
+                <Route path="/wallet" element={<Wallet />} />
+                <Route path="/profile" element={<Profile />} />
+                
+                {/* Admin Routes */}
+                <Route path="/admin/login" element={
+                  <AdminAuthProvider>
+                    <AdminLogin />
+                  </AdminAuthProvider>
+                } />
+                <Route path="/admin" element={
+                  <AdminAuthProvider>
+                    <AdminDashboard />
+                  </AdminAuthProvider>
+                } />
+                <Route path="/admin/property/:propertyId" element={
+                  <AdminAuthProvider>
+                    <PropertyDetail />
+                  </AdminAuthProvider>
+                } />
+                
+                {/* Organization Routes */}
+                <Route path="/org/login" element={
+                  <OrganizationAuthProvider>
+                    <OrgLogin />
+                  </OrganizationAuthProvider>
+                } />
+                <Route path="/orgdashboard" element={
+                  <OrganizationAuthProvider>
+                    <OrgDashboard />
+                  </OrganizationAuthProvider>
+                } />
+                
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
+            </div>
+          </Router>
+        </UserProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }

@@ -71,24 +71,24 @@ const UserForm = ({ user, onSave, onCancel, isLoading }) => {
 
   return (
     <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-      <div className="relative top-10 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white">
+      <div className="relative top-10 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-card">
         <div className="flex justify-between items-center mb-6">
           <div className="flex items-center space-x-3">
             <div className="p-2 bg-blue-100 rounded-lg">
               <User className="w-6 h-6 text-blue-600" />
             </div>
             <div>
-              <h3 className="text-lg font-medium text-gray-900">
+              <h3 className="text-lg font-medium text-card-foreground">
                 {user ? 'Edit User' : 'Add New User'}
               </h3>
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-muted-foreground">
                 {user ? 'Update user information' : 'Create a new user account'}
               </p>
             </div>
           </div>
           <button
             onClick={onCancel}
-            className="text-gray-400 hover:text-gray-600"
+            className="text-gray-400 hover:text-muted-foreground"
           >
             <X className="w-6 h-6" />
           </button>
@@ -98,7 +98,7 @@ const UserForm = ({ user, onSave, onCancel, isLoading }) => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Name */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-foreground mb-1">
                 Full Name *
               </label>
               <input
@@ -107,7 +107,7 @@ const UserForm = ({ user, onSave, onCancel, isLoading }) => {
                 value={formData.name}
                 onChange={handleChange}
                 className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                  errors.name ? 'border-red-300' : 'border-gray-300'
+                  errors.name ? 'border-red-300' : 'border-input'
                 }`}
                 placeholder="Enter full name"
               />
@@ -116,7 +116,7 @@ const UserForm = ({ user, onSave, onCancel, isLoading }) => {
 
             {/* Email */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-foreground mb-1">
                 Email Address *
               </label>
               <div className="relative">
@@ -127,7 +127,7 @@ const UserForm = ({ user, onSave, onCancel, isLoading }) => {
                   value={formData.email}
                   onChange={handleChange}
                   className={`w-full pl-10 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                    errors.email ? 'border-red-300' : 'border-gray-300'
+                    errors.email ? 'border-red-300' : 'border-input'
                   }`}
                   placeholder="Enter email address"
                 />
@@ -137,7 +137,7 @@ const UserForm = ({ user, onSave, onCancel, isLoading }) => {
 
             {/* First Name */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-foreground mb-1">
                 First Name
               </label>
               <input
@@ -145,14 +145,14 @@ const UserForm = ({ user, onSave, onCancel, isLoading }) => {
                 name="first_name"
                 value={formData.first_name}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 placeholder="Enter first name"
               />
             </div>
 
             {/* Last Name */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-foreground mb-1">
                 Last Name
               </label>
               <input
@@ -160,14 +160,14 @@ const UserForm = ({ user, onSave, onCancel, isLoading }) => {
                 name="last_name"
                 value={formData.last_name}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 placeholder="Enter last name"
               />
             </div>
 
             {/* Phone */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-foreground mb-1">
                 Phone Number
               </label>
               <div className="relative">
@@ -177,7 +177,7 @@ const UserForm = ({ user, onSave, onCancel, isLoading }) => {
                   name="phone"
                   value={formData.phone}
                   onChange={handleChange}
-                  className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full pl-10 pr-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   placeholder="Enter phone number"
                 />
               </div>
@@ -186,7 +186,7 @@ const UserForm = ({ user, onSave, onCancel, isLoading }) => {
             {/* Password (only for new users) */}
             {!user && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-foreground mb-1">
                   Password *
                 </label>
                 <input
@@ -195,7 +195,7 @@ const UserForm = ({ user, onSave, onCancel, isLoading }) => {
                   value={formData.password}
                   onChange={handleChange}
                   className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                    errors.password ? 'border-red-300' : 'border-gray-300'
+                    errors.password ? 'border-red-300' : 'border-input'
                   }`}
                   placeholder="Enter password"
                 />
@@ -205,7 +205,7 @@ const UserForm = ({ user, onSave, onCancel, isLoading }) => {
 
             {/* KYC Status */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-foreground mb-1">
                 KYC Status
               </label>
               <div className="relative">
@@ -214,7 +214,7 @@ const UserForm = ({ user, onSave, onCancel, isLoading }) => {
                   name="kyc_status"
                   value={formData.kyc_status}
                   onChange={handleChange}
-                  className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full pl-10 pr-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
                   <option value="pending">Pending</option>
                   <option value="verified">Verified</option>
@@ -230,16 +230,16 @@ const UserForm = ({ user, onSave, onCancel, isLoading }) => {
                 name="is_active"
                 checked={formData.is_active}
                 onChange={handleChange}
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-input rounded"
               />
-              <label className="text-sm font-medium text-gray-700">
+              <label className="text-sm font-medium text-foreground">
                 Active User
               </label>
             </div>
           </div>
 
           {/* Action Buttons */}
-          <div className="flex justify-end space-x-3 pt-6 border-t border-gray-200">
+          <div className="flex justify-end space-x-3 pt-6 border-t border-border">
             <Button
               type="button"
               variant="outline"

@@ -6,13 +6,16 @@ const Select = React.forwardRef(({ children, className = '', ...props }, ref) =>
     <div className="relative">
       <select
         ref={ref}
-        className={`appearance-none bg-white border border-gray-300 rounded-md px-3 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${className}`}
+        className={`appearance-none bg-card border border-input text-card-foreground rounded-md px-3 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring ${className}`}
+        style={{
+          colorScheme: 'dark' // This makes the dropdown arrow dark-theme friendly
+        }}
         {...props}
       >
         {children}
       </select>
       <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
-        <ChevronDown className="h-4 w-4 text-gray-400" />
+        <ChevronDown className="h-4 w-4 text-muted-foreground" />
       </div>
     </div>
   );
@@ -25,13 +28,16 @@ const SelectTrigger = React.forwardRef(({ children, className = '', ...props }, 
     <div className="relative">
       <select
         ref={ref}
-        className={`appearance-none bg-white border border-gray-300 rounded-md px-3 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 w-full ${className}`}
+        className={`appearance-none bg-card border border-input text-card-foreground rounded-md px-3 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring w-full ${className}`}
+        style={{
+          colorScheme: 'dark' // This makes the dropdown arrow dark-theme friendly
+        }}
         {...props}
       >
         {children}
       </select>
       <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
-        <ChevronDown className="h-4 w-4 text-gray-400" />
+        <ChevronDown className="h-4 w-4 text-muted-foreground" />
       </div>
     </div>
   );
@@ -43,7 +49,7 @@ const SelectContent = React.forwardRef(({ children, className = '', ...props }, 
   return (
     <div
       ref={ref}
-      className={`absolute z-50 min-w-[8rem] overflow-hidden rounded-md border bg-white shadow-md ${className}`}
+      className={`absolute z-50 min-w-[8rem] overflow-hidden rounded-md border border-border bg-card text-card-foreground shadow-md ${className}`}
       {...props}
     >
       {children}
@@ -58,7 +64,7 @@ const SelectItem = React.forwardRef(({ children, className = '', value, ...props
     <option
       ref={ref}
       value={value}
-      className={`relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-gray-100 focus:bg-gray-100 data-[disabled]:pointer-events-none data-[disabled]:opacity-50 ${className}`}
+      className={`relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent focus:bg-accent data-[disabled]:pointer-events-none data-[disabled]:opacity-50 ${className}`}
       {...props}
     >
       {children}
@@ -72,7 +78,7 @@ const SelectValue = React.forwardRef(({ placeholder, className = '', ...props },
   return (
     <span
       ref={ref}
-      className={`text-gray-500 ${className}`}
+      className={`text-muted-foreground ${className}`}
       {...props}
     >
       {placeholder}

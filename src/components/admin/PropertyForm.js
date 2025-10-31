@@ -557,14 +557,14 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
 
   return (
     <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-      <div className="relative top-4 mx-auto p-5 border w-11/12 max-w-7xl shadow-lg rounded-md bg-white max-h-[95vh] overflow-y-auto">
+      <div className="relative top-4 mx-auto p-5 border w-11/12 max-w-7xl shadow-lg rounded-md bg-card max-h-[95vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-6">
-          <h3 className="text-2xl font-bold text-gray-900">
+          <h3 className="text-2xl font-bold text-card-foreground">
             {property ? 'Edit Property' : 'Add New Property'}
           </h3>
           <button
             onClick={onCancel}
-            className="text-gray-400 hover:text-gray-600"
+            className="text-gray-400 hover:text-muted-foreground"
           >
             <X className="w-6 h-6" />
           </button>
@@ -573,15 +573,15 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Basic Information */}
           <Card className="p-6">
-            <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+            <h4 className="text-lg font-semibold text-card-foreground mb-4 flex items-center">
               <Building2 className="w-5 h-5 mr-2" />
               Basic Information
             </h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Required Backend Fields */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Organization ID * {loadingOrgs && <span className="text-xs text-gray-500">(Loading...)</span>}
+                <label className="block text-sm font-medium text-foreground mb-1">
+                  Organization ID * {loadingOrgs && <span className="text-xs text-muted-foreground">(Loading...)</span>}
                 </label>
                 {organizations.length > 0 ? (
                   <select
@@ -589,7 +589,7 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                     value={formData.organizationId}
                     onChange={handleChange}
                     required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
                   >
                     <option value="">Select Organization</option>
                     {organizations.map((org) => (
@@ -606,12 +606,12 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                     onChange={handleChange}
                     required
                     placeholder="ORG-000001"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
                   />
                 )}
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-foreground mb-1">
                   Property Type *
                 </label>
                 <select
@@ -619,14 +619,14 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                   value={formData.type}
                   onChange={handleChange}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
                 >
                   <option value="residential">🏠 Residential</option>
                   <option value="commercial">🏢 Commercial</option>
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-foreground mb-1">
                   Total Value (USDT) *
                 </label>
                 <input
@@ -637,11 +637,11 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                   required
                   min="0"
                   step="0.01"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-foreground mb-1">
                   Total Tokens *
                 </label>
                 <input
@@ -652,11 +652,11 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                   required
                   min="1"
                   step="1"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-foreground mb-1">
                   Expected ROI (%) *
                 </label>
                 <input
@@ -667,11 +667,11 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                   required
                   min="0"
                   step="0.1"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-foreground mb-1">
                   Status *
                 </label>
                 <select
@@ -679,7 +679,7 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                   value={formData.status}
                   onChange={handleChange}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
                 >
                   <option value="active">✅ Active</option>
                 </select>
@@ -687,10 +687,10 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
               
               {/* Optional Display Fields */}
               <div className="md:col-span-2 border-t pt-4 mt-4">
-                <p className="text-sm font-medium text-gray-600 mb-4">Optional Display Information</p>
+                <p className="text-sm font-medium text-muted-foreground mb-4">Optional Display Information</p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-foreground mb-1">
                   Property Title
                 </label>
                 <input
@@ -698,11 +698,11 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                   name="title"
                   value={formData.title}
                   onChange={handleTitleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-foreground mb-1">
                   Slug
                 </label>
                 <input
@@ -710,11 +710,11 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                   name="slug"
                   value={formData.slug}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
                 />
               </div>
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-foreground mb-1">
                   Description *
                 </label>
                 <textarea
@@ -723,11 +723,11 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                   onChange={handleChange}
                   required
                   rows={4}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
                 />
               </div>
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-foreground mb-1">
                   Short Description *
                 </label>
                 <textarea
@@ -736,7 +736,7 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                   onChange={handleChange}
                   required
                   rows={2}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
                 />
               </div>
             </div>
@@ -744,13 +744,13 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
 
           {/* Location Information */}
           <Card className="p-6">
-            <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+            <h4 className="text-lg font-semibold text-card-foreground mb-4 flex items-center">
               <MapPin className="w-5 h-5 mr-2" />
               Location Information
             </h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-foreground mb-1">
                   Address *
                 </label>
                 <textarea
@@ -759,11 +759,11 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                   onChange={handleChange}
                   required
                   rows={2}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-foreground mb-1">
                   City *
                 </label>
                 <input
@@ -772,11 +772,11 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                   value={formData.location_city}
                   onChange={handleChange}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-foreground mb-1">
                   State *
                 </label>
                 <input
@@ -785,11 +785,11 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                   value={formData.location_state}
                   onChange={handleChange}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-foreground mb-1">
                   Country *
                 </label>
                 <input
@@ -798,11 +798,11 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                   value={formData.location_country}
                   onChange={handleChange}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-foreground mb-1">
                   Latitude
                 </label>
                 <input
@@ -811,11 +811,11 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                   name="location_latitude"
                   value={formData.location_latitude}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-foreground mb-1">
                   Longitude
                 </label>
                 <input
@@ -824,17 +824,17 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                   name="location_longitude"
                   value={formData.location_longitude}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
                 />
               </div>
             </div>
             
             {/* Location Map */}
             <div className="mt-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-foreground mb-2">
                 Property Location Map
               </label>
-              <p className="text-sm text-gray-600 mb-3">
+              <p className="text-sm text-muted-foreground mb-3">
                 Enter coordinates manually or use the map links to verify location. The latitude and longitude will be updated automatically.
               </p>
               <SimpleMap
@@ -848,13 +848,13 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
 
           {/* Property Details */}
           <Card className="p-6">
-            <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+            <h4 className="text-lg font-semibold text-card-foreground mb-4 flex items-center">
               <Building2 className="w-5 h-5 mr-2" />
               Property Details
             </h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-foreground mb-1">
                   Property Type *
                 </label>
                 <select
@@ -862,7 +862,7 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                   value={formData.property_type}
                   onChange={handleChange}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
                 >
                   <option value="residential">Residential</option>
                   <option value="commercial">Commercial</option>
@@ -870,7 +870,7 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-foreground mb-1">
                   Project Type *
                 </label>
                 <select
@@ -878,7 +878,7 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                   value={formData.project_type}
                   onChange={handleChange}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
                 >
                   <option value="">Select Project Type</option>
                   <option value="residential">Residential</option>
@@ -895,7 +895,7 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-foreground mb-1">
                   Status *
                 </label>
                 <select
@@ -903,13 +903,13 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                   value={formData.status}
                   onChange={handleChange}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
                 >
                   <option value="active">✅ Active</option>
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-foreground mb-1">
                   Floors *
                 </label>
                 <input
@@ -918,11 +918,11 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                   value={formData.floors}
                   onChange={handleChange}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-foreground mb-1">
                   Total Units *
                 </label>
                 <input
@@ -933,15 +933,15 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                   value={formData.total_units}
                   onChange={handleChange}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
                   placeholder="Enter number of units (1-10)"
                 />
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-muted-foreground mt-1">
                   Unit types will be automatically generated based on this number
                 </p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-foreground mb-1">
                   Construction Progress (%)
                 </label>
                 <div className="space-y-3">
@@ -952,8 +952,8 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                       onClick={() => setFormData(prev => ({ ...prev, construction_progress: 25 }))}
                       className={`px-3 py-1 text-sm rounded-md border ${
                         formData.construction_progress === 25
-                          ? 'bg-blue-500 text-white border-blue-500'
-                          : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                          ? 'bg-accent0 text-white border-blue-500'
+                          : 'bg-card text-foreground border-input hover:bg-accent'
                       }`}
                     >
                       25%
@@ -963,8 +963,8 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                       onClick={() => setFormData(prev => ({ ...prev, construction_progress: 50 }))}
                       className={`px-3 py-1 text-sm rounded-md border ${
                         formData.construction_progress === 50
-                          ? 'bg-blue-500 text-white border-blue-500'
-                          : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                          ? 'bg-accent0 text-white border-blue-500'
+                          : 'bg-card text-foreground border-input hover:bg-accent'
                       }`}
                     >
                       50%
@@ -974,8 +974,8 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                       onClick={() => setFormData(prev => ({ ...prev, construction_progress: 75 }))}
                       className={`px-3 py-1 text-sm rounded-md border ${
                         formData.construction_progress === 75
-                          ? 'bg-blue-500 text-white border-blue-500'
-                          : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                          ? 'bg-accent0 text-white border-blue-500'
+                          : 'bg-card text-foreground border-input hover:bg-accent'
                       }`}
                     >
                       75%
@@ -985,8 +985,8 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                       onClick={() => setFormData(prev => ({ ...prev, construction_progress: 100 }))}
                       className={`px-3 py-1 text-sm rounded-md border ${
                         formData.construction_progress === 100
-                          ? 'bg-blue-500 text-white border-blue-500'
-                          : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                          ? 'bg-accent0 text-white border-blue-500'
+                          : 'bg-card text-foreground border-input hover:bg-accent'
                       }`}
                     >
                       100%
@@ -1001,13 +1001,13 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                     name="construction_progress"
                     value={formData.construction_progress}
                     onChange={handleChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
                     placeholder="Enter custom progress (0-100)"
                   />
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-foreground mb-1">
                   Start Date
                 </label>
                 <input
@@ -1015,11 +1015,11 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                   name="start_date"
                   value={formData.start_date}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-foreground mb-1">
                   Expected Completion
                 </label>
                 <input
@@ -1027,11 +1027,11 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                   name="expected_completion"
                   value={formData.expected_completion}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-foreground mb-1">
                   Handover Date
                 </label>
                 <input
@@ -1039,7 +1039,7 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                   name="handover_date"
                   value={formData.handover_date}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
                 />
               </div>
             </div>
@@ -1047,13 +1047,13 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
 
           {/* Pricing Information */}
           <Card className="p-6">
-            <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+            <h4 className="text-lg font-semibold text-card-foreground mb-4 flex items-center">
               <DollarSign className="w-5 h-5 mr-2" />
               Pricing Information
             </h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-foreground mb-1">
                   Total Value (PKR) *
                 </label>
                 <input
@@ -1063,11 +1063,11 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                   onChange={handleChange}
                   required
                   placeholder="e.g., 12000000000"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-foreground mb-1">
                   Market Value (PKR) *
                 </label>
                 <input
@@ -1077,11 +1077,11 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                   onChange={handleChange}
                   required
                   placeholder="e.g., 12000000000"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-foreground mb-1">
                   Appreciation (%)
                 </label>
                 <input
@@ -1090,13 +1090,13 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                   value={formData.pricing_appreciation}
                   onChange={handleChange}
                   placeholder="e.g., 20"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-foreground mb-1">
                   Expected ROI (%) * 
-                  <span className="text-xs text-blue-600 ml-1">(Auto-calculated)</span>
+                  <span className="text-xs text-primary ml-1">(Auto-calculated)</span>
                 </label>
                 <input
                   type="text"
@@ -1105,11 +1105,11 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                   onChange={handleChange}
                   required
                   placeholder="e.g., 11"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-blue-50"
+                  className="w-full px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring bg-accent"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-foreground mb-1">
                   Min Investment (PKR) *
                 </label>
                 <input
@@ -1119,11 +1119,11 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                   onChange={handleChange}
                   required
                   placeholder="e.g., 400000"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-foreground mb-1">
                   Listing Price Formatted
                 </label>
                 <input
@@ -1132,7 +1132,7 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                   value={formData.listing_price_formatted}
                   onChange={handleChange}
                   placeholder="e.g., PKR 12B"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
                 />
               </div>
             </div>
@@ -1140,13 +1140,13 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
 
           {/* Tokenization Information */}
           <Card className="p-6">
-            <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+            <h4 className="text-lg font-semibold text-card-foreground mb-4 flex items-center">
               <Hash className="w-5 h-5 mr-2" />
               Tokenization Information
             </h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-foreground mb-1">
                   Total Tokens *
                 </label>
                 <input
@@ -1155,11 +1155,11 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                   value={formData.tokenization_total_tokens}
                   onChange={handleChange}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-foreground mb-1">
                   Available Tokens *
                 </label>
                 <input
@@ -1168,13 +1168,13 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                   value={formData.tokenization_available_tokens}
                   onChange={handleChange}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-foreground mb-1">
                   Price Per Token (PKR) * 
-                  <span className="text-xs text-blue-600 ml-1">(Auto-calculated)</span>
+                  <span className="text-xs text-primary ml-1">(Auto-calculated)</span>
                 </label>
                 <input
                   type="text"
@@ -1183,13 +1183,13 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                   onChange={handleChange}
                   required
                   placeholder="e.g., 100000"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-blue-50"
+                  className="w-full px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring bg-accent"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-foreground mb-1">
                   Token Price (PKR) * 
-                  <span className="text-xs text-blue-600 ml-1">(Auto-calculated)</span>
+                  <span className="text-xs text-primary ml-1">(Auto-calculated)</span>
                 </label>
                 <input
                   type="text"
@@ -1198,7 +1198,7 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                   onChange={handleChange}
                   required
                   placeholder="e.g., 100000"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-blue-50"
+                  className="w-full px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring bg-accent"
                 />
               </div>
             </div>
@@ -1206,13 +1206,13 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
 
           {/* Property Specifications */}
           <Card className="p-6">
-            <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+            <h4 className="text-lg font-semibold text-card-foreground mb-4 flex items-center">
               <Building2 className="w-5 h-5 mr-2" />
               Property Specifications
             </h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-foreground mb-1">
                   Bedrooms
                 </label>
                 <input
@@ -1220,11 +1220,11 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                   name="bedrooms"
                   value={formData.bedrooms}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-foreground mb-1">
                   Bathrooms
                 </label>
                 <input
@@ -1232,11 +1232,11 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                   name="bathrooms"
                   value={formData.bathrooms}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-foreground mb-1">
                   Area (sqm)
                 </label>
                 <input
@@ -1245,11 +1245,11 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                   name="area_sqm"
                   value={formData.area_sqm}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-foreground mb-1">
                   Appreciation Percentage
                 </label>
                 <input
@@ -1258,7 +1258,7 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                   name="appreciation_percentage"
                   value={formData.appreciation_percentage}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
                 />
               </div>
               <div className="md:col-span-2">
@@ -1268,9 +1268,9 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                     name="is_rented"
                     checked={formData.is_rented}
                     onChange={handleChange}
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    className="h-4 w-4 text-primary focus:ring-ring border-input rounded"
                   />
-                  <span className="ml-2 text-sm text-gray-700">Is Rented</span>
+                  <span className="ml-2 text-sm text-foreground">Is Rented</span>
                 </label>
               </div>
             </div>
@@ -1279,13 +1279,13 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
           {/* Unit Types */}
           <Card className="p-6">
             <div className="flex items-center justify-between mb-4">
-              <h4 className="text-lg font-semibold text-gray-900">Unit Types</h4>
-              <p className="text-sm text-gray-500">
+              <h4 className="text-lg font-semibold text-card-foreground">Unit Types</h4>
+              <p className="text-sm text-muted-foreground">
                 {formData.unit_types.length > 0 ? `${formData.unit_types.length} units generated` : 'Enter Total Units above to auto-generate'}
               </p>
             </div>
             {formData.unit_types.length > 0 && (
-              <p className="text-xs text-gray-500 mb-4">
+              <p className="text-xs text-muted-foreground mb-4">
                 💡 Click the edit button to modify any unit type. You can change the type, size, or count.
               </p>
             )}
@@ -1296,21 +1296,21 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                   placeholder="Unit Type (e.g., 2 Bedroom)"
                   value={newUnitType.type}
                   onChange={(e) => setNewUnitType(prev => ({ ...prev, type: e.target.value }))}
-                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
                 />
                 <input
                   type="text"
                   placeholder="Size (e.g., 1200 sq ft)"
                   value={newUnitType.size}
                   onChange={(e) => setNewUnitType(prev => ({ ...prev, size: e.target.value }))}
-                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
                 />
                 <input
                   type="text"
                   placeholder="Count (e.g., 1)"
                   value={newUnitType.count}
                   onChange={(e) => setNewUnitType(prev => ({ ...prev, count: e.target.value }))}
-                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
                 />
                 <Button type="button" onClick={addUnitType} className="flex items-center space-x-2">
                   <Plus className="w-4 h-4" />
@@ -1318,7 +1318,7 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                 </Button>
               </div>
               {Array.isArray(formData.unit_types) && formData.unit_types.map((unit, index) => (
-                <div key={index} className="p-3 bg-gray-50 rounded-lg">
+                <div key={index} className="p-3 bg-accent rounded-lg">
                   {editingUnitIndex === index ? (
                     // Edit Mode
                     <div className="space-y-3">
@@ -1328,21 +1328,21 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                           placeholder="Unit Type (e.g., 2 Bedroom)"
                           value={editingUnit.type}
                           onChange={(e) => setEditingUnit(prev => ({ ...prev, type: e.target.value }))}
-                          className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          className="px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
                         />
                         <input
                           type="text"
                           placeholder="Size (e.g., 1200 sq ft)"
                           value={editingUnit.size}
                           onChange={(e) => setEditingUnit(prev => ({ ...prev, size: e.target.value }))}
-                          className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          className="px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
                         />
                         <input
                           type="text"
                           placeholder="Count (e.g., 1)"
                           value={editingUnit.count}
                           onChange={(e) => setEditingUnit(prev => ({ ...prev, count: e.target.value }))}
-                          className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          className="px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
                         />
                       </div>
                       <div className="flex space-x-2">
@@ -1369,8 +1369,8 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                     <div className="flex items-center justify-between">
                       <div className="flex space-x-4">
                         <span className="font-medium">{unit.type}</span>
-                        <span className="text-gray-600">{unit.size}</span>
-                        <span className="text-blue-600">Count: {unit.count}</span>
+                        <span className="text-muted-foreground">{unit.size}</span>
+                        <span className="text-primary">Count: {unit.count}</span>
                       </div>
                       <div className="flex space-x-2">
                         <Button
@@ -1378,7 +1378,7 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                           variant="outline"
                           size="sm"
                           onClick={() => editUnitType(index)}
-                          className="text-blue-600 hover:text-blue-700"
+                          className="text-primary hover:text-blue-700"
                         >
                           <Edit className="w-4 h-4" />
                         </Button>
@@ -1401,8 +1401,8 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
 
           {/* Features */}
           <Card className="p-6">
-            <h4 className="text-lg font-semibold text-gray-900 mb-4">Features (optional)</h4>
-            <p className="text-sm text-gray-600 mb-4">
+            <h4 className="text-lg font-semibold text-card-foreground mb-4">Features (optional)</h4>
+            <p className="text-sm text-muted-foreground mb-4">
               Add property features like modern architecture, energy efficiency, smart home features, etc. This field is optional.
             </p>
             <div className="space-y-4">
@@ -1412,7 +1412,7 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                   placeholder="Add a feature"
                   value={newFeature}
                   onChange={(e) => setNewFeature(e.target.value)}
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="flex-1 px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
                 />
                 <Button type="button" onClick={addFeature} className="flex items-center space-x-2">
                   <Plus className="w-4 h-4" />
@@ -1426,7 +1426,7 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                     <button
                       type="button"
                       onClick={() => removeFeature(index)}
-                      className="text-blue-600 hover:text-blue-800"
+                      className="text-primary hover:text-blue-800"
                     >
                       <X className="w-3 h-3" />
                     </button>
@@ -1438,8 +1438,8 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
 
           {/* Amenities */}
           <Card className="p-6">
-            <h4 className="text-lg font-semibold text-gray-900 mb-4">Amenities (optional)</h4>
-            <p className="text-sm text-gray-600 mb-4">
+            <h4 className="text-lg font-semibold text-card-foreground mb-4">Amenities (optional)</h4>
+            <p className="text-sm text-muted-foreground mb-4">
               Add property amenities like swimming pool, gym, parking, security, etc. This field is optional.
             </p>
             <div className="space-y-4">
@@ -1449,7 +1449,7 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                   placeholder="Add an amenity"
                   value={newAmenity}
                   onChange={(e) => setNewAmenity(e.target.value)}
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="flex-1 px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
                 />
                 <Button type="button" onClick={addAmenity} className="flex items-center space-x-2">
                   <Plus className="w-4 h-4" />
@@ -1476,12 +1476,12 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
           {/* Documents */}
           <Card className="p-6">
             <div className="flex items-center justify-between mb-4">
-              <h4 className="text-lg font-semibold text-gray-900">Documents *</h4>
-              <span className="text-sm text-gray-500">
+              <h4 className="text-lg font-semibold text-card-foreground">Documents *</h4>
+              <span className="text-sm text-muted-foreground">
                 {formData.documents.length} document{formData.documents.length !== 1 ? 's' : ''} added
               </span>
             </div>
-            <p className="text-sm text-gray-600 mb-4">
+            <p className="text-sm text-muted-foreground mb-4">
               Add important property documents like approval letters, floor plans, legal documents, etc.
             </p>
             {formData.documents.length === 0 && (
@@ -1498,19 +1498,19 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                   placeholder="Document Name"
                   value={newDocument.name}
                   onChange={(e) => setNewDocument(prev => ({ ...prev, name: e.target.value }))}
-                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
                 />
                 <input
                   type="url"
                   placeholder="Document URL"
                   value={newDocument.url}
                   onChange={(e) => setNewDocument(prev => ({ ...prev, url: e.target.value }))}
-                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
                 />
                 <select
                   value={newDocument.type}
                   onChange={(e) => setNewDocument(prev => ({ ...prev, type: e.target.value }))}
-                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
                 >
                   <option value="">Select Type</option>
                   <option value="brochure">Brochure</option>
@@ -1524,11 +1524,11 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                 </Button>
               </div>
               {Array.isArray(formData.documents) && formData.documents.map((doc, index) => (
-                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div key={index} className="flex items-center justify-between p-3 bg-accent rounded-lg">
                   <div className="flex space-x-4">
                     <span className="font-medium">{doc.name}</span>
-                    <span className="text-gray-600">{doc.type}</span>
-                    <a href={doc.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800">
+                    <span className="text-muted-foreground">{doc.type}</span>
+                    <a href={doc.url} target="_blank" rel="noopener noreferrer" className="text-primary hover:text-blue-800">
                       View Document
                     </a>
                   </div>
@@ -1548,8 +1548,8 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
 
           {/* Property Features */}
           <Card className="p-6">
-            <h4 className="text-lg font-semibold text-gray-900 mb-4">Property Features (optional)</h4>
-            <p className="text-sm text-gray-600 mb-4">
+            <h4 className="text-lg font-semibold text-card-foreground mb-4">Property Features (optional)</h4>
+            <p className="text-sm text-muted-foreground mb-4">
               Add specific property features like premium finishes, high ceilings, balcony access, etc. This field is optional.
             </p>
             <div className="space-y-4">
@@ -1559,7 +1559,7 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                   placeholder="Add a property feature"
                   value={newPropertyFeature}
                   onChange={(e) => setNewPropertyFeature(e.target.value)}
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="flex-1 px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
                 />
                 <Button type="button" onClick={addPropertyFeature} className="flex items-center space-x-2">
                   <Plus className="w-4 h-4" />
@@ -1585,7 +1585,7 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
 
           {/* Images */}
           <Card className="p-6">
-            <h4 className="text-lg font-semibold text-gray-900 mb-4">Images</h4>
+            <h4 className="text-lg font-semibold text-card-foreground mb-4">Images</h4>
             <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <input
@@ -1593,19 +1593,19 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                   placeholder="Image URL"
                   value={newImage.url}
                   onChange={(e) => setNewImage(prev => ({ ...prev, url: e.target.value }))}
-                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
                 />
                 <input
                   type="text"
                   placeholder="Alt Text"
                   value={newImage.alt}
                   onChange={(e) => setNewImage(prev => ({ ...prev, alt: e.target.value }))}
-                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
                 />
                 <select
                   value={newImage.type}
                   onChange={(e) => setNewImage(prev => ({ ...prev, type: e.target.value }))}
-                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
                 >
                   <option value="main">Main Image</option>
                   <option value="gallery">Gallery</option>
@@ -1618,11 +1618,11 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                 </Button>
               </div>
               {Object.entries(formData.images).map(([type, image]) => (
-                <div key={type} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div key={type} className="flex items-center justify-between p-3 bg-accent rounded-lg">
                   <div className="flex space-x-4">
                     <span className="font-medium capitalize">{type}</span>
-                    <span className="text-gray-600">{image.alt}</span>
-                    <a href={image.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800">
+                    <span className="text-muted-foreground">{image.alt}</span>
+                    <a href={image.url} target="_blank" rel="noopener noreferrer" className="text-primary hover:text-blue-800">
                       View Image
                     </a>
                   </div>
@@ -1642,39 +1642,39 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
 
           {/* SEO Information */}
           <Card className="p-6">
-            <h4 className="text-lg font-semibold text-gray-900 mb-4">SEO Information</h4>
+            <h4 className="text-lg font-semibold text-card-foreground mb-4">SEO Information</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-foreground mb-1">
                   SEO Title
                 </label>
                 <input
                   type="text"
                   value={seoData.title}
                   onChange={(e) => setSeoData(prev => ({ ...prev, title: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-foreground mb-1">
                   SEO Keywords
                 </label>
                 <input
                   type="text"
                   value={seoData.keywords}
                   onChange={(e) => setSeoData(prev => ({ ...prev, keywords: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
                 />
               </div>
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-foreground mb-1">
                   SEO Description
                 </label>
                 <textarea
                   value={seoData.description}
                   onChange={(e) => setSeoData(prev => ({ ...prev, description: e.target.value }))}
                   rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
                 />
               </div>
             </div>
@@ -1682,13 +1682,13 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
 
           {/* Status and Visibility */}
           <Card className="p-6">
-            <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+            <h4 className="text-lg font-semibold text-card-foreground mb-4 flex items-center">
               <TrendingUp className="w-5 h-5 mr-2" />
               Status and Visibility
             </h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-foreground mb-1">
                   Sort Order
                 </label>
                 <input
@@ -1696,7 +1696,7 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                   name="sort_order"
                   value={formData.sort_order}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
                 />
               </div>
               <div className="md:col-span-2">
@@ -1707,9 +1707,9 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                       name="is_active"
                       checked={formData.is_active}
                       onChange={handleChange}
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                      className="h-4 w-4 text-primary focus:ring-ring border-input rounded"
                     />
-                    <span className="ml-2 text-sm text-gray-700">Active Property</span>
+                    <span className="ml-2 text-sm text-foreground">Active Property</span>
                   </label>
                   <label className="flex items-center">
                     <input
@@ -1717,9 +1717,9 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                       name="is_featured"
                       checked={formData.is_featured}
                       onChange={handleChange}
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                      className="h-4 w-4 text-primary focus:ring-ring border-input rounded"
                     />
-                    <span className="ml-2 text-sm text-gray-700">Featured Property</span>
+                    <span className="ml-2 text-sm text-foreground">Featured Property</span>
                   </label>
                 </div>
               </div>

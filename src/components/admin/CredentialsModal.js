@@ -27,7 +27,7 @@ Full Name: ${credentials.fullName}
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-      <div className="bg-white rounded-lg max-w-xl w-full max-h-[90vh] my-auto flex flex-col">
+      <div className="bg-card rounded-lg max-w-xl w-full max-h-[90vh] my-auto flex flex-col">
         <div className="bg-gradient-to-r from-green-500 to-green-600 px-6 py-4 flex items-center justify-between rounded-t-lg flex-shrink-0">
           <div className="flex items-center gap-3 text-white">
             <CheckCircle className="w-6 h-6" />
@@ -51,18 +51,18 @@ Full Name: ${credentials.fullName}
           </div>
 
           {/* Organization Info */}
-          <div className="bg-gray-50 rounded-lg p-4">
+          <div className="bg-accent rounded-lg p-4">
             <div className="flex items-center gap-2 mb-3">
-              <Building2 className="w-5 h-5 text-gray-600" />
-              <h3 className="font-semibold text-gray-900">Organization Details</h3>
+              <Building2 className="w-5 h-5 text-muted-foreground" />
+              <h3 className="font-semibold text-card-foreground">Organization Details</h3>
             </div>
             <div className="space-y-2">
               <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600">Name:</span>
-                <span className="font-medium text-gray-900">{credentials.organizationName}</span>
+                <span className="text-sm text-muted-foreground">Name:</span>
+                <span className="font-medium text-card-foreground">{credentials.organizationName}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600">Organization ID:</span>
+                <span className="text-sm text-muted-foreground">Organization ID:</span>
                 <Badge variant="blue">{credentials.organizationId}</Badge>
               </div>
             </div>
@@ -70,25 +70,25 @@ Full Name: ${credentials.fullName}
 
           {/* Admin Credentials */}
           <div className="space-y-4">
-            <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+            <h3 className="font-semibold text-card-foreground flex items-center gap-2">
               <Key className="w-5 h-5 text-blue-600" />
               Admin Login Credentials
             </h3>
 
             <div className="space-y-3">
               {/* Email */}
-              <div className="bg-white border border-gray-200 rounded-lg p-4">
+              <div className="bg-card border border-border rounded-lg p-4">
                 <div className="flex items-center gap-2 mb-2">
                   <Mail className="w-4 h-4 text-gray-400" />
                   <label className="text-xs font-medium text-gray-500 uppercase">Email</label>
                 </div>
-                <p className="text-base font-mono text-gray-900 bg-gray-50 px-3 py-2 rounded border">
+                <p className="text-base font-mono text-card-foreground bg-accent px-3 py-2 rounded border">
                   {credentials.email}
                 </p>
               </div>
 
               {/* Password */}
-              <div className="bg-white border border-gray-200 rounded-lg p-4">
+              <div className="bg-card border border-border rounded-lg p-4">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
                     <Key className="w-4 h-4 text-gray-400" />
@@ -111,18 +111,18 @@ Full Name: ${credentials.fullName}
                     )}
                   </button>
                 </div>
-                <p className="text-base font-mono text-gray-900 bg-gray-50 px-3 py-2 rounded border">
+                <p className="text-base font-mono text-card-foreground bg-accent px-3 py-2 rounded border">
                   {showPassword ? credentials.password : '••••••••••••'}
                 </p>
               </div>
 
               {/* Full Name */}
-              <div className="bg-white border border-gray-200 rounded-lg p-4">
+              <div className="bg-card border border-border rounded-lg p-4">
                 <div className="flex items-center gap-2 mb-2">
                   <User className="w-4 h-4 text-gray-400" />
                   <label className="text-xs font-medium text-gray-500 uppercase">Full Name</label>
                 </div>
-                <p className="text-base font-mono text-gray-900 bg-gray-50 px-3 py-2 rounded border">
+                <p className="text-base font-mono text-card-foreground bg-accent px-3 py-2 rounded border">
                   {credentials.fullName}
                 </p>
               </div>
@@ -147,7 +147,7 @@ Full Name: ${credentials.fullName}
         </div>
 
         {/* Actions - Sticky Footer */}
-        <div className="flex gap-3 justify-end p-6 border-t bg-white rounded-b-lg flex-shrink-0">
+        <div className="flex gap-3 justify-end p-6 border-t bg-card rounded-b-lg flex-shrink-0">
           <Button
             variant="outline"
             onClick={handleCopyCredentials}

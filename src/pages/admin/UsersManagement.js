@@ -343,7 +343,7 @@ const UsersManagement = () => {
   if (!isAuthenticated) {
     return (
       <div className="text-center py-12">
-        <p className="text-gray-600">Please log in to view users.</p>
+        <p className="text-muted-foreground">Please log in to view users.</p>
       </div>
     );
   }
@@ -352,7 +352,7 @@ const UsersManagement = () => {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        <span className="ml-2 text-gray-600">Loading users...</span>
+        <span className="ml-2 text-muted-foreground">Loading users...</span>
       </div>
     );
   }
@@ -373,8 +373,8 @@ const UsersManagement = () => {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Users Management</h2>
-          <p className="text-gray-600">
+          <h2 className="text-2xl font-bold text-card-foreground">Users Management</h2>
+          <p className="text-muted-foreground">
             Manage all users in your platform
             {pagination.totalUsers > 0 && (
               <span className="ml-2 text-blue-600 font-medium">
@@ -401,8 +401,8 @@ const UsersManagement = () => {
           <Card className="p-4 border-l-4 border-blue-500">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Total Users</p>
-                <p className="text-2xl font-bold text-gray-900">{users.length}</p>
+                <p className="text-sm text-muted-foreground">Total Users</p>
+                <p className="text-2xl font-bold text-card-foreground">{users.length}</p>
               </div>
               <div className="p-3 bg-blue-100 rounded-lg">
                 <Users className="w-6 h-6 text-blue-600" />
@@ -413,7 +413,7 @@ const UsersManagement = () => {
           <Card className="p-4 border-l-4 border-green-500">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Active Users</p>
+                <p className="text-sm text-muted-foreground">Active Users</p>
                 <p className="text-2xl font-bold text-green-600">{activeUsersCount}</p>
               </div>
               <div className="p-3 bg-green-100 rounded-lg">
@@ -425,7 +425,7 @@ const UsersManagement = () => {
           <Card className="p-4 border-l-4 border-red-500">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Deleted Users</p>
+                <p className="text-sm text-muted-foreground">Deleted Users</p>
                 <p className="text-2xl font-bold text-red-600">{inactiveUsersCount}</p>
               </div>
               <div className="p-3 bg-red-100 rounded-lg">
@@ -440,25 +440,25 @@ const UsersManagement = () => {
       <Card className="p-6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Search</label>
+            <label className="block text-sm font-medium text-foreground mb-1">Search</label>
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <input
                 type="text"
                 placeholder="Search users..."
                 value={filters.search}
                 onChange={(e) => handleFilterChange('search', e.target.value)}
-                className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full pl-10 pr-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+            <label className="block text-sm font-medium text-foreground mb-1">Status</label>
             <select
               value={filters.status}
               onChange={(e) => handleFilterChange('status', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
             >
               <option value="">All Status</option>
               <option value="active">Active</option>
@@ -467,11 +467,11 @@ const UsersManagement = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">KYC Status</label>
+            <label className="block text-sm font-medium text-foreground mb-1">KYC Status</label>
             <select
               value={filters.kyc_status}
               onChange={(e) => handleFilterChange('kyc_status', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
             >
               <option value="">All KYC Status</option>
               <option value="verified">Verified</option>
@@ -481,11 +481,11 @@ const UsersManagement = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Sort By</label>
+            <label className="block text-sm font-medium text-foreground mb-1">Sort By</label>
             <select
               value={filters.sort_by}
               onChange={(e) => handleFilterChange('sort_by', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
             >
               <option value="created_at">Date Created</option>
               <option value="name">Name</option>
@@ -495,11 +495,11 @@ const UsersManagement = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Order</label>
+            <label className="block text-sm font-medium text-foreground mb-1">Order</label>
             <select
               value={filters.sort_order}
               onChange={(e) => handleFilterChange('sort_order', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
             >
               <option value="desc">Descending</option>
               <option value="asc">Ascending</option>
@@ -508,16 +508,16 @@ const UsersManagement = () => {
         </div>
         
         {/* Additional Options */}
-        <div className="mt-4 pt-4 border-t border-gray-200">
+        <div className="mt-4 pt-4 border-t border-border">
           <div className="flex items-center">
             <input
               type="checkbox"
               id="include_inactive"
               checked={filters.include_inactive}
               onChange={(e) => handleFilterChange('include_inactive', e.target.checked)}
-              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              className="h-4 w-4 text-blue-600 focus:ring-ring border-input rounded"
             />
-            <label htmlFor="include_inactive" className="ml-2 text-sm text-gray-700">
+            <label htmlFor="include_inactive" className="ml-2 text-sm text-foreground">
               Include inactive users (deleted users)
             </label>
           </div>
@@ -528,29 +528,29 @@ const UsersManagement = () => {
       <Card className="overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50">
+            <thead className="bg-accent">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   User
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Contact
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Status
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   KYC Status
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Joined
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-card divide-y divide-gray-200">
               {users.map((user) => {
                 // Get real KYC status from KYC table
                 const userKYCStatus = getUserKYCStatus(user);
@@ -564,13 +564,13 @@ const UsersManagement = () => {
                 return (
                   <tr 
                     key={user.id} 
-                    className={`hover:bg-gray-50 ${isDeleted ? 'bg-red-50 opacity-60' : ''}`}
+                    className={`hover:bg-accent ${isDeleted ? 'bg-red-50 opacity-60' : ''}`}
                   >
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <div className="flex-shrink-0 h-10 w-10">
-                          <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
-                            <span className="text-sm font-medium text-gray-700">
+                          <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
+                            <span className="text-sm font-medium text-foreground">
                               {(user.fullName || user.name || 'U').charAt(0).toUpperCase()}
                             </span>
                           </div>
@@ -682,7 +682,7 @@ const UsersManagement = () => {
                               </span>
                             )}
                           </div>
-                          <div className="text-sm text-gray-500">
+                          <div className="text-sm text-muted-foreground">
                             ID: {user.id?.slice(0, 8)}...
                           </div>
                         </div>
@@ -690,13 +690,13 @@ const UsersManagement = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="space-y-1">
-                        <div className="flex items-center text-sm text-gray-900">
-                          <Mail className="w-3 h-3 mr-2 text-gray-400" />
+                        <div className="flex items-center text-sm text-card-foreground">
+                          <Mail className="w-3 h-3 mr-2 text-muted-foreground" />
                           {user.email}
                         </div>
                         {user.phone && (
-                          <div className="flex items-center text-sm text-gray-500">
-                            <Phone className="w-3 h-3 mr-2 text-gray-400" />
+                          <div className="flex items-center text-sm text-muted-foreground">
+                            <Phone className="w-3 h-3 mr-2 text-muted-foreground" />
                             {user.phone}
                           </div>
                         )}
@@ -720,9 +720,9 @@ const UsersManagement = () => {
                       </Badge>
                       </button>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
                       <div className="flex items-center">
-                        <Calendar className="w-3 h-3 mr-2 text-gray-400" />
+                        <Calendar className="w-3 h-3 mr-2 text-muted-foreground" />
                         {formatDate(user.createdAt || user.created_at)}
                       </div>
                     </td>
@@ -745,7 +745,7 @@ const UsersManagement = () => {
                         <Button 
                           variant="outline" 
                           size="sm" 
-                          className={`${isDeleted ? 'text-gray-400 cursor-not-allowed opacity-50' : 'text-red-600 hover:text-red-700 hover:bg-red-50'}`}
+                          className={`${isDeleted ? 'text-muted-foreground cursor-not-allowed opacity-50' : 'text-red-600 hover:text-red-700 hover:bg-red-50'}`}
                           onClick={() => isDeleted ? null : handleDeleteUser(user)}
                           title={isDeleted ? 'User already deleted' : `Delete ${user.fullName || user.name}`}
                           disabled={isDeleted}
@@ -763,7 +763,7 @@ const UsersManagement = () => {
 
         {/* Pagination */}
         {pagination.totalPages > 1 && (
-          <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+          <div className="bg-card px-4 py-3 flex items-center justify-between border-t border-border sm:px-6">
             <div className="flex-1 flex justify-between sm:hidden">
               <Button
                 variant="outline"
@@ -782,7 +782,7 @@ const UsersManagement = () => {
             </div>
             <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
               <div>
-                <p className="text-sm text-gray-700">
+                <p className="text-sm text-foreground">
                   Showing{' '}
                   <span className="font-medium">
                     {((currentPage - 1) * 10) + 1}
@@ -805,7 +805,7 @@ const UsersManagement = () => {
                       className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
                         page === currentPage
                           ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
-                          : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                          : 'bg-card border-input text-muted-foreground hover:bg-accent'
                       }`}
                     >
                       {page}
@@ -821,17 +821,17 @@ const UsersManagement = () => {
       {/* Status Update Modal */}
       {showModal && selectedUser && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-card">
             <div className="mt-3">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">
+              <h3 className="text-lg font-medium text-card-foreground mb-4">
                 Update User Status
               </h3>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-foreground mb-2">
                     User: {selectedUser.fullName || selectedUser.name}
                   </label>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-foreground mb-2">
                     Email: {selectedUser.email}
                   </label>
                 </div>
@@ -845,9 +845,9 @@ const UsersManagement = () => {
                         isActive: e.target.checked,
                         is_active: e.target.checked 
                       }))}
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                      className="h-4 w-4 text-blue-600 focus:ring-ring border-input rounded"
                     />
-                    <span className="ml-2 text-sm text-gray-700">Active User</span>
+                    <span className="ml-2 text-sm text-foreground">Active User</span>
                   </label>
                 </div>
               </div>
@@ -886,18 +886,18 @@ const UsersManagement = () => {
       {/* Delete Confirmation Modal */}
       {showDeleteModal && userToDelete && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-card">
             <div className="mt-3">
               <div className="flex items-center space-x-3 mb-4">
                 <div className="p-2 bg-red-100 rounded-lg">
                   <AlertTriangle className="w-6 h-6 text-red-600" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-medium text-gray-900">Delete User</h3>
-                  <p className="text-sm text-gray-600">This action cannot be undone</p>
+                  <h3 className="text-lg font-medium text-card-foreground">Delete User</h3>
+                  <p className="text-sm text-muted-foreground">This action cannot be undone</p>
                 </div>
               </div>
-              <p className="text-sm text-gray-700 mb-6">
+              <p className="text-sm text-foreground mb-6">
                 Are you sure you want to delete <strong>{userToDelete.fullName || userToDelete.name}</strong>? 
                 This will deactivate the user account.
               </p>
@@ -928,41 +928,41 @@ const UsersManagement = () => {
       {/* KYC Status Update Modal */}
       {showKYCModal && selectedUserKYC && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white">
+          <div className="relative top-20 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-card">
             <div className="mt-3">
               <div className="flex items-center space-x-3 mb-6">
                 <div className="p-2 bg-blue-100 rounded-lg">
                   <Shield className="w-6 h-6 text-blue-600" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-medium text-gray-900">Update KYC Status</h3>
-                  <p className="text-sm text-gray-600">Review and approve user verification</p>
+                  <h3 className="text-lg font-medium text-card-foreground">Update KYC Status</h3>
+                  <p className="text-sm text-muted-foreground">Review and approve user verification</p>
                 </div>
               </div>
 
               {/* User Information */}
-              <div className="bg-gray-50 p-4 rounded-lg mb-6">
+              <div className="bg-accent p-4 rounded-lg mb-6">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <p className="text-xs text-gray-500 mb-1">User Name</p>
-                    <p className="text-sm font-medium text-gray-900">{selectedUserKYC.fullName || selectedUserKYC.name}</p>
+                    <p className="text-xs text-muted-foreground mb-1">User Name</p>
+                    <p className="text-sm font-medium text-card-foreground">{selectedUserKYC.fullName || selectedUserKYC.name}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-gray-500 mb-1">User ID</p>
-                    <p className="text-sm font-medium text-gray-900">{selectedUserKYC.displayCode || selectedUserKYC.id?.slice(0, 8)}</p>
+                    <p className="text-xs text-muted-foreground mb-1">User ID</p>
+                    <p className="text-sm font-medium text-card-foreground">{selectedUserKYC.displayCode || selectedUserKYC.id?.slice(0, 8)}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-gray-500 mb-1">Email</p>
-                    <p className="text-sm font-medium text-gray-900">{selectedUserKYC.email}</p>
+                    <p className="text-xs text-muted-foreground mb-1">Email</p>
+                    <p className="text-sm font-medium text-card-foreground">{selectedUserKYC.email}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-gray-500 mb-1">Phone</p>
-                    <p className="text-sm font-medium text-gray-900">{selectedUserKYC.phone || 'N/A'}</p>
+                    <p className="text-xs text-muted-foreground mb-1">Phone</p>
+                    <p className="text-sm font-medium text-card-foreground">{selectedUserKYC.phone || 'N/A'}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-gray-500 mb-1">Current KYC Status</p>
+                    <p className="text-xs text-muted-foreground mb-1">Current KYC Status</p>
                     {loadingKYC ? (
-                      <span className="text-sm text-gray-500">Loading...</span>
+                      <span className="text-sm text-muted-foreground">Loading...</span>
                     ) : (
                       <Badge variant={getKYCStatusBadge(kycData?.status || 'not_submitted').variant} className="inline-flex">
                         {getKYCStatusBadge(kycData?.status || 'not_submitted').text}
@@ -970,20 +970,20 @@ const UsersManagement = () => {
                     )}
                   </div>
                   <div>
-                    <p className="text-xs text-gray-500 mb-1">Joined Date</p>
-                    <p className="text-sm font-medium text-gray-900">{formatDate(selectedUserKYC.createdAt || selectedUserKYC.created_at)}</p>
+                    <p className="text-xs text-muted-foreground mb-1">Joined Date</p>
+                    <p className="text-sm font-medium text-card-foreground">{formatDate(selectedUserKYC.createdAt || selectedUserKYC.created_at)}</p>
                   </div>
                 </div>
               </div>
 
               {/* KYC Details from KYC Verification Table */}
               <div className="mb-6">
-                <h4 className="text-sm font-medium text-gray-900 mb-3">KYC Verification Details</h4>
-                <div className="bg-white border border-gray-200 rounded-lg p-4 space-y-3">
+                <h4 className="text-sm font-medium text-card-foreground mb-3">KYC Verification Details</h4>
+                <div className="bg-card border border-border rounded-lg p-4 space-y-3">
                   {loadingKYC ? (
                     <div className="text-center py-4">
                       <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div>
-                      <p className="text-sm text-gray-500 mt-2">Loading KYC data...</p>
+                      <p className="text-sm text-muted-foreground mt-2">Loading KYC data...</p>
                     </div>
                   ) : kycData ? (
                     <>
@@ -1004,26 +1004,26 @@ const UsersManagement = () => {
 
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <p className="text-xs text-gray-500 mb-1">Verification Type</p>
-                          <p className="text-sm text-gray-900 uppercase">{kycData.type || 'Not provided'}</p>
+                          <p className="text-xs text-muted-foreground mb-1">Verification Type</p>
+                          <p className="text-sm text-card-foreground uppercase">{kycData.type || 'Not provided'}</p>
                         </div>
                         <div>
-                          <p className="text-xs text-gray-500 mb-1">Submission Date</p>
-                          <p className="text-sm text-gray-900">{kycData.submittedAt ? formatDate(kycData.submittedAt) : 'Not provided'}</p>
+                          <p className="text-xs text-muted-foreground mb-1">Submission Date</p>
+                          <p className="text-sm text-card-foreground">{kycData.submittedAt ? formatDate(kycData.submittedAt) : 'Not provided'}</p>
                         </div>
                         <div>
-                          <p className="text-xs text-gray-500 mb-1">Reviewed By</p>
-                          <p className="text-sm text-gray-900">{kycData.reviewer || 'Not reviewed yet'}</p>
+                          <p className="text-xs text-muted-foreground mb-1">Reviewed By</p>
+                          <p className="text-sm text-card-foreground">{kycData.reviewer || 'Not reviewed yet'}</p>
                         </div>
                         <div>
-                          <p className="text-xs text-gray-500 mb-1">Reviewed Date</p>
-                          <p className="text-sm text-gray-900">{kycData.reviewedAt ? formatDate(kycData.reviewedAt) : 'Not reviewed yet'}</p>
+                          <p className="text-xs text-muted-foreground mb-1">Reviewed Date</p>
+                          <p className="text-sm text-card-foreground">{kycData.reviewedAt ? formatDate(kycData.reviewedAt) : 'Not reviewed yet'}</p>
                         </div>
                       </div>
                       
                       {/* Document Links */}
                       <div className="pt-3 border-t space-y-2">
-                        <p className="text-xs text-gray-500 mb-2">Uploaded Documents:</p>
+                        <p className="text-xs text-muted-foreground mb-2">Uploaded Documents:</p>
                         {kycData.documentFrontUrl && (
                           <div>
                             <a 
@@ -1061,15 +1061,15 @@ const UsersManagement = () => {
                           </div>
                         )}
                         {!kycData.documentFrontUrl && !kycData.documentBackUrl && !kycData.selfieUrl && (
-                          <p className="text-sm text-gray-500 italic">No documents uploaded</p>
+                          <p className="text-sm text-muted-foreground italic">No documents uploaded</p>
                         )}
                       </div>
 
                       {/* Additional Metadata */}
                       {kycData.metadata && Object.keys(kycData.metadata).length > 0 && (
                         <div className="pt-3 border-t">
-                          <p className="text-xs text-gray-500 mb-2">Additional Information:</p>
-                          <pre className="text-xs bg-gray-50 p-2 rounded overflow-auto">
+                          <p className="text-xs text-muted-foreground mb-2">Additional Information:</p>
+                          <pre className="text-xs bg-accent p-2 rounded overflow-auto">
                             {JSON.stringify(kycData.metadata, null, 2)}
                           </pre>
                         </div>
@@ -1084,12 +1084,12 @@ const UsersManagement = () => {
                       )}
                     </>
                   ) : (
-                    <div className="text-center py-8 bg-gray-50 rounded-lg">
-                      <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-200 mb-3">
-                        <XCircle className="w-8 h-8 text-gray-400" />
+                    <div className="text-center py-8 bg-accent rounded-lg">
+                      <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-muted mb-3">
+                        <XCircle className="w-8 h-8 text-muted-foreground" />
                       </div>
-                      <p className="text-base font-semibold text-gray-700 mb-1">KYC Not Submitted</p>
-                      <p className="text-sm text-gray-500">User hasn't submitted their KYC documents yet</p>
+                      <p className="text-base font-semibold text-foreground mb-1">KYC Not Submitted</p>
+                      <p className="text-sm text-muted-foreground">User hasn't submitted their KYC documents yet</p>
                       <div className="mt-4 p-3 bg-blue-50 rounded-md mx-8">
                         <p className="text-xs text-blue-700">
                           <strong>Note:</strong> User must submit their CNIC/documents before you can verify their account.
@@ -1157,7 +1157,7 @@ const UsersManagement = () => {
                     </div>
                   )
                 ) : (
-                  <p className="text-sm text-gray-500 italic">No KYC submitted - User needs to submit KYC documents first</p>
+                  <p className="text-sm text-muted-foreground italic">No KYC submitted - User needs to submit KYC documents first</p>
                 )}
               </div>
             </div>
@@ -1168,14 +1168,14 @@ const UsersManagement = () => {
       {/* User Details Modal */}
       {showUserDetailsModal && selectedUserDetails && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-10 mx-auto p-6 border w-full max-w-4xl shadow-lg rounded-md bg-white my-10">
+          <div className="relative top-10 mx-auto p-6 border w-full max-w-4xl shadow-lg rounded-md bg-card my-10">
             {/* Close Button */}
             <button
               onClick={() => {
                 setShowUserDetailsModal(false);
                 setSelectedUserDetails(null);
               }}
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+              className="absolute top-4 right-4 text-muted-foreground hover:text-muted-foreground"
             >
               <X className="w-6 h-6" />
             </button>
@@ -1189,10 +1189,10 @@ const UsersManagement = () => {
                   </span>
                 </div>
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-900">
+                  <h2 className="text-2xl font-bold text-card-foreground">
                     {selectedUserDetails.fullName || selectedUserDetails.name || 'Unknown User'}
                   </h2>
-                  <p className="text-gray-600 flex items-center mt-1">
+                  <p className="text-muted-foreground flex items-center mt-1">
                     <Mail className="w-4 h-4 mr-1" />
                     {selectedUserDetails.email}
                   </p>
@@ -1210,9 +1210,9 @@ const UsersManagement = () => {
               <Card className="p-4 border-l-4 border-green-500">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs text-gray-600 mb-1">Wallet Balance</p>
+                    <p className="text-xs text-muted-foreground mb-1">Wallet Balance</p>
                     {loadingFinancialData ? (
-                      <p className="text-sm text-gray-400">Loading...</p>
+                      <p className="text-sm text-muted-foreground">Loading...</p>
                     ) : (
                       <p className="text-lg font-bold text-green-600">
                         USD {(userFinancialData?.walletBalance || 0).toLocaleString()}
@@ -1228,9 +1228,9 @@ const UsersManagement = () => {
               <Card className="p-4 border-l-4 border-blue-500">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs text-gray-600 mb-1">Total Investments</p>
+                    <p className="text-xs text-muted-foreground mb-1">Total Investments</p>
                     {loadingFinancialData ? (
-                      <p className="text-sm text-gray-400">Loading...</p>
+                      <p className="text-sm text-muted-foreground">Loading...</p>
                     ) : (
                       <p className="text-lg font-bold text-blue-600">
                         USD {(userFinancialData?.totalInvestments || 0).toLocaleString()}
@@ -1246,9 +1246,9 @@ const UsersManagement = () => {
               <Card className="p-4 border-l-4 border-purple-500">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs text-gray-600 mb-1">Total Returns</p>
+                    <p className="text-xs text-muted-foreground mb-1">Total Returns</p>
                     {loadingFinancialData ? (
-                      <p className="text-sm text-gray-400">Loading...</p>
+                      <p className="text-sm text-muted-foreground">Loading...</p>
                     ) : (
                       <p className="text-lg font-bold text-purple-600">
                         USD {(userFinancialData?.totalReturns || 0).toLocaleString()}
@@ -1264,9 +1264,9 @@ const UsersManagement = () => {
               <Card className="p-4 border-l-4 border-orange-500">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs text-gray-600 mb-1">Properties</p>
+                    <p className="text-xs text-muted-foreground mb-1">Properties</p>
                     {loadingFinancialData ? (
-                      <p className="text-sm text-gray-400">Loading...</p>
+                      <p className="text-sm text-muted-foreground">Loading...</p>
                     ) : (
                       <p className="text-lg font-bold text-orange-600">
                         {userFinancialData?.propertiesInvested || 0}
@@ -1285,9 +1285,9 @@ const UsersManagement = () => {
               <Card className="p-4 border-l-4 border-indigo-500">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs text-gray-600 mb-1">Current Value</p>
+                    <p className="text-xs text-muted-foreground mb-1">Current Value</p>
                     {loadingFinancialData ? (
-                      <p className="text-sm text-gray-400">Loading...</p>
+                      <p className="text-sm text-muted-foreground">Loading...</p>
                     ) : (
                       <p className="text-lg font-bold text-indigo-600">
                         USD {(userFinancialData?.totalCurrentValue || 0).toLocaleString()}
@@ -1303,9 +1303,9 @@ const UsersManagement = () => {
               <Card className="p-4 border-l-4 border-yellow-500">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs text-gray-600 mb-1">Net ROI</p>
+                    <p className="text-xs text-muted-foreground mb-1">Net ROI</p>
                     {loadingFinancialData ? (
-                      <p className="text-sm text-gray-400">Loading...</p>
+                      <p className="text-sm text-muted-foreground">Loading...</p>
                     ) : (
                       <p className={`text-lg font-bold ${(userFinancialData?.totalNetROI || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                         USD {(userFinancialData?.totalNetROI || 0).toLocaleString()}
@@ -1321,9 +1321,9 @@ const UsersManagement = () => {
               <Card className="p-4 border-l-4 border-teal-500">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs text-gray-600 mb-1">Average ROI</p>
+                    <p className="text-xs text-muted-foreground mb-1">Average ROI</p>
                     {loadingFinancialData ? (
-                      <p className="text-sm text-gray-400">Loading...</p>
+                      <p className="text-sm text-muted-foreground">Loading...</p>
                     ) : (
                       <p className="text-lg font-bold text-teal-600">
                         {(userFinancialData?.averageROI || 0).toFixed(1)}%
@@ -1339,9 +1339,9 @@ const UsersManagement = () => {
               <Card className="p-4 border-l-4 border-cyan-500">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs text-gray-600 mb-1">Active Investments</p>
+                    <p className="text-xs text-muted-foreground mb-1">Active Investments</p>
                     {loadingFinancialData ? (
-                      <p className="text-sm text-gray-400">Loading...</p>
+                      <p className="text-sm text-muted-foreground">Loading...</p>
                     ) : (
                       <p className="text-lg font-bold text-cyan-600">
                         {userFinancialData?.activeInvestments || 0}
@@ -1358,49 +1358,49 @@ const UsersManagement = () => {
             {/* User Information */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
               <Card className="p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Personal Information</h3>
+                <h3 className="text-lg font-semibold text-card-foreground mb-4">Personal Information</h3>
                 <div className="space-y-3">
                   <div>
-                    <label className="block text-sm font-medium text-gray-600">Full Name</label>
-                    <p className="text-base text-gray-900">{selectedUserDetails.fullName || selectedUserDetails.name || 'N/A'}</p>
+                    <label className="block text-sm font-medium text-muted-foreground">Full Name</label>
+                    <p className="text-base text-card-foreground">{selectedUserDetails.fullName || selectedUserDetails.name || 'N/A'}</p>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-600">Email</label>
-                    <p className="text-base text-gray-900">{selectedUserDetails.email}</p>
+                    <label className="block text-sm font-medium text-muted-foreground">Email</label>
+                    <p className="text-base text-card-foreground">{selectedUserDetails.email}</p>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-600">Phone</label>
-                    <p className="text-base text-gray-900">{selectedUserDetails.phone || 'N/A'}</p>
+                    <label className="block text-sm font-medium text-muted-foreground">Phone</label>
+                    <p className="text-base text-card-foreground">{selectedUserDetails.phone || 'N/A'}</p>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-600">User ID</label>
-                    <p className="text-base text-gray-900 font-mono text-xs">{selectedUserDetails.id}</p>
+                    <label className="block text-sm font-medium text-muted-foreground">User ID</label>
+                    <p className="text-base text-card-foreground font-mono text-xs">{selectedUserDetails.id}</p>
                   </div>
                 </div>
               </Card>
 
               <Card className="p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Account Status</h3>
+                <h3 className="text-lg font-semibold text-card-foreground mb-4">Account Status</h3>
                 <div className="space-y-3">
                   <div>
-                    <label className="block text-sm font-medium text-gray-600">Account Status</label>
+                    <label className="block text-sm font-medium text-muted-foreground">Account Status</label>
                     <Badge variant={getStatusBadge(selectedUserDetails.isActive !== undefined ? selectedUserDetails.isActive : selectedUserDetails.is_active).variant}>
                       {getStatusBadge(selectedUserDetails.isActive !== undefined ? selectedUserDetails.isActive : selectedUserDetails.is_active).text}
                     </Badge>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-600">KYC Status</label>
+                    <label className="block text-sm font-medium text-muted-foreground">KYC Status</label>
                     <Badge variant={getKYCStatusBadge(getUserKYCStatus(selectedUserDetails)).variant}>
                       {getKYCStatusBadge(getUserKYCStatus(selectedUserDetails)).text}
                     </Badge>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-600">Joined Date</label>
-                    <p className="text-base text-gray-900">{formatDate(selectedUserDetails.createdAt || selectedUserDetails.created_at)}</p>
+                    <label className="block text-sm font-medium text-muted-foreground">Joined Date</label>
+                    <p className="text-base text-card-foreground">{formatDate(selectedUserDetails.createdAt || selectedUserDetails.created_at)}</p>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-600">Last Login</label>
-                    <p className="text-base text-gray-900">{selectedUserDetails.lastLogin ? formatDate(selectedUserDetails.lastLogin) : 'Never'}</p>
+                    <label className="block text-sm font-medium text-muted-foreground">Last Login</label>
+                    <p className="text-base text-card-foreground">{selectedUserDetails.lastLogin ? formatDate(selectedUserDetails.lastLogin) : 'Never'}</p>
                   </div>
                 </div>
               </Card>
@@ -1409,16 +1409,16 @@ const UsersManagement = () => {
             {/* Investment Details */}
             {userFinancialData && userFinancialData.investments && userFinancialData.investments.length > 0 && (
               <Card className="p-6 mb-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Investment Portfolio</h3>
+                <h3 className="text-lg font-semibold text-card-foreground mb-4">Investment Portfolio</h3>
                 <div className="overflow-x-auto">
                   <table className="w-full">
-                    <thead className="bg-gray-50">
+                    <thead className="bg-accent">
                       <tr>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Property</th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Amount Invested</th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Tokens</th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Returns</th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Status</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground">Property</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground">Amount Invested</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground">Tokens</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground">Returns</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground">Status</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
@@ -1434,14 +1434,14 @@ const UsersManagement = () => {
                           <tr key={index}>
                             <td className="px-4 py-2 text-sm">
                               <div>
-                                <p className="font-medium text-gray-900">{propertyName}</p>
+                                <p className="font-medium text-card-foreground">{propertyName}</p>
                                 {displayCode && (
-                                  <p className="text-xs text-gray-500">{displayCode}</p>
+                                  <p className="text-xs text-muted-foreground">{displayCode}</p>
                                 )}
                               </div>
                             </td>
-                            <td className="px-4 py-2 text-sm text-gray-900">USD {amount.toLocaleString()}</td>
-                            <td className="px-4 py-2 text-sm text-gray-900">{tokens.toLocaleString()}</td>
+                            <td className="px-4 py-2 text-sm text-card-foreground">USD {amount.toLocaleString()}</td>
+                            <td className="px-4 py-2 text-sm text-card-foreground">{tokens.toLocaleString()}</td>
                             <td className="px-4 py-2 text-sm text-green-600">USD {returns.toLocaleString()}</td>
                             <td className="px-4 py-2 text-sm">
                               <Badge variant={status === 'confirmed' || status === 'active' ? 'success' : status === 'pending' ? 'warning' : 'default'}>
@@ -1460,7 +1460,7 @@ const UsersManagement = () => {
             {/* Transaction History */}
             {userFinancialData && userFinancialData.transactions && userFinancialData.transactions.length > 0 && (
               <Card className="p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Transactions</h3>
+                <h3 className="text-lg font-semibold text-card-foreground mb-4">Recent Transactions</h3>
                 <div className="space-y-2">
                   {userFinancialData.transactions.slice(0, 5).map((transaction, index) => {
                     const txType = transaction.type || 'unknown';
@@ -1468,19 +1468,19 @@ const UsersManagement = () => {
                     const amount = parseFloat(transaction.amountUSDT || transaction.amount_in_pkr || transaction.amount || 0);
                     
                     return (
-                      <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div key={index} className="flex items-center justify-between p-3 bg-accent rounded-lg">
                         <div className="flex items-center space-x-3">
                           <div className={`p-2 rounded-lg ${isDeposit ? 'bg-green-100' : 'bg-red-100'}`}>
                             <DollarSign className={`w-4 h-4 ${isDeposit ? 'text-green-600' : 'text-red-600'}`} />
                           </div>
                           <div>
                             <div className="flex items-center space-x-2">
-                              <p className="text-sm font-medium text-gray-900">{transaction.description || txType}</p>
+                              <p className="text-sm font-medium text-card-foreground">{transaction.description || txType}</p>
                               {transaction.displayCode && (
-                                <span className="text-xs text-gray-500">({transaction.displayCode})</span>
+                                <span className="text-xs text-muted-foreground">({transaction.displayCode})</span>
                               )}
                             </div>
-                            <p className="text-xs text-gray-500">{formatDate(transaction.createdAt || transaction.date)}</p>
+                            <p className="text-xs text-muted-foreground">{formatDate(transaction.createdAt || transaction.date)}</p>
                           </div>
                         </div>
                         <div className="text-right">

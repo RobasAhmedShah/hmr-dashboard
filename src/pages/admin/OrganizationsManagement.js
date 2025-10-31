@@ -124,7 +124,7 @@ const OrganizationsManagement = () => {
       <div className="flex items-center justify-center py-12">
         <div className="text-center">
           <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading organizations...</p>
+          <p className="mt-4 text-muted-foreground">Loading organizations...</p>
         </div>
       </div>
     );
@@ -135,8 +135,8 @@ const OrganizationsManagement = () => {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Organizations Management</h2>
-          <p className="text-gray-600">
+          <h2 className="text-2xl font-bold text-card-foreground">Organizations Management</h2>
+          <p className="text-muted-foreground">
             Manage organizations and their admin credentials
             <span className="ml-2 text-blue-600 font-medium">
               ({filteredOrganizations.length} of {organizations.length} {organizations.length === 1 ? 'organization' : 'organizations'})
@@ -154,13 +154,13 @@ const OrganizationsManagement = () => {
 
       {/* Search Bar */}
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
         <input
           type="text"
           placeholder="Search organizations by name, description, or ID..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          className="w-full pl-10 pr-4 py-3 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
         />
       </div>
 
@@ -174,8 +174,8 @@ const OrganizationsManagement = () => {
                   <Building2 className="w-6 h-6 text-blue-600" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900">{org.name}</h3>
-                  <p className="text-sm text-gray-500">{org.displayCode}</p>
+                  <h3 className="text-lg font-semibold text-card-foreground">{org.name}</h3>
+                  <p className="text-sm text-muted-foreground">{org.displayCode}</p>
                 </div>
               </div>
               <Badge variant={org.isActive ? 'green' : 'red'}>
@@ -184,12 +184,12 @@ const OrganizationsManagement = () => {
             </div>
 
             {org.description && (
-              <p className="text-sm text-gray-600 mb-4">{org.description}</p>
+              <p className="text-sm text-muted-foreground mb-4">{org.description}</p>
             )}
 
             {org.website && (
-              <div className="flex items-center gap-2 text-sm text-gray-600 mb-4">
-                <Home className="w-4 h-4 text-gray-400" />
+              <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
+                <Home className="w-4 h-4 text-muted-foreground" />
                 <a href={org.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
                   {org.website}
                 </a>
@@ -198,20 +198,20 @@ const OrganizationsManagement = () => {
 
             {/* Admin Info */}
             {org.admin ? (
-              <div className="bg-gray-50 rounded-lg p-4 mb-4">
-                <p className="text-xs font-medium text-gray-500 uppercase mb-2">Organization Admin</p>
+              <div className="bg-accent rounded-lg p-4 mb-4">
+                <p className="text-xs font-medium text-muted-foreground uppercase mb-2">Organization Admin</p>
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 text-sm">
-                    <Mail className="w-4 h-4 text-gray-400" />
-                    <span className="text-gray-900">{org.admin.email}</span>
+                    <Mail className="w-4 h-4 text-muted-foreground" />
+                    <span className="text-card-foreground">{org.admin.email}</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
-                    <Users className="w-4 h-4 text-gray-400" />
-                    <span className="text-gray-600">{org.admin.fullName}</span>
+                    <Users className="w-4 h-4 text-muted-foreground" />
+                    <span className="text-muted-foreground">{org.admin.fullName}</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
-                    <Calendar className="w-4 h-4 text-gray-400" />
-                    <span className="text-gray-600">Last login: {formatDate(org.admin.lastLogin)}</span>
+                    <Calendar className="w-4 h-4 text-muted-foreground" />
+                    <span className="text-muted-foreground">Last login: {formatDate(org.admin.lastLogin)}</span>
                   </div>
                 </div>
               </div>
@@ -227,16 +227,16 @@ const OrganizationsManagement = () => {
             {org.stats && (
               <div className="grid grid-cols-3 gap-4 mb-4 pb-4 border-b">
                 <div className="text-center">
-                  <p className="text-2xl font-bold text-gray-900">{org.stats.totalProperties || 0}</p>
-                  <p className="text-xs text-gray-500">Properties</p>
+                  <p className="text-2xl font-bold text-card-foreground">{org.stats.totalProperties || 0}</p>
+                  <p className="text-xs text-muted-foreground">Properties</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-2xl font-bold text-gray-900">{org.stats.totalInvestments || 0}</p>
-                  <p className="text-xs text-gray-500">Investments</p>
+                  <p className="text-2xl font-bold text-card-foreground">{org.stats.totalInvestments || 0}</p>
+                  <p className="text-xs text-muted-foreground">Investments</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-2xl font-bold text-gray-900">{org.stats.totalUsers || 0}</p>
-                  <p className="text-xs text-gray-500">Users</p>
+                  <p className="text-2xl font-bold text-card-foreground">{org.stats.totalUsers || 0}</p>
+                  <p className="text-xs text-muted-foreground">Users</p>
                 </div>
               </div>
             )}
@@ -284,11 +284,11 @@ const OrganizationsManagement = () => {
       {/* Empty State */}
       {filteredOrganizations.length === 0 && (
         <Card className="p-12 text-center">
-          <Building2 className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+          <Building2 className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
           {searchQuery ? (
             <>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No organizations found</h3>
-              <p className="text-gray-500 mb-6">
+              <h3 className="text-lg font-medium text-card-foreground mb-2">No organizations found</h3>
+              <p className="text-muted-foreground mb-6">
                 No organizations match your search "{searchQuery}"
               </p>
               <Button variant="outline" onClick={() => setSearchQuery('')}>
@@ -297,8 +297,8 @@ const OrganizationsManagement = () => {
             </>
           ) : (
             <>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No organizations yet</h3>
-              <p className="text-gray-500 mb-6">Create your first organization to get started</p>
+              <h3 className="text-lg font-medium text-card-foreground mb-2">No organizations yet</h3>
+              <p className="text-muted-foreground mb-6">Create your first organization to get started</p>
               <Button onClick={() => setShowCreateModal(true)}>
                 <Plus className="w-4 h-4 mr-2" />
                 Create Organization
