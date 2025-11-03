@@ -5,14 +5,19 @@ const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://hmr-backend.verce
 // Create axios instance
 const api = axios.create({
   baseURL: API_BASE_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
+  // Don't set default Content-Type - let axios set it based on data type
+  // For JSON requests, axios will set 'application/json'
+  // For FormData, axios will set 'multipart/form-data' with boundary automatically
 });
 
 // Request interceptor (no auth needed for demo)
 api.interceptors.request.use(
   (config) => {
+    // Set Content-Type for JSON requests (non-FormData)
+    if (!(config.data instanceof FormData) && !config.headers['Content-Type']) {
+      config.headers['Content-Type'] = 'application/json';
+    }
+    // For FormData, let axios/browser set Content-Type automatically with boundary
     return config;
   },
   (error) => {
@@ -268,17 +273,12 @@ export const rewardsAPI = {
 // Upload API (File uploads)
 export const uploadAPI = {
   // Upload single image
-  uploadImage: (category, formData) => api.post(`/upload/image/${category}`, formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-  }),
+  // Axios will automatically detect FormData and set Content-Type with boundary
+  uploadImage: (category, formData) => api.post(`/upload/image/${category}`, formData),
   // Upload multiple images
-  uploadImages: (category, formData) => api.post(`/upload/images/${category}`, formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-  }),
+  uploadImages: (category, formData) => api.post(`/upload/images/${category}`, formData),
   // Upload document
-  uploadDocument: (category, formData) => api.post(`/upload/document/${category}`, formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-  }),
+  uploadDocument: (category, formData) => api.post(`/upload/document/${category}`, formData),
   // Get file URL
   getFileUrl: (category, filename) => `${API_BASE_URL}/upload/file/${category}/${filename}`,
   // Check if file exists
