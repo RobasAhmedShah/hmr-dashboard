@@ -17,6 +17,7 @@ import {
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import Badge from '../../components/ui/Badge';
+import ThemeToggle from '../../components/ThemeToggle';
 import { organizationsAPI, adminAPI } from '../../services/api';
 import { useOrganizationAuth } from '../../components/organization/OrganizationAuth';
 import OrgPropertiesManagement from './OrgPropertiesManagement';
@@ -486,8 +487,8 @@ const OrgDashboard = () => {
     >
       <div className="flex items-center justify-between">
         <div className="flex-1">
-          <p className="text-sm font-medium text-gray-600">{title}</p>
-          <p className="text-3xl font-bold text-gray-900 mt-2">{value}</p>
+          <p className="text-sm font-medium text-muted-foreground">{title}</p>
+          <p className="text-3xl font-bold text-card-foreground mt-2">{value}</p>
         </div>
         <div className={`p-4 rounded-2xl bg-gradient-to-br from-${color}-100 to-${color}-200`}>
           <Icon className={`w-8 h-8 text-${color}-600`} />
@@ -522,9 +523,9 @@ const OrgDashboard = () => {
     <div className="space-y-6">
       {/* Primary Stats Grid - ORGANIZATION-SPECIFIC */}
       <div className="mb-2">
-        <p className="text-xs text-gray-500 font-medium flex items-center">
+        <p className="text-xs text-muted-foreground font-medium flex items-center">
           <span className="mr-2">🏢</span>
-          Showing data for <span className="mx-1 font-bold text-blue-600">{organizationName}</span> only (Organization ID: {organizationId})
+          Showing data for <span className="mx-1 font-bold text-primary">{organizationName}</span> only (Organization ID: {organizationId})
         </p>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -563,10 +564,10 @@ const OrgDashboard = () => {
         <Card className="p-6">
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Investment Count</span>
+              <span className="text-sm text-muted-foreground">Investment Count</span>
               <TrendingUp className="w-4 h-4 text-purple-600" />
             </div>
-            <p className="text-2xl font-bold text-gray-900">
+            <p className="text-2xl font-bold text-card-foreground">
               {stats.totalInvestmentCount || 0}
             </p>
             <div className="flex items-center space-x-2 text-xs">
@@ -580,13 +581,13 @@ const OrgDashboard = () => {
         <Card className="p-6">
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Transaction Amount</span>
+              <span className="text-sm text-muted-foreground">Transaction Amount</span>
               <DollarSign className="w-4 h-4 text-orange-600" />
             </div>
-            <p className="text-2xl font-bold text-gray-900">
+            <p className="text-2xl font-bold text-card-foreground">
               {formatCurrency(stats.totalTransactionAmount || 0)}
             </p>
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-muted-foreground">
               Total value of all transactions
             </p>
           </div>
@@ -595,13 +596,13 @@ const OrgDashboard = () => {
         <Card className="p-6">
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Property Value</span>
+              <span className="text-sm text-muted-foreground">Property Value</span>
               <Building2 className="w-4 h-4 text-green-600" />
             </div>
-            <p className="text-2xl font-bold text-gray-900">
+            <p className="text-2xl font-bold text-card-foreground">
               {formatCurrency(stats.totalPropertyValue || 0)}
             </p>
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-muted-foreground">
               Combined value of all properties
             </p>
           </div>
@@ -609,17 +610,17 @@ const OrgDashboard = () => {
       </div>
 
       {/* Organization Info Card */}
-      <Card className="p-6 bg-gradient-to-br from-blue-50 to-purple-50 border-blue-200">
+      <Card className="p-6 bg-gradient-to-br from-primary/10 to-purple-50 border-primary/20">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
-            <div className="p-3 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full">
+            <div className="p-3 bg-gradient-to-br from-primary/100 to-primary/80 rounded-full">
               <Building2 className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-gray-900">
+              <h3 className="text-lg font-semibold text-card-foreground">
                 Welcome to {organizationName} Dashboard
               </h3>
-              <p className="text-sm text-gray-600 mt-1">
+              <p className="text-sm text-muted-foreground mt-1">
                 Manage your properties, users, investments, and transactions all in one place.
               </p>
               <div className="flex items-center space-x-4 mt-2">
@@ -627,7 +628,7 @@ const OrgDashboard = () => {
                   Organization ID: {organizationId}
                 </Badge>
                 {organizationUser?.backendOrganizationName && (
-                  <span className="text-xs text-gray-500">
+                  <span className="text-xs text-muted-foreground">
                     Backend: {organizationUser.backendOrganizationName}
                   </span>
                 )}
@@ -635,9 +636,9 @@ const OrgDashboard = () => {
             </div>
           </div>
           <div className="text-right">
-            <div className="text-xs text-gray-500">Logged in as</div>
-            <div className="text-sm font-medium text-gray-900">{organizationUser?.email}</div>
-            <div className="text-xs text-gray-500 mt-1">
+            <div className="text-xs text-muted-foreground">Logged in as</div>
+            <div className="text-sm font-medium text-card-foreground">{organizationUser?.email}</div>
+            <div className="text-xs text-muted-foreground mt-1">
               {new Date().toLocaleDateString('en-US', { 
                 weekday: 'long', 
                 year: 'numeric', 
@@ -651,7 +652,7 @@ const OrgDashboard = () => {
 
       {/* Quick Actions */}
       <Card className="p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
+        <h3 className="text-lg font-semibold text-card-foreground mb-4">Quick Actions</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <Button 
             variant="outline" 
@@ -689,7 +690,7 @@ const OrgDashboard = () => {
       </Card>
 
       {/* API Status & Data Sources (Debug Info) */}
-      <Card className="p-6 bg-gradient-to-br from-green-50 to-blue-50 border-green-200">
+      <Card className="p-6 bg-gradient-to-br from-green-50 to-primary/10 border-green-200">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-sm font-semibold text-gray-700 flex items-center">
             <span className="mr-2">📡</span> Organization-Specific API Status
@@ -698,23 +699,23 @@ const OrgDashboard = () => {
             Filtered by {organizationId}
           </Badge>
         </div>
-        <p className="text-xs text-gray-600 mb-4 font-medium">
-          ⚠️ All endpoints below return data ONLY for <span className="text-blue-600 font-bold">{organizationName}</span>, not totals
+        <p className="text-xs text-muted-foreground mb-4 font-medium">
+          ⚠️ All endpoints below return data ONLY for <span className="text-primary font-bold">{organizationName}</span>, not totals
         </p>
         
         {/* Primary Dashboard Endpoint */}
-        <div className="mb-4 bg-blue-50 border border-blue-200 rounded-lg p-3">
+        <div className="mb-4 bg-primary/10 border border-primary/20 rounded-lg p-3">
           <div className="flex items-center justify-between mb-1">
-            <span className="text-xs font-semibold text-blue-900">📊 Dashboard API (Primary)</span>
+            <span className="text-xs font-semibold text-primary">📊 Dashboard API (Primary)</span>
             <span className={`text-xs ${dashboardStats ? 'text-green-600' : 'text-gray-400'}`}>
               {dashboardStats ? '✓ Active' : '○ Not Used'}
             </span>
           </div>
-          <div className="text-xs text-blue-700 mt-1 font-mono">
+          <div className="text-xs text-primary mt-1 font-mono">
             GET /admin/dashboard?organizationId={organizationId}
           </div>
           {dashboardStats && (
-            <div className="text-xs text-blue-600 mt-2">
+            <div className="text-xs text-primary mt-2">
               Returns: Properties, Investments, Transactions, Investors, Liquidity
             </div>
           )}
@@ -722,77 +723,77 @@ const OrgDashboard = () => {
         
         {/* Individual Endpoints */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-white rounded-lg p-3 border border-gray-200 shadow-sm">
+          <div className="bg-card rounded-lg p-3 border border-border shadow-sm">
             <div className="flex items-center justify-between mb-1">
-              <span className="text-xs font-medium text-gray-600">Properties</span>
+              <span className="text-xs font-medium text-muted-foreground">Properties</span>
               <span className={`text-xs ${stats.totalProperties > 0 ? 'text-green-600' : 'text-gray-400'}`}>
                 {stats.totalProperties > 0 ? '✓' : '○'}
               </span>
             </div>
-            <div className="text-sm font-bold text-gray-900">
+            <div className="text-sm font-bold text-card-foreground">
               {stats.totalProperties} {organizationName} properties
             </div>
-            <div className="text-xs text-gray-500 mt-1 font-mono truncate" title={dashboardStats ? 'From Dashboard API' : `GET /properties?org=${organizationId}`}>
+            <div className="text-xs text-muted-foreground mt-1 font-mono truncate" title={dashboardStats ? 'From Dashboard API' : `GET /properties?org=${organizationId}`}>
               {dashboardStats ? 'Dashboard API' : `GET /properties?org=...`}
             </div>
           </div>
 
-          <div className="bg-white rounded-lg p-3 border border-gray-200 shadow-sm">
+          <div className="bg-card rounded-lg p-3 border border-border shadow-sm">
             <div className="flex items-center justify-between mb-1">
-              <span className="text-xs font-medium text-gray-600">Investors</span>
+              <span className="text-xs font-medium text-muted-foreground">Investors</span>
               <span className={`text-xs ${stats.totalUsers > 0 ? 'text-green-600' : 'text-gray-400'}`}>
                 {stats.totalUsers > 0 ? '✓' : '○'}
               </span>
             </div>
-            <div className="text-sm font-bold text-gray-900">
+            <div className="text-sm font-bold text-card-foreground">
               {stats.totalUsers} {organizationName} investors
             </div>
-            <div className="text-xs text-gray-500 mt-1 font-mono truncate" title={dashboardStats ? 'From Dashboard API' : `GET /admin/users?org=${organizationId}`}>
+            <div className="text-xs text-muted-foreground mt-1 font-mono truncate" title={dashboardStats ? 'From Dashboard API' : `GET /admin/users?org=${organizationId}`}>
               {dashboardStats ? 'Dashboard API' : `GET /admin/users?org=...`}
             </div>
           </div>
 
-          <div className="bg-white rounded-lg p-3 border border-gray-200 shadow-sm">
+          <div className="bg-card rounded-lg p-3 border border-border shadow-sm">
             <div className="flex items-center justify-between mb-1">
-              <span className="text-xs font-medium text-gray-600">Investments</span>
+              <span className="text-xs font-medium text-muted-foreground">Investments</span>
               <span className={`text-xs ${stats.totalInvestmentCount > 0 ? 'text-green-600' : 'text-gray-400'}`}>
                 {stats.totalInvestmentCount > 0 ? '✓' : '○'}
               </span>
             </div>
-            <div className="text-sm font-bold text-gray-900">
+            <div className="text-sm font-bold text-card-foreground">
               {stats.totalInvestmentCount} {organizationName} investments
             </div>
-            <div className="text-xs text-gray-500 mt-1 font-mono truncate" title={dashboardStats ? 'From Dashboard API' : `GET /investments?org=${organizationId}`}>
+            <div className="text-xs text-muted-foreground mt-1 font-mono truncate" title={dashboardStats ? 'From Dashboard API' : `GET /investments?org=${organizationId}`}>
               {dashboardStats ? 'Dashboard API' : `GET /investments?org=...`}
             </div>
           </div>
 
-          <div className="bg-white rounded-lg p-3 border border-gray-200 shadow-sm">
+          <div className="bg-card rounded-lg p-3 border border-border shadow-sm">
             <div className="flex items-center justify-between mb-1">
-              <span className="text-xs font-medium text-gray-600">Transactions</span>
+              <span className="text-xs font-medium text-muted-foreground">Transactions</span>
               <span className={`text-xs ${stats.totalTransactions > 0 ? 'text-green-600' : 'text-gray-400'}`}>
                 {stats.totalTransactions > 0 ? '✓' : '○'}
               </span>
             </div>
-            <div className="text-sm font-bold text-gray-900">
+            <div className="text-sm font-bold text-card-foreground">
               {stats.totalTransactions} {organizationName} transactions
             </div>
-            <div className="text-xs text-gray-500 mt-1 font-mono truncate" title={`GET /organizations/${organizationId}/transactions`}>
+            <div className="text-xs text-muted-foreground mt-1 font-mono truncate" title={`GET /organizations/${organizationId}/transactions`}>
               GET /organizations/:id/tx
             </div>
           </div>
         </div>
         
-        <div className="mt-4 pt-4 border-t border-gray-200">
+        <div className="mt-4 pt-4 border-t border-border">
           <div className="flex items-center justify-between text-xs flex-wrap gap-2">
-            <span className="text-gray-600">
+            <span className="text-muted-foreground">
               <span className="font-medium">Data Source:</span> {dashboardStats ? 'Dashboard API' : 'Individual Org APIs'}
             </span>
-            <span className="text-gray-600 font-medium flex items-center">
+            <span className="text-muted-foreground font-medium flex items-center">
               <span className="mr-1">🏢</span>
-              <span className="font-medium">Organization:</span> <span className="ml-1 text-blue-600">{organizationId}</span>
+              <span className="font-medium">Organization:</span> <span className="ml-1 text-primary">{organizationId}</span>
             </span>
-            <span className="text-gray-600">
+            <span className="text-muted-foreground">
               <span className="font-medium">Last Updated:</span> {new Date().toLocaleTimeString()}
             </span>
           </div>
@@ -806,7 +807,7 @@ const OrgDashboard = () => {
         <Card className="p-6 text-center">
           <div className="flex items-center justify-center space-x-2">
             <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-            <span className="text-gray-600">Loading dashboard data...</span>
+            <span className="text-muted-foreground">Loading dashboard data...</span>
           </div>
         </Card>
       )}
@@ -818,28 +819,27 @@ const OrgDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       {/* Header */}
-      <div className="bg-white shadow-sm">
+      <div className="bg-card shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center space-x-4">
-              <div className="p-2 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg">
-                <Building2 className="w-6 h-6 text-white" />
-              </div>
+              <img src="/logo.svg" alt="Logo" className="w-10 h-10 rounded-lg" />
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">{organizationName}</h1>
-                <p className="text-sm text-gray-500">Organization Dashboard</p>
+                <h1 className="text-2xl font-bold text-card-foreground">{organizationName}</h1>
+                <p className="text-sm text-muted-foreground">Organization Dashboard</p>
               </div>
             </div>
             <div className="flex items-center space-x-4">
               <Badge variant="blue" className="text-sm px-4 py-2">
                 {organizationSlug.toUpperCase()}
               </Badge>
-              <div className="flex items-center space-x-2 text-sm text-gray-600">
+              <div className="flex items-center space-x-2 text-sm text-muted-foreground">
                 <Shield className="w-4 h-4" />
                 <span>{organizationUser?.email}</span>
               </div>
+              <ThemeToggle />
               <Button variant="outline" onClick={handleLogout} className="flex items-center space-x-2">
                 <LogOut className="w-4 h-4" />
                 <span className="hidden sm:inline">Logout</span>
@@ -850,7 +850,7 @@ const OrgDashboard = () => {
       </div>
 
       {/* Organization Info Banner */}
-      <div className="bg-gradient-to-r from-blue-500 to-purple-600 border-b">
+      <div className="bg-gradient-to-r from-primary to-primary/80 border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
           <div className="flex items-center justify-between text-white">
             <div className="flex items-center space-x-3">
@@ -864,7 +864,7 @@ const OrgDashboard = () => {
                 </p>
               </div>
             </div>
-            <Badge className="bg-white text-blue-600 font-semibold">
+            <Badge className="bg-card text-primary font-semibold">
               {organizationSlug.toUpperCase()}
             </Badge>
           </div>
@@ -873,7 +873,7 @@ const OrgDashboard = () => {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Navigation Tabs */}
-        <div className="mb-8 bg-white rounded-lg shadow-sm p-2 overflow-x-auto">
+        <div className="mb-8 bg-card rounded-lg shadow-sm p-2 overflow-x-auto">
           <nav className="flex space-x-2 min-w-max">
             {tabs.map((tab) => {
               const Icon = tab.icon;
@@ -883,8 +883,8 @@ const OrgDashboard = () => {
                   onClick={() => setActiveTab(tab.id)}
                   className={`flex items-center space-x-2 py-3 px-4 rounded-lg font-medium text-sm transition-all duration-200 whitespace-nowrap ${
                     activeTab === tab.id
-                      ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-md'
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                      ? 'bg-gradient-to-r from-primary to-primary/80 text-primary-foreground shadow-md'
+                      : 'text-muted-foreground hover:text-card-foreground hover:bg-accent'
                   }`}
                 >
                   <Icon className="w-4 h-4" />

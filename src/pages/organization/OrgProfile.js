@@ -55,31 +55,31 @@ const OrgProfile = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold text-gray-900">Profile Settings</h2>
-        <p className="text-gray-600">Manage your account settings and credentials</p>
+        <h2 className="text-2xl font-bold text-card-foreground">Profile Settings</h2>
+        <p className="text-muted-foreground">Manage your account settings and credentials</p>
       </div>
 
       {/* Organization Info */}
       <Card className="p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Organization</h3>
+        <h3 className="text-lg font-semibold text-card-foreground mb-4">Organization</h3>
         <div className="space-y-4">
           <div className="flex items-center gap-3">
-            <div className="p-3 bg-blue-100 rounded-lg">
-              <Building2 className="w-5 h-5 text-blue-600" />
+            <div className="p-3 bg-primary/20 rounded-lg">
+              <Building2 className="w-5 h-5 text-primary" />
             </div>
             <div>
-              <p className="text-sm text-gray-500">Organization Name</p>
-              <p className="text-base font-medium text-gray-900">{organizationName}</p>
+              <p className="text-sm text-muted-foreground">Organization Name</p>
+              <p className="text-base font-medium text-card-foreground">{organizationName}</p>
             </div>
           </div>
 
           {displayCode && (
             <div className="flex items-start gap-3">
-              <div className="p-3 bg-purple-100 rounded-lg">
+              <div className="p-3 bg-primary/20 rounded-lg">
                 <Building2 className="w-5 h-5 text-purple-600" />
               </div>
               <div>
-                <p className="text-sm text-gray-500">Organization ID</p>
+                <p className="text-sm text-muted-foreground">Organization ID</p>
                 <Badge variant="blue" className="mt-1">{displayCode}</Badge>
               </div>
             </div>
@@ -89,15 +89,15 @@ const OrgProfile = () => {
 
       {/* Profile Info */}
       <Card className="p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Account Information</h3>
+        <h3 className="text-lg font-semibold text-card-foreground mb-4">Account Information</h3>
         <div className="space-y-4">
           <div className="flex items-center gap-3">
             <div className="p-3 bg-green-100 rounded-lg">
               <Mail className="w-5 h-5 text-green-600" />
             </div>
             <div>
-              <p className="text-sm text-gray-500">Email</p>
-              <p className="text-base font-medium text-gray-900">{adminEmail}</p>
+              <p className="text-sm text-muted-foreground">Email</p>
+              <p className="text-base font-medium text-card-foreground">{adminEmail}</p>
             </div>
           </div>
 
@@ -107,8 +107,8 @@ const OrgProfile = () => {
                 <User className="w-5 h-5 text-orange-600" />
               </div>
               <div>
-                <p className="text-sm text-gray-500">Full Name</p>
-                <p className="text-base font-medium text-gray-900">{adminFullName}</p>
+                <p className="text-sm text-muted-foreground">Full Name</p>
+                <p className="text-base font-medium text-card-foreground">{adminFullName}</p>
               </div>
             </div>
           )}
@@ -119,8 +119,8 @@ const OrgProfile = () => {
       <Card className="p-6">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h3 className="text-lg font-semibold text-gray-900">Password</h3>
-            <p className="text-sm text-gray-500 mt-1">Update your password to keep your account secure</p>
+            <h3 className="text-lg font-semibold text-card-foreground">Password</h3>
+            <p className="text-sm text-muted-foreground mt-1">Update your password to keep your account secure</p>
           </div>
           {!showChangePassword && (
             <Button
@@ -190,8 +190,8 @@ const OrgProfile = () => {
             </div>
           </form>
         ) : (
-          <div className="bg-gray-50 rounded-lg p-4 mt-6">
-            <p className="text-sm text-gray-600">
+          <div className="bg-background rounded-lg p-4 mt-6">
+            <p className="text-sm text-muted-foreground">
               💡 <strong>Tip:</strong> Use a strong password with at least 8 characters, including uppercase, lowercase, numbers, and special characters.
             </p>
           </div>

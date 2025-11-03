@@ -24,12 +24,8 @@ const Header = () => {
           {/* Logo */}
           <div className="flex-shrink-0">
             <Link to="/" className="flex items-center">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <Building2 className="w-5 h-5 text-primary-foreground" />
-              </div>
-              <span className="ml-2 text-xl font-bold text-foreground">
-                HMR Builders
-              </span>
+              <img src="/logo.svg" alt="Logo" className="w-8 h-8 rounded-lg" />
+              <span className="ml-2 text-xl font-bold text-foreground">HMR Builders</span>
             </Link>
           </div>
 

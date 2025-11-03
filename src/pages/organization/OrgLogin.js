@@ -4,6 +4,7 @@ import { Building2, Eye, EyeOff, LogIn } from 'lucide-react';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import Badge from '../../components/ui/Badge';
+import ThemeToggle from '../../components/ThemeToggle';
 import { useOrganizationAuth } from '../../components/organization/OrganizationAuth';
 
 const OrgLogin = () => {
@@ -61,16 +62,17 @@ const OrgLogin = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-background flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative">
+      <div className="absolute top-4 right-4">
+        <ThemeToggle />
+      </div>
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
-          <div className="mx-auto h-16 w-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center shadow-lg">
-            <Building2 className="h-8 w-8 text-white" />
-          </div>
-          <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
+          <img src="/logo.svg" alt="Logo" className="mx-auto h-16 w-16 rounded-lg shadow-lg" />
+          <h2 className="mt-6 text-3xl font-extrabold text-card-foreground">
             Organization Portal
           </h2>
-          <p className="mt-2 text-sm text-gray-600">
+          <p className="mt-2 text-sm text-muted-foreground">
             Sign in to manage your organization
           </p>
           <div className="mt-4 flex items-center justify-center space-x-2">
@@ -88,7 +90,7 @@ const OrgLogin = () => {
             )}
 
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="email" className="block text-sm font-medium text-foreground mb-1">
                 Email Address
               </label>
               <input
@@ -98,13 +100,13 @@ const OrgLogin = () => {
                 required
                 value={formData.email}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-primary"
                 placeholder="admin@organization.com"
               />
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="password" className="block text-sm font-medium text-foreground mb-1">
                 Password
               </label>
               <div className="relative">
@@ -115,13 +117,13 @@ const OrgLogin = () => {
                   required
                   value={formData.password}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 pr-10"
+                  className="w-full px-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-primary pr-10"
                   placeholder="Enter your password"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-muted-foreground"
                 >
                   {showPassword ? (
                     <EyeOff className="w-4 h-4" />
@@ -150,20 +152,20 @@ const OrgLogin = () => {
               )}
             </Button>
 
-            <div className="pt-4 border-t border-gray-200">
-              <p className="text-sm text-gray-600 mb-3">Quick Login:</p>
+            <div className="pt-4 border-t border-border">
+              <p className="text-sm text-muted-foreground mb-3">Quick Login:</p>
               <div className="grid grid-cols-2 gap-3">
                 <button
                   type="button"
                   onClick={fillHMRCredentials}
-                  className="px-4 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors text-sm font-medium"
+                  className="px-4 py-2 bg-primary/10 text-primary rounded-lg hover:bg-primary/20 transition-colors text-sm font-medium"
                 >
                   🏢 HMR
                 </button>
                 <button
                   type="button"
                   onClick={fillSaimaCredentials}
-                  className="px-4 py-2 bg-purple-50 text-purple-700 rounded-lg hover:bg-purple-100 transition-colors text-sm font-medium"
+                  className="px-4 py-2 bg-primary/10 text-primary rounded-lg hover:bg-primary/20 transition-colors text-sm font-medium"
                 >
                   🏢 Saima
                 </button>
@@ -171,19 +173,19 @@ const OrgLogin = () => {
             </div>
           </form>
 
-          <div className="mt-6 p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border border-blue-100">
-            <h3 className="text-sm font-semibold text-gray-800 mb-3">Demo Credentials:</h3>
+          <div className="mt-6 p-4 bg-accent rounded-lg border border-border">
+            <h3 className="text-sm font-semibold text-card-foreground mb-3">Demo Credentials:</h3>
             <div className="space-y-2">
-              <div className="bg-white p-2 rounded border border-blue-200">
-                <p className="text-xs font-medium text-blue-700">HMR Company:</p>
-                <p className="text-xs text-gray-600">
+              <div className="bg-card p-2 rounded border border-border">
+                <p className="text-xs font-medium text-primary">HMR Company:</p>
+                <p className="text-xs text-muted-foreground">
                   <strong>Email:</strong> admin@hmr.com<br />
                   <strong>Password:</strong> hmr123
                 </p>
               </div>
-              <div className="bg-white p-2 rounded border border-purple-200">
-                <p className="text-xs font-medium text-purple-700">Saima Company:</p>
-                <p className="text-xs text-gray-600">
+              <div className="bg-card p-2 rounded border border-border">
+                <p className="text-xs font-medium text-primary">Saima Company:</p>
+                <p className="text-xs text-muted-foreground">
                   <strong>Email:</strong> admin@saima.com<br />
                   <strong>Password:</strong> saima123
                 </p>
@@ -193,7 +195,7 @@ const OrgLogin = () => {
         </Card>
 
         <div className="text-center">
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-muted-foreground">
             🔒 Secure organization portal for property management
           </p>
         </div>
