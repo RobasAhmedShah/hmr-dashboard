@@ -33,9 +33,7 @@ const AdminSidebar = ({ activeTab, setActiveTab }) => {
         {/* Header */}
         <div className="space-y-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-sidebar-primary to-sidebar-primary/70 flex items-center justify-center shadow-lg">
-              <span className="text-sm font-bold text-sidebar-primary-foreground">AD</span>
-            </div>
+            <img src="/logo.svg" alt="Logo" className="w-10 h-10 rounded-lg shadow-lg" />
             <div>
               <p className="text-sm font-semibold text-sidebar-foreground">Admin Panel</p>
             </div>

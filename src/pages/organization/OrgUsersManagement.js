@@ -159,8 +159,8 @@ const OrgUsersManagement = ({ organizationId }) => {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="text-center">
-          <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading users...</p>
+          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Loading users...</p>
         </div>
       </div>
     );
@@ -182,10 +182,10 @@ const OrgUsersManagement = ({ organizationId }) => {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Investors Management</h2>
-          <p className="text-gray-600">
+          <h2 className="text-2xl font-bold text-card-foreground">Investors Management</h2>
+          <p className="text-muted-foreground">
             Users who invested in {organizationName} properties
-            <span className="ml-2 text-blue-600 font-medium">
+            <span className="ml-2 text-primary font-medium">
               ({pagination.totalUsers} {pagination.totalUsers === 1 ? 'investor' : 'investors'})
             </span>
           </p>
@@ -195,15 +195,15 @@ const OrgUsersManagement = ({ organizationId }) => {
       {/* Investment Analytics Summary */}
       {analytics && Object.keys(analytics).length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card className="p-4 bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+          <Card className="p-4 bg-gradient-to-br from-primary/10 to-blue-100 border-primary/20">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-blue-600 font-medium">Total Investment Value</p>
-                <p className="text-2xl font-bold text-blue-900 mt-1">
+                <p className="text-sm text-primary font-medium">Total Investment Value</p>
+                <p className="text-2xl font-bold text-primary mt-1">
                   ${parseFloat(analytics.totalAmountUSDT || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
                 </p>
               </div>
-              <DollarSign className="w-8 h-8 text-blue-600 opacity-50" />
+              <DollarSign className="w-8 h-8 text-primary opacity-50" />
             </div>
           </Card>
 
@@ -219,7 +219,7 @@ const OrgUsersManagement = ({ organizationId }) => {
             </div>
           </Card>
 
-          <Card className="p-4 bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
+          <Card className="p-4 bg-gradient-to-br from-purple-50 to-purple-100 border-border">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-purple-600 font-medium">Active Investments</p>
@@ -257,7 +257,7 @@ const OrgUsersManagement = ({ organizationId }) => {
                 placeholder="Search users..."
                 value={filters.search}
                 onChange={(e) => handleFilterChange('search', e.target.value)}
-                className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full pl-10 pr-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-primary"
               />
             </div>
           </div>
@@ -267,7 +267,7 @@ const OrgUsersManagement = ({ organizationId }) => {
             <select
               value={filters.status}
               onChange={(e) => handleFilterChange('status', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-primary"
             >
               <option value="">All Status</option>
               <option value="active">Active</option>
@@ -281,32 +281,32 @@ const OrgUsersManagement = ({ organizationId }) => {
       <Card className="overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50">
+            <thead className="bg-background">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Investor
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Contact
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Total Invested
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Investments
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Joined
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-card divide-y divide-gray-200">
               {paginatedUsers.length === 0 ? (
                 <tr>
                   <td colSpan="5" className="px-6 py-12 text-center">
                     <UsersIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">No investors found</h3>
-                    <p className="text-gray-500">
+                    <h3 className="text-lg font-medium text-card-foreground mb-2">No investors found</h3>
+                    <p className="text-muted-foreground">
                       {users.length === 0 
                         ? `No investors have invested in ${organizationName} properties yet` 
                         : 'No investors match your current filters'}
@@ -315,21 +315,21 @@ const OrgUsersManagement = ({ organizationId }) => {
                 </tr>
               ) : (
                 paginatedUsers.map((user) => (
-                  <tr key={user.id} className="hover:bg-gray-50">
+                  <tr key={user.id} className="hover:bg-background">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <div className="flex-shrink-0 h-10 w-10">
-                          <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-400 to-purple-600 flex items-center justify-center">
+                          <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-400 to-primary/80 flex items-center justify-center">
                             <span className="text-sm font-medium text-white">
                               {(user.fullName || user.name || 'U').charAt(0).toUpperCase()}
                             </span>
                           </div>
                         </div>
                         <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">
+                          <div className="text-sm font-medium text-card-foreground">
                             {user.fullName || user.name || 'Unknown User'}
                           </div>
-                          <div className="text-sm text-gray-500">
+                          <div className="text-sm text-muted-foreground">
                             ID: {user.id?.slice(0, 8)}...
                           </div>
                         </div>
@@ -337,12 +337,12 @@ const OrgUsersManagement = ({ organizationId }) => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="space-y-1">
-                        <div className="flex items-center text-sm text-gray-900">
+                        <div className="flex items-center text-sm text-card-foreground">
                           <Mail className="w-3 h-3 mr-2 text-gray-400" />
                           {user.email}
                         </div>
                         {user.phone && (
-                          <div className="flex items-center text-sm text-gray-500">
+                          <div className="flex items-center text-sm text-muted-foreground">
                             <Phone className="w-3 h-3 mr-2 text-gray-400" />
                             {user.phone}
                           </div>
@@ -353,22 +353,22 @@ const OrgUsersManagement = ({ organizationId }) => {
                       <div className="text-sm font-semibold text-green-600">
                         ${user.totalInvested?.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0.00'}
                       </div>
-                      <div className="text-xs text-gray-500">
+                      <div className="text-xs text-muted-foreground">
                         {user.activeInvestments || 0} active
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">
+                      <div className="text-sm font-medium text-card-foreground">
                         {user.investmentCount || 0} {user.investmentCount === 1 ? 'investment' : 'investments'}
                       </div>
                       {user.properties && user.properties.length > 0 && (
-                        <div className="text-xs text-gray-500 truncate max-w-xs" title={user.properties.join(', ')}>
+                        <div className="text-xs text-muted-foreground truncate max-w-xs" title={user.properties.join(', ')}>
                           {user.properties.slice(0, 2).join(', ')}
                           {user.properties.length > 2 && ` +${user.properties.length - 2} more`}
                         </div>
                       )}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
                       <div className="flex items-center">
                         <Calendar className="w-3 h-3 mr-2 text-gray-400" />
                         {formatDate(user.createdAt || user.created_at)}
@@ -383,7 +383,7 @@ const OrgUsersManagement = ({ organizationId }) => {
 
         {/* Pagination */}
         {pagination.totalPages > 1 && (
-          <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+          <div className="bg-card px-4 py-3 flex items-center justify-between border-t border-border sm:px-6">
             <div className="flex-1 flex justify-between sm:hidden">
               <Button
                 variant="outline"

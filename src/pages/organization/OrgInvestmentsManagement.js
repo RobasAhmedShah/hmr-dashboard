@@ -262,8 +262,8 @@ const OrgInvestmentsManagement = ({ organizationId }) => {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="text-center">
-          <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading investments...</p>
+          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Loading investments...</p>
         </div>
       </div>
     );
@@ -285,10 +285,10 @@ const OrgInvestmentsManagement = ({ organizationId }) => {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Investments Management</h2>
-          <p className="text-gray-600">
+          <h2 className="text-2xl font-bold text-card-foreground">Investments Management</h2>
+          <p className="text-muted-foreground">
             Monitor all property investments
-            <span className="ml-2 text-blue-600 font-medium">
+            <span className="ml-2 text-primary font-medium">
               ({filteredInvestments.length} {filteredInvestments.length === 1 ? 'investment' : 'investments'})
             </span>
           </p>
@@ -297,19 +297,19 @@ const OrgInvestmentsManagement = ({ organizationId }) => {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card className="p-6 border-l-4 border-blue-500">
+        <Card className="p-6 border-l-4 border-primary">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Total Investments</p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">
+              <p className="text-sm text-muted-foreground">Total Investments</p>
+              <p className="text-2xl font-bold text-card-foreground mt-1">
                 {formatCurrency(summary.totalInvestment)}
               </p>
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-muted-foreground mt-1">
                 {filteredInvestments.length} investments
               </p>
             </div>
-            <div className="p-3 bg-blue-100 rounded-lg">
-              <DollarSign className="w-6 h-6 text-blue-600" />
+            <div className="p-3 bg-primary/20 rounded-lg">
+              <DollarSign className="w-6 h-6 text-primary" />
             </div>
           </div>
         </Card>
@@ -317,15 +317,15 @@ const OrgInvestmentsManagement = ({ organizationId }) => {
         <Card className="p-6 border-l-4 border-purple-500">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Total Tokens</p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">
+              <p className="text-sm text-muted-foreground">Total Tokens</p>
+              <p className="text-2xl font-bold text-card-foreground mt-1">
                 {summary.totalTokens.toLocaleString()}
               </p>
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-muted-foreground mt-1">
                 Avg: {(filteredInvestments.length > 0 ? summary.totalTokens / filteredInvestments.length : 0).toFixed(2)} per investment
               </p>
             </div>
-            <div className="p-3 bg-purple-100 rounded-lg">
+            <div className="p-3 bg-primary/20 rounded-lg">
               <TrendingUp className="w-6 h-6 text-purple-600" />
             </div>
           </div>
@@ -334,11 +334,11 @@ const OrgInvestmentsManagement = ({ organizationId }) => {
         <Card className="p-6 border-l-4 border-green-500">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Active Investments</p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">
+              <p className="text-sm text-muted-foreground">Active Investments</p>
+              <p className="text-2xl font-bold text-card-foreground mt-1">
                 {summary.activeInvestments}
               </p>
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-muted-foreground mt-1">
                 {summary.pendingInvestments} pending
               </p>
             </div>
@@ -351,11 +351,11 @@ const OrgInvestmentsManagement = ({ organizationId }) => {
         <Card className="p-6 border-l-4 border-orange-500">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Avg Investment</p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">
+              <p className="text-sm text-muted-foreground">Avg Investment</p>
+              <p className="text-2xl font-bold text-card-foreground mt-1">
                 {formatCurrency(summary.averageInvestment)}
               </p>
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-muted-foreground mt-1">
                 per investor
               </p>
             </div>
@@ -378,7 +378,7 @@ const OrgInvestmentsManagement = ({ organizationId }) => {
                 placeholder="Search investments..."
                 value={filters.search}
                 onChange={(e) => handleFilterChange('search', e.target.value)}
-                className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full pl-10 pr-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-primary"
               />
             </div>
           </div>
@@ -388,7 +388,7 @@ const OrgInvestmentsManagement = ({ organizationId }) => {
             <select
               value={filters.status}
               onChange={(e) => handleFilterChange('status', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-primary"
             >
               <option value="">All Status</option>
               <option value="active">Active</option>
@@ -404,35 +404,35 @@ const OrgInvestmentsManagement = ({ organizationId }) => {
       <Card className="overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50">
+            <thead className="bg-background">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Investor
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Property
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Amount
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Tokens
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Status
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Date
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-card divide-y divide-gray-200">
               {filteredInvestments.length === 0 ? (
                 <tr>
                   <td colSpan="6" className="px-6 py-12 text-center">
                     <TrendingUp className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">No investments found</h3>
-                    <p className="text-gray-500">No investments match your current filters</p>
+                    <h3 className="text-lg font-medium text-card-foreground mb-2">No investments found</h3>
+                    <p className="text-muted-foreground">No investments match your current filters</p>
                   </td>
                 </tr>
               ) : (
@@ -443,16 +443,16 @@ const OrgInvestmentsManagement = ({ organizationId }) => {
                   const propertyName = getPropertyName(investment);
                   
                   return (
-                    <tr key={investment.id || investment.displayCode} className="hover:bg-gray-50">
+                    <tr key={investment.id || investment.displayCode} className="hover:bg-background">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
                           <User className="w-4 h-4 text-gray-400 mr-2" />
                           <div>
-                            <div className="text-sm font-medium text-gray-900">
+                            <div className="text-sm font-medium text-card-foreground">
                               {investorName}
                             </div>
                             {investment.user?.email && (
-                              <div className="text-xs text-gray-500">
+                              <div className="text-xs text-muted-foreground">
                                 {investment.user.email}
                               </div>
                             )}
@@ -463,11 +463,11 @@ const OrgInvestmentsManagement = ({ organizationId }) => {
                         <div className="flex items-center">
                           <Building2 className="w-4 h-4 text-gray-400 mr-2" />
                           <div>
-                            <div className="text-sm text-gray-900">
+                            <div className="text-sm text-card-foreground">
                               {propertyName}
                             </div>
                             {investment.property?.displayCode && (
-                              <div className="text-xs text-gray-500">
+                              <div className="text-xs text-muted-foreground">
                                 {investment.property.displayCode}
                               </div>
                             )}
@@ -479,7 +479,7 @@ const OrgInvestmentsManagement = ({ organizationId }) => {
                           {formatCurrency(amount)}
                         </div>
                         {investment.displayCode && (
-                          <div className="text-xs text-gray-500 font-mono">
+                          <div className="text-xs text-muted-foreground font-mono">
                             {investment.displayCode}
                           </div>
                         )}
@@ -493,7 +493,7 @@ const OrgInvestmentsManagement = ({ organizationId }) => {
                         {getStatusBadge(investment.status)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center text-sm text-gray-500">
+                        <div className="flex items-center text-sm text-muted-foreground">
                           <Calendar className="w-3 h-3 mr-2 text-gray-400" />
                           {formatDate(investment.created_at || investment.createdAt)}
                         </div>

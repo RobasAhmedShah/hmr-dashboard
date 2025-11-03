@@ -132,8 +132,8 @@ const OrgPropertiesManagement = ({ organizationId }) => {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="text-center">
-          <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading properties...</p>
+          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Loading properties...</p>
         </div>
       </div>
     );
@@ -155,10 +155,10 @@ const OrgPropertiesManagement = ({ organizationId }) => {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Properties Management</h2>
-          <p className="text-gray-600">
+          <h2 className="text-2xl font-bold text-card-foreground">Properties Management</h2>
+          <p className="text-muted-foreground">
             Manage your organization's properties
-            <span className="ml-2 text-blue-600 font-medium">
+            <span className="ml-2 text-primary font-medium">
               ({filteredProperties.length} {filteredProperties.length === 1 ? 'property' : 'properties'})
             </span>
           </p>
@@ -177,7 +177,7 @@ const OrgPropertiesManagement = ({ organizationId }) => {
                 placeholder="Search properties..."
                 value={filters.search}
                 onChange={(e) => handleFilterChange('search', e.target.value)}
-                className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full pl-10 pr-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-primary"
               />
             </div>
           </div>
@@ -187,7 +187,7 @@ const OrgPropertiesManagement = ({ organizationId }) => {
             <select
               value={filters.status}
               onChange={(e) => handleFilterChange('status', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-primary"
             >
               <option value="">All Status</option>
               <option value="available">Available</option>
@@ -201,7 +201,7 @@ const OrgPropertiesManagement = ({ organizationId }) => {
             <select
               value={filters.property_type}
               onChange={(e) => handleFilterChange('property_type', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-primary"
             >
               <option value="">All Types</option>
               <option value="residential">Residential</option>
@@ -215,7 +215,7 @@ const OrgPropertiesManagement = ({ organizationId }) => {
             <select
               value={filters.sort_by}
               onChange={(e) => handleFilterChange('sort_by', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-primary"
             >
               <option value="created_at">Date Created</option>
               <option value="name">Name</option>
@@ -229,8 +229,8 @@ const OrgPropertiesManagement = ({ organizationId }) => {
       {filteredProperties.length === 0 ? (
         <Card className="p-12 text-center">
           <Building2 className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No properties found</h3>
-          <p className="text-gray-500">
+          <h3 className="text-lg font-medium text-card-foreground mb-2">No properties found</h3>
+          <p className="text-muted-foreground">
             {filters.search || filters.status || filters.property_type
               ? 'Try adjusting your filters'
               : 'No properties have been added yet'}
@@ -243,10 +243,10 @@ const OrgPropertiesManagement = ({ organizationId }) => {
               <div className="p-6">
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                    <h3 className="text-lg font-semibold text-card-foreground mb-1">
                       {property.title || property.name || 'Unnamed Property'}
                     </h3>
-                    <div className="flex items-center text-sm text-gray-500">
+                    <div className="flex items-center text-sm text-muted-foreground">
                       <MapPin className="w-4 h-4 mr-1" />
                       {property.city || property.location || 'No location'}
                       {property.country && `, ${property.country}`}
@@ -257,29 +257,29 @@ const OrgPropertiesManagement = ({ organizationId }) => {
 
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Price per Token</span>
-                    <span className="font-semibold text-gray-900">
+                    <span className="text-sm text-muted-foreground">Price per Token</span>
+                    <span className="font-semibold text-card-foreground">
                       {formatCurrency(property.pricePerTokenUSDT || property.pricePerToken || property.price_per_token || 0)}
                     </span>
                   </div>
 
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Total Tokens</span>
-                    <span className="font-semibold text-gray-900">
+                    <span className="text-sm text-muted-foreground">Total Tokens</span>
+                    <span className="font-semibold text-card-foreground">
                       {parseFloat(property.totalTokens || property.total_tokens || 0).toLocaleString()}
                     </span>
                   </div>
 
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Available Tokens</span>
+                    <span className="text-sm text-muted-foreground">Available Tokens</span>
                     <span className="font-semibold text-green-600">
                       {parseFloat(property.availableTokens || property.available_tokens || 0).toLocaleString()}
                     </span>
                   </div>
 
-                  <div className="pt-3 border-t border-gray-200">
+                  <div className="pt-3 border-t border-border">
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-600">Type</span>
+                      <span className="text-muted-foreground">Type</span>
                       <Badge variant="blue">
                         {property.type || property.propertyType || property.property_type || 'N/A'}
                       </Badge>
@@ -287,7 +287,7 @@ const OrgPropertiesManagement = ({ organizationId }) => {
                   </div>
                 </div>
 
-                <div className="mt-4 pt-4 border-t border-gray-200">
+                <div className="mt-4 pt-4 border-t border-border">
                   <Button 
                     variant="outline" 
                     size="sm" 
