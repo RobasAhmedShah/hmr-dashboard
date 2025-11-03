@@ -50,22 +50,33 @@ export const propertiesAPI = {
   create: (propertyData) => api.post('/properties', propertyData),
   update: (id, propertyData) => api.put(`/properties/${id}`, propertyData),
   delete: (id) => api.delete(`/properties/${id}`),
+  uploadImages: (id, formData) => api.post(`/properties/${id}/upload-images`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  }),
 };
 
 // Investments API (Complete)
 export const investmentsAPI = {
   create: (investmentData) => api.post('/investments/invest', investmentData), // Updated for new backend
+  invest: (investData) => api.post('/investments/invest', investData), // Make investment
+  getAll: (params) => api.get('/investments', { params }), // Get all investments with optional filters
   getMyInvestments: (params) => api.get('/investments/my-investments', { params }),
-  getByUserId: (userId) => api.get(`/investments/user/${userId}`),
+  getByUserId: (userId) => api.get(`/investments`, { params: { userId } }), // Updated to use query param
   getById: (id) => api.get(`/investments/${id}`),
   updateStatus: (id, status) => api.patch(`/investments/${id}/status`, { status }),
   cancel: (id) => api.patch(`/investments/${id}/cancel`),
   getPortfolioSummary: () => api.get('/investments/portfolio/summary'),
+  // Investment Analytics
+  getUserAnalytics: (userId) => api.get(`/investments/analytics/user/${userId}`),
+  getOrganizationAnalytics: (orgId) => api.get(`/investments/analytics/organization/${orgId}`),
+  getUserOrgAnalytics: (userId, orgId) => api.get(`/investments/analytics/user/${userId}/organization/${orgId}`),
 };
 
 // Users API (Complete)
 export const usersAPI = {
   getAll: () => api.get('/admin/users'), // Updated for new backend
+  getById: (userId) => api.get(`/users/${userId}`), // Get user by ID or displayCode
+  updateUser: (userId, userData) => api.patch(`/users/${userId}`, userData), // Update user profile
   getProfile: () => api.get('/users/profile'),
   getProfileById: (userId) => api.get(`/users/profile/${userId}`),
   updateProfile: (profileData) => api.put('/users/profile', profileData),
@@ -87,6 +98,20 @@ export const paymentMethodsAPI = {
   setDefault: (id) => api.put(`/payment-methods/${id}/default`),
   delete: (id) => api.delete(`/payment-methods/${id}`),
   verify: (id, otp) => api.post(`/payment-methods/${id}/verify`, { otp }),
+};
+
+// Wallet API (Complete)
+export const walletAPI = {
+  // Wallet operations
+  getWallet: (userId) => api.get(`/wallet/user/${userId}`), // Get wallet by user ID or displayCode
+  getAllWallets: () => api.get('/wallet'), // Get all wallets
+  updateWallet: (walletId, walletData) => api.patch(`/wallet/${walletId}`, walletData), // Update wallet
+  deposit: (depositData) => api.post('/wallet/deposit', depositData), // Create deposit
+  buyTokens: (data) => api.post('/wallet/buy-tokens', data),
+  getHoldings: (userId) => api.get(`/wallet/holdings/${userId}`),
+  getHistory: (userId, params) => api.get(`/wallet/history/${userId}`, { params }),
+  getProperties: (params) => api.get('/wallet/properties', { params }),
+  getProperty: (id) => api.get(`/wallet/properties/${id}`),
 };
 
 // Wallet Transactions API (Complete)
@@ -119,6 +144,11 @@ export const organizationsAPI = {
   
   // Create a new organization
   create: (data) => api.post('/organizations', data),
+  
+  // Upload organization logo
+  uploadLogo: (id, formData) => api.post(`/organizations/${id}/upload-logo`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  }),
   
   // Get organization liquidity analytics
   // GET /organizations/:id/liquidity
@@ -205,9 +235,10 @@ export const adminAPI = {
   getTransaction: (id) => api.get(`/transactions/${id}`), // Not yet implemented
 };
 
-// Portfolio API (Mobile Optimized)
+// Portfolio API (Complete)
 export const portfolioAPI = {
-  getPortfolio: (userId) => api.get(`/portfolio/user/${userId}/detailed`), // Updated for new backend
+  getPortfolio: (userId) => api.get(`/portfolio/user/${userId}/detailed`), // Get detailed portfolio for user
+  getDetailedPortfolio: (userId) => api.get(`/portfolio/user/${userId}/detailed`), // Alias for clarity
   getSummary: (userId) => api.get(`/portfolio/summary/${userId}`),
   getStats: (userId) => api.get(`/portfolio/stats/${userId}`),
   updateStats: (userId, statsData) => api.put(`/portfolio/stats/${userId}`, statsData),
@@ -226,13 +257,32 @@ export const supportAPI = {
   getContactInfo: () => api.get('/support/contact-info'),
 };
 
-// Wallet API (Token Purchase & Management)
-export const walletAPI = {
-  buyTokens: (data) => api.post('/wallet/buy-tokens', data),
-  getHoldings: (userId) => api.get(`/wallet/holdings/${userId}`),
-  getHistory: (userId, params) => api.get(`/wallet/history/${userId}`, { params }),
-  getProperties: (params) => api.get('/wallet/properties', { params }),
-  getProperty: (id) => api.get(`/wallet/properties/${id}`),
+// Rewards API (Complete)
+export const rewardsAPI = {
+  getAll: (params) => api.get('/rewards', { params }), // Get all rewards
+  getByUserId: (userId) => api.get('/rewards', { params: { userId } }), // Get user rewards
+  getById: (id) => api.get(`/rewards/${id}`), // Get reward by ID or displayCode
+  distributeRoi: (roiData) => api.post('/rewards/distribute', roiData), // Distribute ROI rewards
+};
+
+// Upload API (File uploads)
+export const uploadAPI = {
+  // Upload single image
+  uploadImage: (category, formData) => api.post(`/upload/image/${category}`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  }),
+  // Upload multiple images
+  uploadImages: (category, formData) => api.post(`/upload/images/${category}`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  }),
+  // Upload document
+  uploadDocument: (category, formData) => api.post(`/upload/document/${category}`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  }),
+  // Get file URL
+  getFileUrl: (category, filename) => `${API_BASE_URL}/upload/file/${category}/${filename}`,
+  // Check if file exists
+  checkFile: (category, filename) => api.get(`/upload/exists/${category}/${filename}`),
 };
 
 // Docs API
