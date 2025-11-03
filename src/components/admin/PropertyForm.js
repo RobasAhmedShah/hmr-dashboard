@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { X, Save, Building2, MapPin, DollarSign, TrendingUp, Hash, Plus, Trash2, Settings, Edit } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { X, Save, Building2, MapPin, DollarSign, TrendingUp, Hash, Plus, Trash2, Settings, Edit, Upload } from 'lucide-react';
 import Card from '../ui/Card';
 import Button from '../ui/Button';
 import SimpleMap from './SimpleMap';
-import { adminAPI } from '../../services/api';
+import { adminAPI, uploadAPI } from '../../services/api';
 
 const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
   const [formData, setFormData] = useState({
@@ -72,8 +72,12 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
   const [newFeature, setNewFeature] = useState('');
   const [newAmenity, setNewAmenity] = useState('');
   const [newDocument, setNewDocument] = useState({ name: '', url: '', type: '' });
+  const [uploadingDocument, setUploadingDocument] = useState(false);
+  const documentFileInputRef = useRef(null);
   const [newPropertyFeature, setNewPropertyFeature] = useState('');
   const [newImage, setNewImage] = useState({ url: '', alt: '', type: 'main' });
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const imageFileInputRef = useRef(null);
   const [seoData, setSeoData] = useState({ title: '', description: '', keywords: '' });
   const [organizations, setOrganizations] = useState([]);
   const [loadingOrgs, setLoadingOrgs] = useState(false);
@@ -502,6 +506,60 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
         documents: [...prev.documents, { ...newDocument }]
       }));
       setNewDocument({ name: '', url: '', type: '' });
+    } else {
+      alert('Please fill in all document fields (Name, URL, and Type)');
+    }
+  };
+
+  const handleDocumentFileUpload = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    const allowedTypes = ['.pdf', '.doc', '.docx', '.txt'];
+    const fileExt = '.' + file.name.split('.').pop().toLowerCase();
+    if (!allowedTypes.includes(fileExt)) {
+      alert('Invalid file type. Please upload PDF, DOC, DOCX, or TXT files.');
+      return;
+    }
+
+    // Validate file size (10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      alert('File size exceeds 10MB limit.');
+      return;
+    }
+
+    // Auto-fill document name from filename
+    const fileNameWithoutExt = file.name.replace(/\.[^/.]+$/, '');
+    setNewDocument(prev => ({ ...prev, name: fileNameWithoutExt }));
+
+    setUploadingDocument(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await uploadAPI.uploadDocument('properties', formData);
+      
+      if (response.data?.success && response.data?.data) {
+        const uploadedFile = response.data.data;
+        // Set the uploaded file URL
+        setNewDocument(prev => ({ 
+          ...prev, 
+          url: uploadedFile.url || uploadedFile.fullUrl || `/upload/file/properties/${uploadedFile.filename}` 
+        }));
+        alert('Document uploaded successfully! Please select a document type and click Add.');
+      } else {
+        throw new Error('Upload failed');
+      }
+    } catch (error) {
+      console.error('Document upload error:', error);
+      alert('Failed to upload document. Please try again.');
+    } finally {
+      setUploadingDocument(false);
+      // Reset file input
+      if (documentFileInputRef.current) {
+        documentFileInputRef.current.value = '';
+      }
     }
   };
 
@@ -544,6 +602,59 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
         }
       }));
       setNewImage({ url: '', alt: '', type: 'main' });
+    } else {
+      alert('Please fill in Image URL and Alt Text before adding.');
+    }
+  };
+
+  const handleImageFileUpload = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'];
+    if (!allowedTypes.includes(file.type)) {
+      alert('Invalid file type. Please upload JPG, PNG, GIF, WEBP, or SVG images.');
+      return;
+    }
+
+    // Validate file size (10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      alert('File size exceeds 10MB limit.');
+      return;
+    }
+
+    // Auto-fill alt text from filename
+    const fileNameWithoutExt = file.name.replace(/\.[^/.]+$/, '');
+    setNewImage(prev => ({ ...prev, alt: fileNameWithoutExt }));
+
+    setUploadingImage(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await uploadAPI.uploadImage('properties', formData);
+      
+      if (response.data?.success && response.data?.data) {
+        const uploadedFile = response.data.data;
+        // Set the uploaded file URL
+        setNewImage(prev => ({ 
+          ...prev, 
+          url: uploadedFile.url || uploadedFile.fullUrl || `/upload/file/properties/${uploadedFile.filename}` 
+        }));
+        alert('Image uploaded successfully! Please add alt text and click Add.');
+      } else {
+        throw new Error('Upload failed');
+      }
+    } catch (error) {
+      console.error('Image upload error:', error);
+      alert('Failed to upload image. Please try again.');
+    } finally {
+      setUploadingImage(false);
+      // Reset file input
+      if (imageFileInputRef.current) {
+        imageFileInputRef.current.value = '';
+      }
     }
   };
 
@@ -1492,6 +1603,44 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
               </div>
             )}
             <div className="space-y-4">
+              {/* File Upload Option */}
+              <div className="mb-4 p-4 bg-accent rounded-lg border border-border">
+                <label className="block text-sm font-medium text-foreground mb-2">
+                  Upload Document File
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    ref={documentFileInputRef}
+                    type="file"
+                    accept=".pdf,.doc,.docx,.txt"
+                    onChange={handleDocumentFileUpload}
+                    className="hidden"
+                    id="document-file-upload"
+                    disabled={uploadingDocument}
+                  />
+                  <label
+                    htmlFor="document-file-upload"
+                    className="cursor-pointer inline-flex items-center px-4 py-2 border border-primary bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {uploadingDocument ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Uploading...
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="w-4 h-4 mr-2" />
+                        Choose File
+                      </>
+                    )}
+                  </label>
+                  <span className="text-sm text-muted-foreground">
+                    Supported: PDF, DOC, DOCX, TXT (Max 10MB)
+                  </span>
+                </div>
+              </div>
+
+              {/* Manual URL Entry */}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <input
                   type="text"
@@ -1502,7 +1651,7 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                 />
                 <input
                   type="url"
-                  placeholder="Document URL"
+                  placeholder="Document URL (or upload file above)"
                   value={newDocument.url}
                   onChange={(e) => setNewDocument(prev => ({ ...prev, url: e.target.value }))}
                   className="px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
@@ -1518,7 +1667,12 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                   <option value="legal">Legal Document</option>
                   <option value="other">Other</option>
                 </select>
-                <Button type="button" onClick={addDocument} className="flex items-center space-x-2">
+                <Button 
+                  type="button" 
+                  onClick={addDocument} 
+                  className="flex items-center justify-center space-x-2"
+                  disabled={uploadingDocument}
+                >
                   <Plus className="w-4 h-4" />
                   <span>Add</span>
                 </Button>
@@ -1587,10 +1741,48 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
           <Card className="p-6">
             <h4 className="text-lg font-semibold text-card-foreground mb-4">Images</h4>
             <div className="space-y-4">
+              {/* File Upload Option */}
+              <div className="mb-4 p-4 bg-accent rounded-lg border border-border">
+                <label className="block text-sm font-medium text-foreground mb-2">
+                  Upload Image File
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    ref={imageFileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageFileUpload}
+                    className="hidden"
+                    id="image-file-upload"
+                    disabled={uploadingImage}
+                  />
+                  <label
+                    htmlFor="image-file-upload"
+                    className="cursor-pointer inline-flex items-center px-4 py-2 border border-primary bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {uploadingImage ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Uploading...
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="w-4 h-4 mr-2" />
+                        Choose Image
+                      </>
+                    )}
+                  </label>
+                  <span className="text-sm text-muted-foreground">
+                    Supported: JPG, PNG, GIF, WEBP, SVG (Max 10MB)
+                  </span>
+                </div>
+              </div>
+
+              {/* Manual URL Entry */}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <input
                   type="url"
-                  placeholder="Image URL"
+                  placeholder="Image URL (or upload file above)"
                   value={newImage.url}
                   onChange={(e) => setNewImage(prev => ({ ...prev, url: e.target.value }))}
                   className="px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
@@ -1612,7 +1804,12 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                   <option value="floor-plan">Floor Plan</option>
                   <option value="location">Location</option>
                 </select>
-                <Button type="button" onClick={addImage} className="flex items-center space-x-2">
+                <Button 
+                  type="button" 
+                  onClick={addImage} 
+                  className="flex items-center justify-center space-x-2"
+                  disabled={uploadingImage}
+                >
                   <Plus className="w-4 h-4" />
                   <span>Add</span>
                 </Button>
