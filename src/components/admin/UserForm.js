@@ -70,9 +70,10 @@ const UserForm = ({ user, onSave, onCancel, isLoading }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-      <div className="relative top-10 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-card">
-        <div className="flex justify-between items-center mb-6">
+    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 h-full w-full z-50 flex items-start justify-center p-4 overflow-y-auto">
+      <div className="relative my-10 mx-auto border w-full max-w-2xl shadow-lg rounded-md bg-card max-h-[90vh] flex flex-col">
+        {/* Sticky Header with Close Button */}
+        <div className="sticky top-0 z-10 bg-card border-b border-border px-5 py-4 flex justify-between items-center rounded-t-md shadow-sm">
           <div className="flex items-center space-x-3">
             <div className="p-2 bg-blue-100 rounded-lg">
               <User className="w-6 h-6 text-blue-600" />
@@ -88,13 +89,15 @@ const UserForm = ({ user, onSave, onCancel, isLoading }) => {
           </div>
           <button
             onClick={onCancel}
-            className="text-gray-400 hover:text-muted-foreground"
+            className="text-gray-400 hover:text-muted-foreground transition-colors"
           >
             <X className="w-6 h-6" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Scrollable Content */}
+        <div className="overflow-y-auto flex-1 px-5 py-5">
+          <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Name */}
             <div>
@@ -257,7 +260,8 @@ const UserForm = ({ user, onSave, onCancel, isLoading }) => {
               <span>{isLoading ? 'Saving...' : (user ? 'Update User' : 'Create User')}</span>
             </Button>
           </div>
-        </form>
+          </form>
+        </div>
       </div>
     </div>
   );

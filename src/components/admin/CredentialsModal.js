@@ -28,7 +28,7 @@ Full Name: ${credentials.fullName}
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
       <div className="bg-card rounded-lg max-w-xl w-full max-h-[90vh] my-auto flex flex-col">
-        <div className="bg-gradient-to-r from-green-500 to-green-600 px-6 py-4 flex items-center justify-between rounded-t-lg flex-shrink-0">
+        <div className="sticky top-0 z-10 bg-gradient-to-r from-green-500 to-green-600 px-6 py-4 flex items-center justify-between rounded-t-lg flex-shrink-0 shadow-sm">
           <div className="flex items-center gap-3 text-white">
             <CheckCircle className="w-6 h-6" />
             <h2 className="text-xl font-bold">Organization Created Successfully!</h2>
