@@ -10,6 +10,7 @@ import {
   MoreVertical,
   Zap,
   Building2,
+  Coins,
 } from 'lucide-react';
 
 const AdminSidebar = ({ activeTab, setActiveTab }) => {
@@ -19,6 +20,7 @@ const AdminSidebar = ({ activeTab, setActiveTab }) => {
     { id: 'investments', icon: BarChart3, label: 'Investments' },
     { id: 'users', icon: Users, label: 'Users' },
     { id: 'transactions', icon: Archive, label: 'Transactions' },
+    { id: 'tokens', icon: Coins, label: 'Tokens' },
   ];
 
   const documentItems = [
