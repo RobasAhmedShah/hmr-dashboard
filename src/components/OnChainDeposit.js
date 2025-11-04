@@ -62,7 +62,7 @@ const OnChainDeposit = ({ userId, onDepositSuccess, onClose }) => {
   const handleShare = () => {
     if (navigator.share) {
       navigator.share({
-        title: 'HMR Builders Deposit Address',
+        title: 'Blocks Deposit Address',
         text: onChainData.shareText,
         url: window.location.href
       });

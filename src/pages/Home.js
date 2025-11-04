@@ -176,7 +176,7 @@ const Home = () => {
       {/* Features Section */}
       <section className="mb-16">
         <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold text-gray-900 mb-4">Why Choose HMR Builders?</h2>
+          <h2 className="text-3xl font-bold text-gray-900 mb-4">Why Choose Blocks?</h2>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
             We make real estate investing accessible, transparent, and profitable for everyone
           </p>

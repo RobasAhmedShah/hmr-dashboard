@@ -5,7 +5,7 @@ import Button from '../../components/ui/Button';
 const AdminSettings = () => {
   const [general, setGeneral] = useState({
     appName: 'HMR Dashboard',
-    companyName: 'HMR Builders',
+    companyName: 'Blocks',
     supportEmail: 'support@example.com',
     timezone: 'UTC',
   });
