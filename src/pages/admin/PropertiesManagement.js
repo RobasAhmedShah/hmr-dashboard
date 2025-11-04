@@ -1265,6 +1265,17 @@ const PropertiesManagement = () => {
                   variant="outline"
                   onClick={() => {
                     setShowModal(false);
+                    handleDistributeReward(selectedProperty);
+                  }}
+                  className="flex items-center bg-green-600 hover:bg-green-700 text-white border-green-600"
+                >
+                  <DollarSign className="w-4 h-4 mr-2" />
+                  Distribute Reward
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowModal(false);
                     handleEditProperty(selectedProperty);
                   }}
                   className="flex items-center"
@@ -1443,19 +1454,19 @@ const PropertiesManagement = () => {
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-card-foreground mb-2">
-                      Total ROI Amount (USDT)
+                      Total ROI Amount (USDT) *
                     </label>
                     <Input
                       type="number"
                       step="0.01"
                       min="0.01"
-                      placeholder="Enter total ROI amount in USDT"
+                      placeholder="Enter amount in USDT (e.g., 10000)"
                       value={rewardAmount}
                       onChange={(e) => setRewardAmount(e.target.value)}
-                      className="w-full"
+                      className="w-full text-lg font-semibold"
                     />
-                    <p className="text-xs text-muted-foreground mt-1">
-                      This amount will be distributed proportionally to all investors based on their token ownership
+                    <p className="text-xs text-muted-foreground mt-2">
+                      💡 This amount will be distributed proportionally to all investors based on their token ownership
                     </p>
                   </div>
 
@@ -1505,9 +1516,9 @@ const PropertiesManagement = () => {
                     <Button
                       onClick={confirmDistributeReward}
                       disabled={distributeRewardMutation.isLoading || !rewardAmount || parseFloat(rewardAmount) <= 0}
-                      className="bg-green-600 hover:bg-green-700"
+                      className="bg-green-600 hover:bg-green-700 text-white font-semibold"
                     >
-                      {distributeRewardMutation.isLoading ? 'Distributing...' : 'Distribute Reward'}
+                      {distributeRewardMutation.isLoading ? 'Sending...' : 'Send Reward'}
                     </Button>
                   </div>
                 </div>
