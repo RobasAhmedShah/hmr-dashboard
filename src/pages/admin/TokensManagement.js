@@ -105,6 +105,20 @@ const TokensManagement = () => {
       // Calculate available tokens
       const availableTokens = totalTokens - boughtTokens;
 
+      // Calculate total investment (USD) from investments in this org's properties
+      const totalInvestment = investments
+        .filter(inv => {
+          const invPropertyId = inv.propertyId || inv.property?.id || inv.property?.displayCode;
+          return orgProperties.some(prop => 
+            (prop.id === invPropertyId || prop.displayCode === invPropertyId) &&
+            (inv.status === 'confirmed' || inv.status === 'active')
+          );
+        })
+        .reduce((sum, inv) => {
+          const amount = parseFloat(inv.amountUSDT || inv.amount || 0);
+          return sum + amount;
+        }, 0);
+
       // Calculate funding percentage
       const fundingPercentage = totalTokens > 0 ? (boughtTokens / totalTokens) * 100 : 0;
 
@@ -115,6 +129,7 @@ const TokensManagement = () => {
         totalTokens: totalTokens,
         boughtTokens: boughtTokens,
         availableTokens: availableTokens,
+        totalInvestment: totalInvestment,
         fundingPercentage: fundingPercentage,
         propertyCount: orgProperties.length,
         logoUrl: org.logoUrl || null
@@ -282,6 +297,9 @@ const TokensManagement = () => {
                   Available Tokens
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  Total Investment
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Funding Progress
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
@@ -292,7 +310,7 @@ const TokensManagement = () => {
             <tbody className="bg-card divide-y divide-border">
               {filteredAndSortedTokens.length === 0 ? (
                 <tr>
-                  <td colSpan="6" className="px-6 py-12 text-center">
+                  <td colSpan="7" className="px-6 py-12 text-center">
                     <Coins className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
                     <p className="text-muted-foreground">No tokens found</p>
                   </td>
@@ -337,8 +355,14 @@ const TokensManagement = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center text-sm text-card-foreground">
-                        <DollarSign className="w-4 h-4 mr-1 text-orange-600" />
-                        <span className="font-semibold">{formatNumber(token.availableTokens)}</span>
+                        <Coins className="w-4 h-4 mr-1 text-orange-600" />
+                        <span className="font-semibold">{formatNumber(token.availableTokens)} tokens</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center text-sm text-card-foreground">
+                        <DollarSign className="w-4 h-4 mr-1 text-purple-600" />
+                        <span className="font-semibold text-purple-600">${formatNumber(token.totalInvestment)}</span>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -372,7 +396,7 @@ const TokensManagement = () => {
 
       {/* Summary Statistics */}
       {filteredAndSortedTokens.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
           <Card className="p-4">
             <div className="flex items-center justify-between">
               <div>
@@ -403,7 +427,18 @@ const TokensManagement = () => {
                   {formatNumber(filteredAndSortedTokens.reduce((sum, t) => sum + t.availableTokens, 0))}
                 </p>
               </div>
-              <DollarSign className="w-8 h-8 text-orange-600 opacity-50" />
+              <Coins className="w-8 h-8 text-orange-600 opacity-50" />
+            </div>
+          </Card>
+          <Card className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-muted-foreground mb-1">Total Investment</p>
+                <p className="text-lg font-bold text-purple-600">
+                  ${formatNumber(filteredAndSortedTokens.reduce((sum, t) => sum + t.totalInvestment, 0))}
+                </p>
+              </div>
+              <DollarSign className="w-8 h-8 text-purple-600 opacity-50" />
             </div>
           </Card>
           <Card className="p-4">
