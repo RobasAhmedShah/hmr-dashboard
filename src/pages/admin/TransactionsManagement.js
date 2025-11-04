@@ -216,13 +216,11 @@ const TransactionsManagement = () => {
   };
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    const date = new Date(dateString);
+    const month = date.getMonth() + 1; // getMonth() returns 0-11
+    const day = date.getDate();
+    const year = date.getFullYear().toString().slice(-2); // Last 2 digits of year
+    return `${month}/${day}/${year}`;
   };
 
   if (!isAuthenticated) {

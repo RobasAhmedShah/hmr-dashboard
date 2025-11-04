@@ -11,7 +11,6 @@ import {
   Users,
   Mail,
   Phone,
-  Calendar,
   Shield,
   CheckCircle,
   XCircle,
@@ -542,10 +541,7 @@ const UsersManagement = () => {
                 <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider w-[9rem]">
                   KYC Status
                 </th>
-                <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider w-[9rem]">
-                  Joined
-                </th>
-                <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider w-[8rem]">
+                <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider w-[12rem]">
                   Actions
                 </th>
               </tr>
@@ -720,34 +716,30 @@ const UsersManagement = () => {
                       </Badge>
                       </button>
                     </td>
-                    <td className="px-3 py-2 whitespace-nowrap text-xs text-muted-foreground">
-                      <div className="flex items-center">
-                        <Calendar className="w-3 h-3 mr-2 text-muted-foreground" />
-                        {formatDate(user.createdAt || user.created_at)}
-                      </div>
-                    </td>
-                    <td className="px-3 py-2 whitespace-nowrap text-right text-sm font-medium">
-                      <div className="flex items-center space-x-2">
+                    <td className="px-3 py-2 whitespace-nowrap text-sm font-medium">
+                      <div className="flex items-center justify-start space-x-2">
                         <Button
                           variant="outline"
                           size="sm"
-                          className="h-7 w-7 p-0"
+                          className="h-7 w-7 p-0 flex-shrink-0"
                           onClick={() => handleEditUser(user)}
+                          title="Edit user"
                         >
                           <Edit className="w-3.5 h-3.5" />
                         </Button>
                         <Button 
                           variant="outline" 
                           size="sm"
-                          className="h-7 w-7 p-0"
+                          className="h-7 w-7 p-0 flex-shrink-0"
                           onClick={() => handleStatusUpdate(user)}
+                          title="Update status"
                         >
                           <Shield className="w-3.5 h-3.5" />
                         </Button>
                         <Button 
                           variant="outline" 
                           size="sm" 
-                          className={`h-7 w-7 p-0 ${isDeleted ? 'text-muted-foreground cursor-not-allowed opacity-50' : 'text-red-600 hover:text-red-700 hover:bg-red-50'}`}
+                          className={`h-7 w-7 p-0 flex-shrink-0 ${isDeleted ? 'text-muted-foreground cursor-not-allowed opacity-50' : 'text-red-600 hover:text-red-700 hover:bg-red-50'}`}
                           onClick={() => isDeleted ? null : handleDeleteUser(user)}
                           title={isDeleted ? 'User already deleted' : `Delete ${user.fullName || user.name}`}
                           disabled={isDeleted}

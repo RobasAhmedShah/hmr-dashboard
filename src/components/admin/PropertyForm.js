@@ -667,19 +667,23 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-      <div className="relative top-4 mx-auto p-5 border w-11/12 max-w-7xl shadow-lg rounded-md bg-card max-h-[95vh] overflow-y-auto">
-        <div className="flex justify-between items-center mb-6">
+    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 h-full w-full z-50 flex items-start justify-center p-4 overflow-y-auto">
+      <div className="relative my-4 mx-auto border w-11/12 max-w-7xl shadow-lg rounded-md bg-card max-h-[95vh] flex flex-col">
+        {/* Sticky Header with Close Button */}
+        <div className="sticky top-0 z-10 bg-card border-b border-border px-5 py-4 flex justify-between items-center rounded-t-md shadow-sm">
           <h3 className="text-2xl font-bold text-card-foreground">
             {property ? 'Edit Property' : 'Add New Property'}
           </h3>
           <button
             onClick={onCancel}
-            className="text-gray-400 hover:text-muted-foreground"
+            className="text-gray-400 hover:text-gray-600 transition-colors"
           >
             <X className="w-6 h-6" />
           </button>
         </div>
+        
+        {/* Scrollable Content */}
+        <div className="overflow-y-auto flex-1 px-5 py-5">
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Basic Information */}
@@ -1956,6 +1960,7 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
             </div>
           </div>
         </form>
+        </div>
       </div>
     </div>
   );

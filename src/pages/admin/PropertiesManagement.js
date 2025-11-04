@@ -860,28 +860,28 @@ const PropertiesManagement = () => {
       {/* Properties Table */}
       <Card className="overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full">
+          <table className="w-full table-auto">
             <thead className="bg-accent">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider w-[20%]">
                   Property
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider w-[10%]">
                   Type
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider w-[10%]">
                   Status
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider w-[12%]">
                   Total Value
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider w-[12%]">
                   Funding
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider w-[8%]">
                   ROI
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider w-[18%]">
                   Actions
                 </th>
               </tr>
@@ -889,7 +889,7 @@ const PropertiesManagement = () => {
             <tbody className="bg-card divide-y divide-gray-200">
               {properties.length === 0 ? (
                 <tr>
-                  <td colSpan="7" className="px-6 py-12 text-center text-muted-foreground">
+                  <td colSpan="7" className="px-3 py-12 text-center text-muted-foreground">
                     <div className="flex flex-col items-center">
                       <Building2 className="w-12 h-12 text-muted-foreground mb-4" />
                       <p className="text-lg font-medium">No properties found</p>
@@ -965,38 +965,38 @@ const PropertiesManagement = () => {
 
                 return (
                   <tr key={mappedProperty.id} className="hover:bg-accent">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="flex-shrink-0 h-10 w-10">
-                          <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center">
-                            <Building2 className="w-5 h-5 text-muted-foreground" />
+                    <td className="px-3 py-2">
+                      <div className="flex items-center min-w-0">
+                        <div className="flex-shrink-0 h-8 w-8">
+                          <div className="h-8 w-8 rounded-lg bg-muted flex items-center justify-center">
+                            <Building2 className="w-4 h-4 text-muted-foreground" />
                           </div>
                         </div>
-                        <div className="ml-4">
-                          <div className="text-sm font-medium text-card-foreground">
+                        <div className="ml-2 min-w-0 flex-1">
+                          <div className="text-xs font-medium text-card-foreground truncate">
                             <button
                               onClick={() => handleViewProperty(mappedProperty)}
-                              className="text-blue-600 hover:text-blue-800 hover:underline cursor-pointer text-left"
+                              className="text-blue-600 hover:text-blue-800 hover:underline cursor-pointer text-left truncate max-w-full"
                             >
                               {mappedProperty.title}
                             </button>
                           </div>
-                          <div className="text-sm text-muted-foreground flex items-center">
-                            <MapPin className="w-3 h-3 mr-1" />
-                            {mappedProperty.location_city}
+                          <div className="text-xs text-muted-foreground flex items-center truncate">
+                            <MapPin className="w-3 h-3 mr-1 flex-shrink-0" />
+                            <span className="truncate">{mappedProperty.location_city}</span>
                           </div>
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <Badge className={getPropertyTypeColor(mappedProperty.property_type)}>
+                    <td className="px-3 py-2 whitespace-nowrap">
+                      <Badge className={`${getPropertyTypeColor(mappedProperty.property_type)} text-xs`}>
                         {mappedProperty.property_type}
                       </Badge>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-3 py-2 whitespace-nowrap">
                       <Badge 
                         variant={statusInfo.variant}
-                        className="cursor-pointer hover:opacity-80 transition-opacity"
+                        className="cursor-pointer hover:opacity-80 transition-opacity text-xs"
                         onClick={() => {
                           setSelectedProperty(mappedProperty);
                           setShowModal(true);
@@ -1006,59 +1006,61 @@ const PropertiesManagement = () => {
                         {statusInfo.text}
                       </Badge>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-card-foreground">
+                    <td className="px-3 py-2 whitespace-nowrap text-xs text-card-foreground">
                       {formatPrice(mappedProperty.pricing_total_value)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-3 py-2 whitespace-nowrap">
                       <div className="flex items-center">
-                        <div className="w-16 bg-muted rounded-full h-2 mr-2">
+                        <div className="w-12 bg-muted rounded-full h-1.5 mr-1.5 flex-shrink-0">
                           <div
-                            className={`h-2 rounded-full ${isDisabled ? 'bg-green-600' : 'bg-gray-400'}`}
+                            className={`h-1.5 rounded-full ${isDisabled ? 'bg-green-600' : 'bg-gray-400'}`}
                             style={{ width: `${Math.max(fundingPercentage, 0.1)}%` }}
                           ></div>
                         </div>
-                        <span className={`text-sm ${isDisabled ? 'text-green-600 font-medium' : 'text-muted-foreground'}`}>
-                          {fundingPercentage < 0.01 ? fundingPercentage.toFixed(5) : Math.round(fundingPercentage)}%
+                        <span className={`text-xs ${isDisabled ? 'text-green-600 font-medium' : 'text-muted-foreground'}`}>
+                          {fundingPercentage < 0.01 ? fundingPercentage.toFixed(2) : Math.round(fundingPercentage)}%
                         </span>
                         {isDisabled && (
-                          <span className="ml-2 text-xs text-red-500">🔒</span>
+                          <span className="ml-1 text-xs text-red-500">🔒</span>
                         )}
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-card-foreground">
+                    <td className="px-3 py-2 whitespace-nowrap text-xs text-card-foreground">
                       {mappedProperty.pricing_expected_roi}%
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <div className="flex items-center space-x-2">
+                    <td className="px-3 py-2 whitespace-nowrap text-sm font-medium">
+                      <div className="flex items-center justify-start space-x-1">
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={() => handleDistributeReward(mappedProperty)}
-                          className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                          className="h-7 w-7 p-0 text-green-600 hover:text-green-700 hover:bg-green-50"
                           title="Distribute Reward"
                         >
-                          <DollarSign className="w-4 h-4" />
+                          <DollarSign className="w-3.5 h-3.5" />
                         </Button>
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={() => handleEditProperty(mappedProperty)}
+                          className="h-7 w-7 p-0"
                           title="Edit Property"
                         >
-                          <Edit className="w-4 h-4" />
+                          <Edit className="w-3.5 h-3.5" />
                         </Button>
                         <Button 
                           variant="outline" 
                           size="sm"
                           onClick={() => handleViewProperty(mappedProperty)}
+                          className="h-7 w-7 p-0"
                           title="View Property Details"
                         >
-                          <Eye className="w-4 h-4" />
+                          <Eye className="w-3.5 h-3.5" />
                         </Button>
                         <Button 
                           variant="outline" 
                           size="sm" 
-                          className={`${isDisabled ? 'text-muted-foreground cursor-not-allowed opacity-50' : 'text-red-600 hover:text-red-700 hover:bg-red-50'}`}
+                          className={`h-7 w-7 p-0 ${isDisabled ? 'text-muted-foreground cursor-not-allowed opacity-50' : 'text-red-600 hover:text-red-700 hover:bg-red-50'}`}
                           onClick={() => {
                             console.log(`Delete clicked for ${mappedProperty.title}:`, {
                               fundingPercentage,
@@ -1077,7 +1079,7 @@ const PropertiesManagement = () => {
                           disabled={isDisabled}
                           title={isDisabled ? `Cannot delete property with ${fundingPercentage.toFixed(5)}% funding` : 'Delete Property'}
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <Trash2 className="w-3.5 h-3.5" />
                         </Button>
                       </div>
                     </td>
@@ -1159,30 +1161,33 @@ const PropertiesManagement = () => {
         const roi = selectedProperty.pricing_expected_roi || selectedProperty.expectedROI || 0;
         
         return (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-            <div className="relative top-10 mx-auto p-6 border w-full max-w-4xl shadow-lg rounded-md bg-card my-10">
-              {/* Close Button */}
-              <button
-                onClick={() => {
-                  setShowModal(false);
-                  setSelectedProperty(null);
-                }}
-                className="absolute top-4 right-4 text-muted-foreground hover:text-muted-foreground"
-              >
-                <X className="w-6 h-6" />
-              </button>
-
-              {/* Header */}
-              <div className="mb-6">
-                <h2 className="text-2xl font-bold text-card-foreground">{selectedProperty.title}</h2>
-                <p className="text-muted-foreground flex items-center mt-1">
-                  <MapPin className="w-4 h-4 mr-1" />
-                  {selectedProperty.location_city || 'Unknown City'}
-                </p>
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 h-full w-full z-50 flex items-start justify-center p-4 overflow-y-auto">
+            <div className="relative my-4 mx-auto border w-full max-w-4xl shadow-lg rounded-md bg-card max-h-[95vh] flex flex-col">
+              {/* Sticky Header with Close Button */}
+              <div className="sticky top-0 z-10 bg-card border-b border-border px-6 py-4 flex justify-between items-center rounded-t-md shadow-sm">
+                <div>
+                  <h2 className="text-2xl font-bold text-card-foreground">{selectedProperty.title}</h2>
+                  <p className="text-muted-foreground flex items-center mt-1">
+                    <MapPin className="w-4 h-4 mr-1" />
+                    {selectedProperty.location_city || 'Unknown City'}
+                  </p>
                 </div>
+                <button
+                  onClick={() => {
+                    setShowModal(false);
+                    setSelectedProperty(null);
+                  }}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
 
-              {/* Investment Stats Cards */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+              {/* Scrollable Content */}
+              <div className="overflow-y-auto flex-1 px-6 py-6">
+
+                {/* Investment Stats Cards */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                 <Card className="p-4">
                   <p className="text-xs text-muted-foreground mb-1">Total Investment</p>
                   <p className="text-lg font-bold text-card-foreground">{formatPrice(totalInvestment)}</p>
@@ -1201,8 +1206,8 @@ const PropertiesManagement = () => {
                 </Card>
                 </div>
 
-              {/* Second Row Stats */}
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
+                {/* Second Row Stats */}
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
                 <Card className="p-4">
                   <p className="text-xs text-muted-foreground mb-1">Price Per Token</p>
                   <p className="text-lg font-bold text-card-foreground">{formatPrice(pricePerToken)}</p>
@@ -1217,8 +1222,8 @@ const PropertiesManagement = () => {
                 </Card>
                 </div>
 
-              {/* Property Information */}
-              <Card className="p-6">
+                {/* Property Information */}
+                <Card className="p-6">
                 <h3 className="text-lg font-semibold text-card-foreground mb-4">Property Information</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -1250,39 +1255,40 @@ const PropertiesManagement = () => {
                   </div>
               </Card>
 
-              {/* Action Buttons */}
-              <div className="flex justify-end space-x-3 mt-6">
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setShowModal(false);
-                    setSelectedProperty(null);
-                  }}
-                >
-                  Close
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setShowModal(false);
-                    handleDistributeReward(selectedProperty);
-                  }}
-                  className="flex items-center bg-green-600 hover:bg-green-700 text-white border-green-600"
-                >
-                  <DollarSign className="w-4 h-4 mr-2" />
-                  Distribute Reward
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setShowModal(false);
-                    handleEditProperty(selectedProperty);
-                  }}
-                  className="flex items-center"
-                >
-                  <Edit className="w-4 h-4 mr-2" />
-                  Edit Property
-                </Button>
+                {/* Action Buttons */}
+                <div className="flex justify-end space-x-3 mt-6">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setShowModal(false);
+                      setSelectedProperty(null);
+                    }}
+                  >
+                    Close
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setShowModal(false);
+                      handleDistributeReward(selectedProperty);
+                    }}
+                    className="flex items-center bg-green-600 hover:bg-green-700 text-white border-green-600"
+                  >
+                    <DollarSign className="w-4 h-4 mr-2" />
+                    Distribute Reward
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setShowModal(false);
+                      handleEditProperty(selectedProperty);
+                    }}
+                    className="flex items-center"
+                  >
+                    <Edit className="w-4 h-4 mr-2" />
+                    Edit Property
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
