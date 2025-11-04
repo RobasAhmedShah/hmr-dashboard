@@ -24,7 +24,7 @@ const Header = () => {
           {/* Logo */}
           <div className="flex-shrink-0">
             <Link to="/" className="flex items-center">
-              <img src="/logo.svg" alt="Logo" className="w-8 h-8 rounded-lg" />
+              <img src="/logo1.png" alt="Logo" className="w-8 h-8 rounded-lg" />
               <span className="ml-2 text-xl font-bold text-foreground">HMR Builders</span>
             </Link>
           </div>

@@ -22,7 +22,7 @@ import Badge from '../../components/ui/Badge';
 import ThemeToggle from '../../components/ThemeToggle';
 import AdminSidebar from '../../components/admin/AdminSidebar';
 import MetricCards from '../../components/admin/MetricCards';
-import InvestmentChart from '../../components/admin/InvestmentChart';
+// import InvestmentChart from '../../components/admin/InvestmentChart';
 import { adminAPI } from '../../services/api';
 import { useAdminAuth } from '../../components/admin/AdminAuth';
 import PropertiesManagement from './PropertiesManagement';
@@ -299,11 +299,19 @@ const AdminDashboard = () => {
           }}
         />
 
-        {/* Investment Chart */}
-        <InvestmentChart 
+        {/* Investment Chart - Temporarily disabled until recharts is installed */}
+        {/* <InvestmentChart 
           data={timeSeries?.investments} 
           stats={stats}
-        />
+        /> */}
+        <Card className="p-6">
+          <div className="text-center py-12">
+            <p className="text-muted-foreground">Investment chart temporarily disabled</p>
+            <p className="text-sm text-muted-foreground mt-2">
+              Install recharts: <code className="bg-accent px-2 py-1 rounded">npm install recharts</code>
+            </p>
+          </div>
+        </Card>
 
         {/* Peak Performance Cards */}
         {aggregated?.users?.peak || aggregated?.investments?.peak || aggregated?.transactions?.peak ? (

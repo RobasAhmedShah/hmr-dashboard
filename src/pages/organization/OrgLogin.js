@@ -68,7 +68,7 @@ const OrgLogin = () => {
       </div>
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
-          <img src="/logo.svg" alt="Logo" className="mx-auto h-16 w-16 rounded-lg shadow-lg" />
+          <img src="/logo1.png" alt="Logo" className="mx-auto h-16 w-16 rounded-lg shadow-lg" />
           <h2 className="mt-6 text-3xl font-extrabold text-card-foreground">
             Organization Portal
           </h2>
