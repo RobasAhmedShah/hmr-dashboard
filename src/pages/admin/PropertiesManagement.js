@@ -10,13 +10,17 @@ import {
   Building2,
   MapPin,
   AlertTriangle,
-  X
+  X,
+  DollarSign,
+  Coins,
+  Users
 } from 'lucide-react';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import Badge from '../../components/ui/Badge';
+import Input from '../../components/ui/Input';
 import PropertyForm from '../../components/admin/PropertyForm';
-import { adminAPI } from '../../services/api';
+import { adminAPI, rewardsAPI, investmentsAPI } from '../../services/api';
 import { useAdminAuth } from '../../components/admin/AdminAuth';
 
 const PropertiesManagement = () => {
@@ -36,6 +40,10 @@ const PropertiesManagement = () => {
   const [editingProperty, setEditingProperty] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [propertyToDelete, setPropertyToDelete] = useState(null);
+  const [showRewardModal, setShowRewardModal] = useState(false);
+  const [propertyForReward, setPropertyForReward] = useState(null);
+  const [rewardAmount, setRewardAmount] = useState('');
+  const [rewardDistributionResult, setRewardDistributionResult] = useState(null);
 
   const queryClient = useQueryClient();
 
@@ -278,6 +286,112 @@ const PropertiesManagement = () => {
       }
     }
   );
+
+  // Fetch all investments to filter by property (backend doesn't support propertyId filter)
+  const { data: allInvestmentsData, isLoading: isLoadingInvestments } = useQuery(
+    ['all-investments'],
+    () => investmentsAPI.getAll(),
+    {
+      enabled: !!propertyForReward && showRewardModal,
+      retry: 1,
+    }
+  );
+
+  // Calculate total tokens in market from confirmed investments for this property
+  const totalTokensInMarket = useMemo(() => {
+    if (!propertyForReward || !allInvestmentsData?.data) {
+      // Fallback: calculate from property tokens (total - available)
+      if (propertyForReward) {
+        const total = parseFloat(propertyForReward.tokenization_total_tokens || propertyForReward.totalTokens || 0);
+        const available = parseFloat(propertyForReward.tokenization_available_tokens || propertyForReward.availableTokens || 0);
+        return Math.max(0, total - available);
+      }
+      return 0;
+    }
+    
+    const investments = Array.isArray(allInvestmentsData.data) 
+      ? allInvestmentsData.data 
+      : allInvestmentsData.data.data || [];
+    
+    const propertyId = propertyForReward.id || propertyForReward.displayCode;
+    const propertyInvestments = investments.filter(inv => 
+      (inv.propertyId === propertyId || 
+       inv.property?.id === propertyId || 
+       inv.property?.displayCode === propertyId) &&
+      (inv.status === 'confirmed' || inv.status === 'active')
+    );
+    
+    return propertyInvestments.reduce((sum, inv) => {
+      const tokens = parseFloat(inv.tokensPurchased) || 0;
+      return sum + tokens;
+    }, 0);
+  }, [allInvestmentsData, propertyForReward]);
+
+  // Count investors for this property
+  const investorCount = useMemo(() => {
+    if (!propertyForReward || !allInvestmentsData?.data) return 0;
+    
+    const investments = Array.isArray(allInvestmentsData.data) 
+      ? allInvestmentsData.data 
+      : allInvestmentsData.data.data || [];
+    
+    const propertyId = propertyForReward.id || propertyForReward.displayCode;
+    const propertyInvestments = investments.filter(inv => 
+      (inv.propertyId === propertyId || 
+       inv.property?.id === propertyId || 
+       inv.property?.displayCode === propertyId) &&
+      (inv.status === 'confirmed' || inv.status === 'active')
+    );
+    
+    // Count unique users
+    const uniqueUsers = new Set(propertyInvestments.map(inv => inv.userId || inv.user?.id));
+    return uniqueUsers.size;
+  }, [allInvestmentsData, propertyForReward]);
+
+  // Distribute reward mutation
+  const distributeRewardMutation = useMutation(
+    (data) => rewardsAPI.distributeRoi(data),
+    {
+      onSuccess: (response) => {
+        console.log('✅ Reward distributed successfully:', response);
+        const result = response?.data || response;
+        setRewardDistributionResult(result);
+        queryClient.invalidateQueries(['admin-properties']);
+        queryClient.invalidateQueries(['all-investments']);
+        // Show success message
+        const message = result.message || `Successfully distributed ${rewardAmount} USDT`;
+        alert(`✅ ${message}`);
+      },
+      onError: (error) => {
+        console.error('❌ Failed to distribute reward:', error);
+        const errorMsg = error.response?.data?.message || error.message || 'Unknown error';
+        alert(`❌ Failed to distribute reward: ${errorMsg}`);
+      }
+    }
+  );
+
+  // Handle reward distribution
+  const handleDistributeReward = (property) => {
+    setPropertyForReward(property);
+    setRewardAmount('');
+    setRewardDistributionResult(null);
+    setShowRewardModal(true);
+  };
+
+  // Confirm reward distribution
+  const confirmDistributeReward = () => {
+    if (!propertyForReward) return;
+    if (!rewardAmount || parseFloat(rewardAmount) <= 0) {
+      alert('Please enter a valid reward amount (greater than 0)');
+      return;
+    }
+
+    const propertyId = propertyForReward.displayCode || propertyForReward.id;
+    distributeRewardMutation.mutate({
+      propertyId: propertyId,
+      totalRoiUSDT: parseFloat(rewardAmount)
+    });
+  };
 
   // Parse response - handle different backend formats
   // Get all properties from API response
@@ -919,6 +1033,15 @@ const PropertiesManagement = () => {
                         <Button
                           variant="outline"
                           size="sm"
+                          onClick={() => handleDistributeReward(mappedProperty)}
+                          className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                          title="Distribute Reward"
+                        >
+                          <DollarSign className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
                           onClick={() => handleEditProperty(mappedProperty)}
                           title="Edit Property"
                         >
@@ -1222,6 +1345,213 @@ const PropertiesManagement = () => {
                   {deletePropertyMutation.isLoading ? 'Deleting...' : 'Delete Property'}
                 </Button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reward Distribution Modal */}
+      {showRewardModal && propertyForReward && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-card">
+            <div className="mt-3">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-green-100 rounded-lg">
+                    <DollarSign className="w-6 h-6 text-green-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-medium text-card-foreground">Distribute Reward</h3>
+                    <p className="text-sm text-muted-foreground">Distribute ROI to all investors</p>
+                  </div>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setShowRewardModal(false);
+                    setPropertyForReward(null);
+                    setRewardAmount('');
+                    setRewardDistributionResult(null);
+                  }}
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+              
+              {/* Property Info */}
+              <Card className="p-4 mb-4">
+                <h4 className="font-medium text-card-foreground mb-3">{propertyForReward.title}</h4>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="text-muted-foreground">Display Code:</span>
+                    <p className="font-medium text-card-foreground">{propertyForReward.displayCode || propertyForReward.id}</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Location:</span>
+                    <p className="font-medium text-card-foreground">{propertyForReward.location_city || propertyForReward.city || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Total Tokens:</span>
+                    <p className="font-medium text-card-foreground">
+                      {propertyForReward.tokenization_total_tokens || propertyForReward.totalTokens || 'N/A'}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Available Tokens:</span>
+                    <p className="font-medium text-card-foreground">
+                      {propertyForReward.tokenization_available_tokens || propertyForReward.availableTokens || 'N/A'}
+                    </p>
+                  </div>
+                </div>
+              </Card>
+
+              {/* Token Market Info */}
+              {isLoadingInvestments ? (
+                <div className="text-center py-4">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div>
+                  <p className="text-sm text-muted-foreground mt-2">Loading investment data...</p>
+                </div>
+              ) : (
+                <Card className="p-4 mb-4 bg-blue-50 border-blue-200">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <Coins className="w-5 h-5 text-blue-600" />
+                    <h4 className="font-medium text-card-foreground">Tokens in Market</h4>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <span className="text-sm text-muted-foreground">Total Tokens Purchased:</span>
+                      <p className="text-lg font-semibold text-blue-600">
+                        {totalTokensInMarket.toLocaleString(undefined, { maximumFractionDigits: 6 })} tokens
+                      </p>
+                    </div>
+                    <div>
+                      <span className="text-sm text-muted-foreground">Investors:</span>
+                      <p className="text-lg font-semibold text-blue-600">
+                        {investorCount} user{investorCount !== 1 ? 's' : ''}
+                      </p>
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Rewards will be distributed proportionally based on token ownership
+                  </p>
+                </Card>
+              )}
+
+              {/* Reward Distribution Form */}
+              {!rewardDistributionResult ? (
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-card-foreground mb-2">
+                      Total ROI Amount (USDT)
+                    </label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0.01"
+                      placeholder="Enter total ROI amount in USDT"
+                      value={rewardAmount}
+                      onChange={(e) => setRewardAmount(e.target.value)}
+                      className="w-full"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      This amount will be distributed proportionally to all investors based on their token ownership
+                    </p>
+                  </div>
+
+                  {rewardAmount && parseFloat(rewardAmount) > 0 && totalTokensInMarket > 0 && (
+                    <Card className="p-4 bg-green-50 border-green-200">
+                      <div className="flex items-center space-x-2 mb-2">
+                        <Users className="w-5 h-5 text-green-600" />
+                        <h4 className="font-medium text-card-foreground">Distribution Preview</h4>
+                      </div>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Total ROI:</span>
+                          <span className="font-semibold text-green-600">{parseFloat(rewardAmount).toLocaleString()} USDT</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Total Tokens in Market:</span>
+                          <span className="font-semibold">{totalTokensInMarket.toLocaleString(undefined, { maximumFractionDigits: 6 })}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">ROI per Token:</span>
+                          <span className="font-semibold">
+                            {(parseFloat(rewardAmount) / totalTokensInMarket).toFixed(6)} USDT
+                          </span>
+                        </div>
+                        <div className="pt-2 border-t border-green-200">
+                          <p className="text-xs text-muted-foreground">
+                            Each investor will receive rewards proportional to their token ownership
+                          </p>
+                        </div>
+                      </div>
+                    </Card>
+                  )}
+
+                  <div className="flex justify-end space-x-3 mt-6">
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setShowRewardModal(false);
+                        setPropertyForReward(null);
+                        setRewardAmount('');
+                        setRewardDistributionResult(null);
+                      }}
+                      disabled={distributeRewardMutation.isLoading}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      onClick={confirmDistributeReward}
+                      disabled={distributeRewardMutation.isLoading || !rewardAmount || parseFloat(rewardAmount) <= 0}
+                      className="bg-green-600 hover:bg-green-700"
+                    >
+                      {distributeRewardMutation.isLoading ? 'Distributing...' : 'Distribute Reward'}
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <Card className="p-4 bg-green-50 border-green-200">
+                    <div className="flex items-center space-x-2 mb-3">
+                      <div className="p-2 bg-green-100 rounded-lg">
+                        <DollarSign className="w-5 h-5 text-green-600" />
+                      </div>
+                      <h4 className="font-medium text-green-800">Reward Distribution Successful!</h4>
+                    </div>
+                    <div className="space-y-2 text-sm">
+                      <p className="text-green-700 font-medium">
+                        {rewardDistributionResult.message || `Successfully distributed ${rewardAmount} USDT`}
+                      </p>
+                      {rewardDistributionResult.count && (
+                        <p className="text-muted-foreground">
+                          Rewards distributed to {rewardDistributionResult.count} user(s)
+                        </p>
+                      )}
+                      {rewardDistributionResult.totalDistributed && (
+                        <p className="text-muted-foreground">
+                          Total distributed: {parseFloat(rewardDistributionResult.totalDistributed).toLocaleString()} USDT
+                        </p>
+                      )}
+                    </div>
+                  </Card>
+
+                  <div className="flex justify-end space-x-3">
+                    <Button
+                      onClick={() => {
+                        setShowRewardModal(false);
+                        setPropertyForReward(null);
+                        setRewardAmount('');
+                        setRewardDistributionResult(null);
+                      }}
+                      className="bg-green-600 hover:bg-green-700"
+                    >
+                      Close
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
