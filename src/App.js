@@ -5,14 +5,14 @@ import { UserProvider } from './contexts/UserContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 
 // Pages
-import Home from './pages/Home';
-import Properties from './pages/Properties';
-import Login from './pages/Login';
-import Register from './pages/Register';
-import Dashboard from './pages/Dashboard';
-import Portfolio from './pages/Portfolio';
-import Profile from './pages/Profile';
-import Wallet from './pages/Wallet';
+import Home from './pages/user/Home';
+import Properties from './pages/user/Properties';
+import Login from './pages/user/Login';
+import Register from './pages/user/Register';
+import Dashboard from './pages/user/Dashboard';
+import Portfolio from './pages/user/Portfolio';
+import Profile from './pages/user/Profile';
+import Wallet from './pages/user/Wallet';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminLogin from './pages/admin/AdminLogin';
 import PropertyDetail from './pages/admin/PropertyDetail';

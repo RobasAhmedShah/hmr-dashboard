@@ -60,83 +60,89 @@ export const propertiesAPI = {
   }),
 };
 
-// Investments API (Complete)
+// Investments API (Complete - User End)
 export const investmentsAPI = {
-  create: (investmentData) => api.post('/investments/invest', investmentData), // Updated for new backend
+  create: (investmentData) => api.post('/investments', investmentData), // Create investment (POST /api/investments)
   invest: (investData) => api.post('/investments/invest', investData), // Make investment
   getAll: (params) => api.get('/investments', { params }), // Get all investments with optional filters
-  getMyInvestments: (params) => api.get('/investments/my-investments', { params }),
-  getByUserId: (userId) => api.get(`/investments`, { params: { userId } }), // Updated to use query param
-  getById: (id) => api.get(`/investments/${id}`),
+  getMyInvestments: (params) => api.get('/investments/my-investments', { params }), // GET /api/investments/my-investments
+  getByUserId: (userId) => api.get(`/investments/user/${userId}`), // GET /api/investments/user/:userId
+  getById: (id) => api.get(`/investments/${id}`), // GET /api/investments/:id
   updateStatus: (id, status) => api.patch(`/investments/${id}/status`, { status }),
   cancel: (id) => api.patch(`/investments/${id}/cancel`),
-  getPortfolioSummary: () => api.get('/investments/portfolio/summary'),
+  getPortfolioSummary: () => api.get('/investments/portfolio/summary'), // GET /api/investments/portfolio/summary
   // Investment Analytics
   getUserAnalytics: (userId) => api.get(`/investments/analytics/user/${userId}`),
   getOrganizationAnalytics: (orgId) => api.get(`/investments/analytics/organization/${orgId}`),
   getUserOrgAnalytics: (userId, orgId) => api.get(`/investments/analytics/user/${userId}/organization/${orgId}`),
 };
 
-// Users API (Complete)
+// Users API (Complete - User End)
 export const usersAPI = {
-  getAll: () => api.get('/admin/users'), // Updated for new backend
-  getById: (userId) => api.get(`/users/${userId}`), // Get user by ID or displayCode
+  getAll: () => api.get('/admin/users'), // GET /api/admin/users (for profile switcher - backend uses admin endpoint)
+  getById: (userId) => api.get(`/users/${userId}`), // GET /api/users/:userId (Get user by ID or displayCode)
   updateUser: (userId, userData) => api.patch(`/users/${userId}`, userData), // Update user profile
-  getProfile: () => api.get('/users/profile'),
-  getProfileById: (userId) => api.get(`/users/profile/${userId}`),
-  updateProfile: (profileData) => api.put('/users/profile', profileData),
-  changePassword: (passwordData) => api.put('/users/change-password', passwordData),
-  submitKYC: (kycData) => api.post('/users/kyc', kycData),
-  getKYCStatus: () => api.get('/users/kyc/status'),
-  getActivity: () => api.get('/users/activity'),
-  getNotifications: () => api.get('/users/notifications'),
-  getWallet: () => api.get('/users/wallet'),
-  getWalletById: (userId) => api.get(`/wallet/user/${userId}`), // Updated for new backend
-  getHoldings: () => api.get('/users/holdings'),
-  getAllUsers: () => api.get('/admin/users'), // Updated for new backend
+  getProfile: () => api.get('/users/profile'), // GET /api/users/profile (authenticated user)
+  getProfileById: (userId) => api.get(`/users/profile/${userId}`), // GET /api/users/profile/:userId
+  updateProfile: (profileData) => api.put('/users/profile', profileData), // PUT /api/users/profile
+  changePassword: (passwordData) => api.put('/users/change-password', passwordData), // PUT /api/users/change-password
+  submitKYC: (kycData) => api.post('/users/kyc', kycData), // POST /api/users/kyc
+  getKYCStatus: () => api.get('/users/kyc/status'), // GET /api/users/kyc/status
+  getActivity: () => api.get('/users/activity'), // GET /api/users/activity
+  getNotifications: () => api.get('/users/notifications'), // GET /api/users/notifications
+  getWallet: () => api.get('/users/wallet'), // GET /api/users/wallet (authenticated user)
+  getWalletById: (userId) => api.get(`/wallet/user/${userId}`), // GET /api/wallet/user/:userId (backend uses /wallet/user not /users/wallet)
+  getHoldings: () => api.get('/users/holdings'), // GET /api/users/holdings
+  getAllUsers: () => api.get('/admin/users'), // GET /api/admin/users (for profile switcher - backend uses admin endpoint)
 };
 
-// Payment Methods API
+// Payment Methods API (User End)
 export const paymentMethodsAPI = {
-  getAll: (userId) => api.get(`/payment-methods${userId ? `?userId=${userId}` : ''}`),
-  create: (paymentData) => api.post('/payment-methods', paymentData),
-  setDefault: (id) => api.put(`/payment-methods/${id}/default`),
-  delete: (id) => api.delete(`/payment-methods/${id}`),
-  verify: (id, otp) => api.post(`/payment-methods/${id}/verify`, { otp }),
+  getAll: (userId) => api.get(`/payment-methods${userId ? `?userId=${userId}` : ''}`), // GET /api/payment-methods?userId={userId}
+  create: (paymentData) => api.post('/payment-methods', paymentData), // POST /api/payment-methods
+  setDefault: (id) => api.put(`/payment-methods/${id}/default`), // PUT /api/payment-methods/:id/default
+  delete: (id) => api.delete(`/payment-methods/${id}`), // DELETE /api/payment-methods/:id
+  verify: (id, otp) => api.post(`/payment-methods/${id}/verify`, { otp }), // POST /api/payment-methods/:id/verify
 };
 
-// Wallet API (Complete)
+// Wallet API (Complete - User End)
 export const walletAPI = {
   // Wallet operations
   getWallet: (userId) => api.get(`/wallet/user/${userId}`), // Get wallet by user ID or displayCode
   getAllWallets: () => api.get('/wallet'), // Get all wallets
   updateWallet: (walletId, walletData) => api.patch(`/wallet/${walletId}`, walletData), // Update wallet
   deposit: (depositData) => api.post('/wallet/deposit', depositData), // Create deposit
-  buyTokens: (data) => api.post('/wallet/buy-tokens', data),
-  getHoldings: (userId) => api.get(`/wallet/holdings/${userId}`),
-  getHistory: (userId, params) => api.get(`/wallet/history/${userId}`, { params }),
-  getProperties: (params) => api.get('/wallet/properties', { params }),
-  getProperty: (id) => api.get(`/wallet/properties/${id}`),
+  buyTokens: (data) => api.post('/wallet/buy-tokens', data), // POST /api/wallet/buy-tokens
+  getHoldings: (userId) => api.get(`/wallet/holdings/${userId}`), // GET /api/wallet/holdings/:userId
+  getHistory: (userId, params) => api.get(`/wallet/history/${userId}`, { params }), // GET /api/wallet/history/:userId
+  getProperties: (params) => api.get('/wallet/properties', { params }), // GET /api/wallet/properties
+  getProperty: (id) => api.get(`/wallet/properties/${id}`), // GET /api/wallet/properties/:id
 };
 
-// Wallet Transactions API (Complete)
+// Wallet Transactions API (Complete - User End)
 export const walletTransactionsAPI = {
-  getAll: (params) => api.get('/transactions', { params }), // Updated for new backend
-  createDeposit: (depositData) => api.post('/wallet/deposit', depositData), // Updated for new backend
-  createWithdrawal: (withdrawalData) => api.post('/wallet-transactions/withdrawal', withdrawalData),
-  verifyOTP: (id, otp) => api.post(`/wallet-transactions/${id}/verify-otp`, { otp }),
-  getById: (id) => api.get(`/wallet-transactions/${id}`),
-  getBalance: () => api.get('/wallet-transactions/balance/current'),
-  getByUserId: (userId, params) => api.get(`/transactions/user/${userId}`, { params }), // Updated for new backend
+  getAll: (params) => api.get('/wallet-transactions', { params }), // GET /api/wallet-transactions (with filters)
+  createDeposit: (depositData) => api.post('/wallet-transactions/deposit', depositData), // POST /api/wallet-transactions/deposit
+  createWithdrawal: (withdrawalData) => api.post('/wallet-transactions/withdrawal', withdrawalData), // POST /api/wallet-transactions/withdrawal
+  verifyOTP: (id, otp) => api.post(`/wallet-transactions/${id}/verify-otp`, { otp }), // POST /api/wallet-transactions/:id/verify-otp
+  getById: (id) => api.get(`/wallet-transactions/${id}`), // GET /api/wallet-transactions/:id
+  getBalance: () => api.get('/wallet-transactions/balance/current'), // GET /api/wallet-transactions/balance/current
+  getByUserId: (userId, params) => api.get(`/transactions/user/${userId}`, { params }), // GET /api/transactions/user/:userId (backend uses /transactions not /wallet-transactions)
   // New on-chain and third-party deposit methods
-  createOnChainDeposit: (data) => api.post('/wallet/deposit', {  // Updated for new backend
+  createOnChainDeposit: (data) => api.post('/wallet-transactions/deposit', {  // POST /api/wallet-transactions/deposit (with provider/blockchain)
     userId: data.userId,
-    provider: data.blockchain,
+    blockchain: data.blockchain,
+    provider: data.provider || data.blockchain,
     action: 'generate',
-    amount: 1000, // Default amount for address generation
-    currency: 'PKR'
+    amount: data.amount || 1000,
+    currency: data.currency || 'PKR'
   }),
-  createThirdPartyDeposit: (data) => api.post('/wallet/deposit', { ...data, type: 'thirdparty' }), // Updated for new backend
+  createThirdPartyDeposit: (data) => api.post('/wallet-transactions/deposit', { // POST /api/wallet-transactions/deposit (with provider)
+    ...data,
+    provider: data.provider,
+    action: 'generate',
+    type: 'thirdparty'
+  }),
 };
 
 // Organizations API (Real estate developers)
@@ -240,13 +246,13 @@ export const adminAPI = {
   getTransaction: (id) => api.get(`/transactions/${id}`), // Not yet implemented
 };
 
-// Portfolio API (Complete)
+// Portfolio API (Complete - User End)
 export const portfolioAPI = {
-  getPortfolio: (userId) => api.get(`/portfolio/user/${userId}/detailed`), // Get detailed portfolio for user
-  getDetailedPortfolio: (userId) => api.get(`/portfolio/user/${userId}/detailed`), // Alias for clarity
-  getSummary: (userId) => api.get(`/portfolio/summary/${userId}`),
-  getStats: (userId) => api.get(`/portfolio/stats/${userId}`),
-  updateStats: (userId, statsData) => api.put(`/portfolio/stats/${userId}`, statsData),
+  getPortfolio: (userId) => api.get(`/portfolio/${userId}`), // GET /api/portfolio/:userId
+  getDetailedPortfolio: (userId) => api.get(`/portfolio/${userId}`), // Alias for clarity
+  getSummary: (userId) => api.get(`/portfolio/summary/${userId}`), // GET /api/portfolio/summary/:userId
+  getStats: (userId) => api.get(`/portfolio/stats/${userId}`), // GET /api/portfolio/stats/:userId
+  updateStats: (userId, statsData) => api.put(`/portfolio/stats/${userId}`, statsData), // PUT /api/portfolio/stats/:userId
 };
 
 // Calculator API (Mobile Optimized)

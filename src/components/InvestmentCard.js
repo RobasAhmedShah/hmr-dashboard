@@ -60,16 +60,7 @@ const InvestmentCard = ({ investment }) => {
         </div>
       </div>
 
-      {getPropertyImage(investment.property) && (
-        <img
-          src={getPropertyImage(investment.property)}
-          alt={investment.property?.title || investment.propertyTitle}
-          className="w-full h-32 object-cover rounded-lg mb-4"
-          onError={(e) => {
-            e.target.style.display = 'none';
-          }}
-        />
-      )}
+      {/* Images removed - no pictures displayed */}
 
       <div className="grid grid-cols-2 gap-4 mb-4">
         <div>

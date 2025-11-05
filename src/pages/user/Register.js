@@ -1,38 +1,39 @@
 import React, { useState } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
-import { Eye, EyeOff, Mail, Lock, Building2 } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, User, Building2 } from 'lucide-react';
 import Layout from '../../components/Layout/Layout';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import Card from '../../components/ui/Card';
 
-const Login = () => {
+const Register = () => {
   const navigate = useNavigate();
-  const location = useLocation();
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  
-  const from = location.state?.from?.pathname || '/dashboard';
 
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors },
   } = useForm();
 
+  const password = watch('password');
+
   const onSubmit = async (data) => {
     setLoading(true);
-    // Simulate login process
+    // Simulate registration process
     setTimeout(() => {
       setLoading(false);
-      navigate(from, { replace: true });
+      navigate('/dashboard');
     }, 1000);
   };
 
-  const handleGoogleLogin = () => {
+  const handleGoogleRegister = () => {
     // Implement Google OAuth
-    console.log('Google login clicked');
+    console.log('Google register clicked');
   };
 
   return (
@@ -47,16 +48,66 @@ const Login = () => {
               </div>
             </div>
             <h2 className="mt-6 text-3xl font-bold text-gray-900">
-              Welcome back
+              Create your account
             </h2>
             <p className="mt-2 text-sm text-gray-600">
-              Sign in to your account to continue investing
+              Start investing in real estate today
             </p>
           </div>
 
-          {/* Login Form */}
+          {/* Registration Form */}
           <Card>
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                <div>
+                  <Input
+                    label="First Name"
+                    placeholder="Enter your first name"
+                    {...register('firstName', {
+                      required: 'First name is required',
+                      minLength: {
+                        value: 2,
+                        message: 'First name must be at least 2 characters',
+                      },
+                    })}
+                    error={errors.firstName?.message}
+                    icon={<User className="w-5 h-5 text-gray-400" />}
+                  />
+                </div>
+
+                <div>
+                  <Input
+                    label="Last Name"
+                    placeholder="Enter your last name"
+                    {...register('lastName', {
+                      required: 'Last name is required',
+                      minLength: {
+                        value: 2,
+                        message: 'Last name must be at least 2 characters',
+                      },
+                    })}
+                    error={errors.lastName?.message}
+                    icon={<User className="w-5 h-5 text-gray-400" />}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Input
+                  label="Full Name"
+                  placeholder="Enter your full name"
+                  {...register('name', {
+                    required: 'Full name is required',
+                    minLength: {
+                      value: 2,
+                      message: 'Full name must be at least 2 characters',
+                    },
+                  })}
+                  error={errors.name?.message}
+                  icon={<User className="w-5 h-5 text-gray-400" />}
+                />
+              </div>
+
               <div>
                 <Input
                   label="Email address"
@@ -79,12 +130,16 @@ const Login = () => {
                   <Input
                     label="Password"
                     type={showPassword ? 'text' : 'password'}
-                    placeholder="Enter your password"
+                    placeholder="Create a password"
                     {...register('password', {
                       required: 'Password is required',
                       minLength: {
                         value: 6,
                         message: 'Password must be at least 6 characters',
+                      },
+                      pattern: {
+                        value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
+                        message: 'Password must contain at least one uppercase letter, one lowercase letter, and one number',
                       },
                     })}
                     error={errors.password?.message}
@@ -104,27 +159,52 @@ const Login = () => {
                 </div>
               </div>
 
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <input
-                    id="remember-me"
-                    name="remember-me"
-                    type="checkbox"
-                    className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+              <div>
+                <div className="relative">
+                  <Input
+                    label="Confirm Password"
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    placeholder="Confirm your password"
+                    {...register('confirmPassword', {
+                      required: 'Please confirm your password',
+                      validate: (value) =>
+                        value === password || 'Passwords do not match',
+                    })}
+                    error={errors.confirmPassword?.message}
+                    icon={<Lock className="w-5 h-5 text-gray-400" />}
                   />
-                  <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
-                    Remember me
-                  </label>
-                </div>
-
-                <div className="text-sm">
-                  <Link
-                    to="/forgot-password"
-                    className="font-medium text-primary-600 hover:text-primary-500"
+                  <button
+                    type="button"
+                    className="absolute right-3 top-8 text-gray-400 hover:text-gray-600"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                   >
-                    Forgot your password?
-                  </Link>
+                    {showConfirmPassword ? (
+                      <EyeOff className="w-5 h-5" />
+                    ) : (
+                      <Eye className="w-5 h-5" />
+                    )}
+                  </button>
                 </div>
+              </div>
+
+              <div className="flex items-center">
+                <input
+                  id="terms"
+                  name="terms"
+                  type="checkbox"
+                  required
+                  className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                />
+                <label htmlFor="terms" className="ml-2 block text-sm text-gray-900">
+                  I agree to the{' '}
+                  <Link to="/terms" className="text-primary-600 hover:text-primary-500">
+                    Terms of Service
+                  </Link>{' '}
+                  and{' '}
+                  <Link to="/privacy" className="text-primary-600 hover:text-primary-500">
+                    Privacy Policy
+                  </Link>
+                </label>
               </div>
 
               <Button
@@ -133,7 +213,7 @@ const Login = () => {
                 loading={loading}
                 disabled={loading}
               >
-                Sign in
+                Create Account
               </Button>
             </form>
 
@@ -153,7 +233,7 @@ const Login = () => {
                   type="button"
                   variant="outline"
                   className="w-full"
-                  onClick={handleGoogleLogin}
+                  onClick={handleGoogleRegister}
                 >
                   <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
                     <path
@@ -180,12 +260,12 @@ const Login = () => {
 
             <div className="mt-6 text-center">
               <p className="text-sm text-gray-600">
-                Don't have an account?{' '}
+                Already have an account?{' '}
                 <Link
-                  to="/register"
+                  to="/login"
                   className="font-medium text-primary-600 hover:text-primary-500"
                 >
-                  Sign up for free
+                  Sign in
                 </Link>
               </p>
             </div>
@@ -196,4 +276,5 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default Register;
+
