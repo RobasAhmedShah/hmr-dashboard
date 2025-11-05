@@ -32,36 +32,74 @@ const PropertyCard = ({ property, onInvest }) => {
     return typeMap[type] || 'bg-muted text-card-foreground';
   };
 
-  // Handle mobile API format - fundingPercentage is already calculated
+  // Extract property data with fallbacks for different API formats
+  // Location handling
+  const location = property.location || 
+                   (property.location_city && property.location_state 
+                     ? `${property.location_city}, ${property.location_state}` 
+                     : null) ||
+                   (property.city && property.state 
+                     ? `${property.city}, ${property.state}` 
+                     : null) ||
+                   property.address ||
+                   property.city ||
+                   null;
+
+  // Total Value - check multiple possible field names
+  const totalValue = property.price || 
+                     property.pricing?.totalValue || 
+                     property.totalValueUSDT ||
+                     property.purchasePriceUSDT ||
+                     property.pricing?.marketValue ||
+                     property.marketValue ||
+                     null;
+
+  // Expected ROI - check multiple possible field names
+  const expectedROI = property.roi || 
+                      property.pricing?.expectedROI || 
+                      property.expectedROI ||
+                      property.pricing_expected_roi ||
+                      null;
+
+  // Tokens - check multiple possible field names
+  const totalTokens = property.tokens || 
+                     property.tokenization?.totalTokens || 
+                     property.totalTokens ||
+                     property.tokenization_total_tokens ||
+                     0;
+
+  const availableTokens = property.availableTokens || 
+                         property.tokenization?.availableTokens || 
+                         property.tokenization_available_tokens ||
+                         property.available_tokens ||
+                         0;
+
+  // Min Investment - check multiple possible field names
+  const minInvestment = property.minInvestment || 
+                       property.pricing?.minInvestment || 
+                       property.min_investment ||
+                       property.pricing_min_investment ||
+                       null;
+
+  // Calculate funding percentage
   const tokenPercentage = property.fundingPercentage || 
-    (property.tokenization
-      ? ((property.tokenization.totalTokens - property.tokenization.availableTokens) / property.tokenization.totalTokens) * 100
+    (totalTokens > 0 
+      ? ((totalTokens - availableTokens) / totalTokens) * 100 
       : 0);
 
   return (
     <Card hover className="h-full flex flex-col">
-      <div className="relative">
-        {getPropertyImage(property) && (
-          <img
-            src={getPropertyImage(property)}
-            alt={property.title}
-            className="w-full h-48 object-cover rounded-lg mb-4"
-            onError={(e) => {
-              e.target.style.display = 'none';
-            }}
-          />
-        )}
-        <div className="absolute top-2 left-2 flex gap-2">
+      <div className="relative mb-4">
+        {/* Images removed - no pictures displayed */}
+        <div className="flex gap-2">
           {getStatusBadge(property.status)}
           <Badge className={getPropertyTypeColor(property.propertyType || property.type)}>
             {property.propertyType || property.type || 'Property'}
           </Badge>
-        </div>
-        {property.isFeatured && (
-          <div className="absolute top-2 right-2">
+          {property.isFeatured && (
             <Badge variant="primary">Featured</Badge>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       <div className="flex-1 flex flex-col">
@@ -75,20 +113,20 @@ const PropertyCard = ({ property, onInvest }) => {
 
         <div className="flex items-center text-gray-500 text-sm mb-4">
           <MapPin className="w-4 h-4 mr-1" />
-          <span>{formatLocation(property.location)}</span>
+          <span>{formatLocation(location)}</span>
         </div>
 
         <div className="grid grid-cols-2 gap-4 mb-4">
           <div>
             <p className="text-sm text-gray-500">Total Value</p>
             <p className="font-semibold text-lg">
-              {property.price || formatPrice(property.pricing?.totalValue) || 'N/A'}
+              {totalValue ? formatPrice(totalValue) : 'N/A'}
             </p>
           </div>
           <div>
             <p className="text-sm text-gray-500">Expected ROI</p>
             <p className="font-semibold text-lg text-green-600">
-              {property.roi ? `${property.roi}%` : (property.pricing?.expectedROI ? `${property.pricing.expectedROI}%` : 'N/A')}
+              {expectedROI ? `${expectedROI}%` : 'N/A'}
             </p>
           </div>
         </div>
@@ -105,8 +143,8 @@ const PropertyCard = ({ property, onInvest }) => {
             ></div>
           </div>
           <div className="flex justify-between text-xs text-gray-500 mt-1">
-            <span>{property.availableTokens || 0} available</span>
-            <span>{property.tokens || 0} total</span>
+            <span>{availableTokens} available</span>
+            <span>{totalTokens} total</span>
           </div>
         </div>
 
@@ -116,7 +154,7 @@ const PropertyCard = ({ property, onInvest }) => {
             <span className="text-gray-500">Min Investment</span>
           </div>
           <div className="text-right font-medium">
-            {property.minInvestment || 'PKR 0'}
+            {minInvestment ? (typeof minInvestment === 'string' ? minInvestment : `PKR ${minInvestment.toLocaleString()}`) : 'PKR 0'}
           </div>
         </div>
 
@@ -130,7 +168,7 @@ const PropertyCard = ({ property, onInvest }) => {
             >
               View Details
             </Button>
-            {property.status === 'active' && (property.availableTokens > 0 || property.tokenization?.availableTokens > 0) && (
+            {property.status === 'active' && availableTokens > 0 && (
               <Button
                 className="flex-1"
                 onClick={() => onInvest && onInvest(property)}

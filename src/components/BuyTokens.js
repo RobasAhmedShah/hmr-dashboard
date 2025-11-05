@@ -30,12 +30,24 @@ const BuyTokens = ({ userId, onPurchaseSuccess, preselectPropertyId }) => {
   const fetchProperties = async () => {
     try {
       const response = await walletAPI.getProperties({ limit: 50 });
-      if (response.data.success) {
-        setProperties(response.data.data);
+      console.log('BuyTokens - Properties API Response:', response);
+      // Handle multiple response formats
+      const propertiesData = response?.data?.data || 
+                             response?.data?.properties || 
+                             response?.data || 
+                             (Array.isArray(response?.data) ? response.data : []) ||
+                             [];
+      if (Array.isArray(propertiesData)) {
+        setProperties(propertiesData);
+      } else if (propertiesData && Array.isArray(propertiesData.properties)) {
+        setProperties(propertiesData.properties);
+      } else {
+        console.warn('Unexpected properties data format:', propertiesData);
+        setProperties([]);
       }
     } catch (error) {
       console.error('Error fetching properties:', error);
-      setError('Failed to load properties');
+      setError('Failed to load properties. Please try again.');
     }
   };
 
