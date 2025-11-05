@@ -14,7 +14,6 @@ import {
 } from 'lucide-react';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
-import Badge from '../../components/ui/Badge';
 import { orgAdminAPI, organizationsAPI } from '../../services/api';
 import CreateOrganizationModal from '../../components/admin/CreateOrganizationModal';
 import CredentialsModal from '../../components/admin/CredentialsModal';
@@ -178,9 +177,6 @@ const OrganizationsManagement = () => {
                   <p className="text-sm text-muted-foreground">{org.displayCode}</p>
                 </div>
               </div>
-              <Badge variant={org.isActive ? 'green' : 'red'}>
-                {org.isActive ? 'Active' : 'Inactive'}
-              </Badge>
             </div>
 
             {org.description && (
