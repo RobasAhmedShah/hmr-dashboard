@@ -271,6 +271,7 @@ const Register = () => {
             </div>
           </Card>
         </div>
+        
       </div>
     </Layout>
   );

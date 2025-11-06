@@ -22,51 +22,71 @@ const Portfolio = () => {
     queryClient.invalidateQueries(['token-holdings', userId]);
   }, [userId, queryClient]);
 
-  // Fetch portfolio data
+  // Fetch portfolio data with error handling
   const { data: portfolioData, isLoading: portfolioLoading } = useQuery(
     ['portfolio', userId],
     () => portfolioAPI.getPortfolio(userId),
     {
       enabled: !!userId,
+      retry: false,
+      onError: (error) => {
+        console.warn('Portfolio API not available:', error.response?.status);
+      }
     }
   );
 
-  // Fetch portfolio summary
+  // Fetch portfolio summary with error handling
   const { data: summaryData, isLoading: summaryLoading } = useQuery(
     ['portfolio-summary', userId],
     () => portfolioAPI.getSummary(userId),
     {
       enabled: !!userId,
+      retry: false,
+      onError: (error) => {
+        console.warn('Portfolio summary API not available:', error.response?.status);
+      }
     }
   );
 
-  // Fetch user stats (same as Dashboard)
+  // Fetch user stats with error handling
   const { data: statsData, isLoading: statsLoading, refetch: refetchStats } = useQuery(
     ['portfolio-stats', userId],
     () => portfolioAPI.getStats(userId),
     { 
       enabled: !!userId,
-      staleTime: 0, // Always fetch fresh data
-      cacheTime: 0, // Don't cache the data
-      refetchOnWindowFocus: true // Refetch when window gains focus
+      retry: false,
+      staleTime: 0,
+      cacheTime: 0,
+      refetchOnWindowFocus: true,
+      onError: (error) => {
+        console.warn('Portfolio stats API not available:', error.response?.status);
+      }
     }
   );
 
-  // Fetch user profile for additional data
+  // Fetch user profile with error handling
   const { data: profileData } = useQuery(
     ['user-profile', userId],
     () => usersAPI.getProfileById(userId),
     {
       enabled: !!userId,
+      retry: false,
+      onError: (error) => {
+        console.warn('Profile API not available:', error.response?.status);
+      }
     }
   );
 
-  // Fetch token holdings
+  // Fetch token holdings with error handling
   const { data: tokenHoldingsData, isLoading: tokenHoldingsLoading } = useQuery(
     ['token-holdings', userId],
     () => walletAPI.getHoldings(userId),
     {
       enabled: !!userId,
+      retry: false,
+      onError: (error) => {
+        console.warn('Token holdings API not available:', error.response?.status);
+      }
     }
   );
 
@@ -82,7 +102,11 @@ const Portfolio = () => {
   console.log('Portfolio - Profile data:', profile);
 
 
-  if (portfolioLoading || summaryLoading || statsLoading || tokenHoldingsLoading) { 
+  // Only show loading if we have no data at all
+  const isLoading = (portfolioLoading || summaryLoading || statsLoading || tokenHoldingsLoading) && 
+                     !portfolioData && !summaryData && !statsData;
+  
+  if (isLoading) { 
     return (
       <Layout>
         <div className="min-h-screen bg-gray-50 py-8">

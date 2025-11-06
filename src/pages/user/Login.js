@@ -1,17 +1,21 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
+import { useMutation } from 'react-query';
 import { Eye, EyeOff, Mail, Lock, Building2 } from 'lucide-react';
 import Layout from '../../components/Layout/Layout';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import Card from '../../components/ui/Card';
+import { authAPI } from '../../services/api';
+import { useUser } from '../../contexts/UserContext';
 
 const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { setCurrentUser } = useUser();
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   
   const from = location.state?.from?.pathname || '/dashboard';
 
@@ -21,18 +25,67 @@ const Login = () => {
     formState: { errors },
   } = useForm();
 
-  const onSubmit = async (data) => {
-    setLoading(true);
-    // Simulate login process
-    setTimeout(() => {
-      setLoading(false);
+  // Login mutation
+  const loginMutation = useMutation(authAPI.login, {
+    onSuccess: (response) => {
+      const { user, token, refreshToken } = response.data;
+      
+      // Store tokens
+      localStorage.setItem('token', token);
+      localStorage.setItem('refreshToken', refreshToken);
+      
+      // Set current user
+      setCurrentUser(user);
+      
+      // Navigate to dashboard
       navigate(from, { replace: true });
-    }, 1000);
+    },
+    onError: (error) => {
+      console.error('Login error:', error);
+      setError(error.response?.data?.message || 'Login failed. Please try again.');
+    },
+  });
+
+  // Google login mutation
+  const googleLoginMutation = useMutation(authAPI.googleLogin, {
+    onSuccess: (response) => {
+      const { user, token, refreshToken } = response.data;
+      
+      // Store tokens
+      localStorage.setItem('token', token);
+      localStorage.setItem('refreshToken', refreshToken);
+      
+      // Set current user
+      setCurrentUser(user);
+      
+      // Navigate to dashboard
+      navigate(from, { replace: true });
+    },
+    onError: (error) => {
+      console.error('Google login error:', error);
+      setError(error.response?.data?.message || 'Google login failed. Please try again.');
+    },
+  });
+
+  const onSubmit = async (data) => {
+    setError('');
+    loginMutation.mutate({
+      email: data.email,
+      password: data.password,
+    });
   };
 
   const handleGoogleLogin = () => {
-    // Implement Google OAuth
-    console.log('Google login clicked');
+    // For demo purposes, simulate Google OAuth response
+    // In production, this would integrate with Google OAuth SDK
+    const mockGoogleUser = {
+      email: 'user@gmail.com',
+      name: 'Google User',
+      googleId: 'google_123456',
+      profileImage: 'https://via.placeholder.com/150'
+    };
+    
+    googleLoginMutation.mutate(mockGoogleUser);
   };
 
   return (
@@ -56,6 +109,11 @@ const Login = () => {
 
           {/* Login Form */}
           <Card>
+            {error && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+                <p className="text-red-600 text-sm">{error}</p>
+              </div>
+            )}
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
               <div>
                 <Input
@@ -130,10 +188,10 @@ const Login = () => {
               <Button
                 type="submit"
                 className="w-full"
-                loading={loading}
-                disabled={loading}
+                loading={loginMutation.isLoading}
+                disabled={loginMutation.isLoading}
               >
-                Sign in
+                {loginMutation.isLoading ? 'Signing in...' : 'Sign in'}
               </Button>
             </form>
 
@@ -154,6 +212,8 @@ const Login = () => {
                   variant="outline"
                   className="w-full"
                   onClick={handleGoogleLogin}
+                  loading={googleLoginMutation.isLoading}
+                  disabled={googleLoginMutation.isLoading}
                 >
                   <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
                     <path

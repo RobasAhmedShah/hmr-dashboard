@@ -11,6 +11,7 @@ import {
   Zap,
   Building2,
   Coins,
+  Shield,
 } from 'lucide-react';
 
 const AdminSidebar = ({ activeTab, setActiveTab }) => {
@@ -21,6 +22,7 @@ const AdminSidebar = ({ activeTab, setActiveTab }) => {
     { id: 'users', icon: Users, label: 'Users' },
     { id: 'transactions', icon: Archive, label: 'Transactions' },
     { id: 'tokens', icon: Coins, label: 'Tokens' },
+    { id: 'kyc', icon: Shield, label: 'KYC Management' },
   ];
 
   const documentItems = [

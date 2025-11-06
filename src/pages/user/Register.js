@@ -1,17 +1,21 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
+import { useMutation } from 'react-query';
 import { Eye, EyeOff, Mail, Lock, User, Building2 } from 'lucide-react';
 import Layout from '../../components/Layout/Layout';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import Card from '../../components/ui/Card';
+import { authAPI } from '../../services/api';
+import { useUser } from '../../contexts/UserContext';
 
 const Register = () => {
   const navigate = useNavigate();
+  const { setCurrentUser } = useUser();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const {
     register,
@@ -22,18 +26,70 @@ const Register = () => {
 
   const password = watch('password');
 
-  const onSubmit = async (data) => {
-    setLoading(true);
-    // Simulate registration process
-    setTimeout(() => {
-      setLoading(false);
+  // Register mutation
+  const registerMutation = useMutation(authAPI.register, {
+    onSuccess: (response) => {
+      const { user, token, refreshToken } = response.data;
+      
+      // Store tokens
+      localStorage.setItem('token', token);
+      localStorage.setItem('refreshToken', refreshToken);
+      
+      // Set current user
+      setCurrentUser(user);
+      
+      // Navigate to dashboard
       navigate('/dashboard');
-    }, 1000);
+    },
+    onError: (error) => {
+      console.error('Registration error:', error);
+      setError(error.response?.data?.message || 'Registration failed. Please try again.');
+    },
+  });
+
+  // Google register mutation
+  const googleRegisterMutation = useMutation(authAPI.googleLogin, {
+    onSuccess: (response) => {
+      const { user, token, refreshToken } = response.data;
+      
+      // Store tokens
+      localStorage.setItem('token', token);
+      localStorage.setItem('refreshToken', refreshToken);
+      
+      // Set current user
+      setCurrentUser(user);
+      
+      // Navigate to dashboard
+      navigate('/dashboard');
+    },
+    onError: (error) => {
+      console.error('Google registration error:', error);
+      setError(error.response?.data?.message || 'Google registration failed. Please try again.');
+    },
+  });
+
+  const onSubmit = async (data) => {
+    setError('');
+    registerMutation.mutate({
+      name: data.name,
+      firstName: data.firstName,
+      lastName: data.lastName,
+      email: data.email,
+      password: data.password,
+    });
   };
 
   const handleGoogleRegister = () => {
-    // Implement Google OAuth
-    console.log('Google register clicked');
+    // For demo purposes, simulate Google OAuth response
+    // In production, this would integrate with Google OAuth SDK
+    const mockGoogleUser = {
+      email: 'newuser@gmail.com',
+      name: 'New Google User',
+      googleId: 'google_789012',
+      profileImage: 'https://via.placeholder.com/150'
+    };
+    
+    googleRegisterMutation.mutate(mockGoogleUser);
   };
 
   return (
@@ -57,6 +113,11 @@ const Register = () => {
 
           {/* Registration Form */}
           <Card>
+            {error && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+                <p className="text-red-600 text-sm">{error}</p>
+              </div>
+            )}
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
               <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
                 <div>
@@ -210,10 +271,10 @@ const Register = () => {
               <Button
                 type="submit"
                 className="w-full"
-                loading={loading}
-                disabled={loading}
+                loading={registerMutation.isLoading}
+                disabled={registerMutation.isLoading}
               >
-                Create Account
+                {registerMutation.isLoading ? 'Creating Account...' : 'Create Account'}
               </Button>
             </form>
 
@@ -234,6 +295,8 @@ const Register = () => {
                   variant="outline"
                   className="w-full"
                   onClick={handleGoogleRegister}
+                  loading={googleRegisterMutation.isLoading}
+                  disabled={googleRegisterMutation.isLoading}
                 >
                   <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
                     <path

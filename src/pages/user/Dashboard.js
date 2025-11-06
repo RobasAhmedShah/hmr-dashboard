@@ -46,17 +46,15 @@ const Dashboard = () => {
     queryClient.invalidateQueries(['featured-properties']);
   }, [userId, queryClient, currentUser?.name]);
 
-  // Fetch dashboard data
+  // Fetch dashboard data with error handling
   const { data: portfolioData, isLoading: portfolioLoading } = useQuery(
     ['portfolio', userId],
     () => portfolioAPI.getPortfolio(userId),
     { 
       enabled: !!userId,
-      onSuccess: (data) => {
-        console.log('Portfolio data for', currentUser?.name, ':', data);
-      },
+      retry: false,
       onError: (error) => {
-        console.error('Portfolio error for', currentUser?.name, ':', error);
+        console.warn('Portfolio API not available:', error.response?.status);
       }
     }
   );
@@ -64,7 +62,13 @@ const Dashboard = () => {
   const { isLoading: summaryLoading } = useQuery(
     ['portfolioSummary', userId],
     () => portfolioAPI.getSummary(userId),
-    { enabled: !!userId }
+    { 
+      enabled: !!userId,
+      retry: false,
+      onError: (error) => {
+        console.warn('Portfolio summary API not available:', error.response?.status);
+      }
+    }
   );
 
   const { data: profileData, isLoading: profileLoading } = useQuery(
@@ -72,11 +76,9 @@ const Dashboard = () => {
     () => usersAPI.getProfileById(userId),
     { 
       enabled: !!userId,
-      onSuccess: (data) => {
-        console.log('Profile data for', currentUser?.name, ':', data);
-      },
+      retry: false,
       onError: (error) => {
-        console.error('Profile error for', currentUser?.name, ':', error);
+        console.warn('Profile API not available:', error.response?.status);
       }
     }
   );
@@ -84,24 +86,61 @@ const Dashboard = () => {
   const { data: investmentsData } = useQuery(
     ['investments', userId],
     () => investmentsAPI.getByUserId(userId),
-    { enabled: !!userId }
+    { 
+      enabled: !!userId,
+      retry: false,
+      onError: (error) => {
+        console.warn('Investments API not available:', error.response?.status);
+      }
+    }
   );
 
   useQuery(
     ['wallet', userId],
     () => usersAPI.getWalletById(userId),
-    { enabled: !!userId }
+    { 
+      enabled: !!userId,
+      retry: false,
+      onError: (error) => {
+        console.warn('Wallet API not available:', error.response?.status);
+      }
+    }
   );
 
   const { data: recentTransactions } = useQuery(
     ['recentTransactions', userId],
     () => walletTransactionsAPI.getByUserId(userId, { limit: 5 }),
-    { enabled: !!userId }
+    { 
+      enabled: !!userId,
+      retry: false,
+      onError: (error) => {
+        console.warn('Transactions API not available:', error.response?.status);
+      }
+    }
   );
 
-  const { data: featuredProperties } = useQuery(
+  const { data: featuredProperties, isError: featuredError } = useQuery(
     'featuredProperties',
-    () => propertiesAPI.getFeatured()
+    () => propertiesAPI.getFeatured(),
+    {
+      retry: false,
+      onError: (error) => {
+        console.warn('Featured properties API not available:', error.response?.status);
+      }
+    }
+  );
+
+  // Fallback query for featured properties if main query fails
+  const { data: fallbackProperties } = useQuery(
+    'featuredPropertiesFallback',
+    () => propertiesAPI.getAll({ featured: true, limit: 6 }),
+    {
+      enabled: featuredError && !featuredProperties,
+      retry: false,
+      onError: (error) => {
+        console.warn('Fallback properties API also failed:', error.response?.status);
+      }
+    }
   );
 
   const { data: statsData, refetch: refetchStats } = useQuery(
@@ -109,9 +148,13 @@ const Dashboard = () => {
     () => portfolioAPI.getStats(userId),
     { 
       enabled: !!userId,
-      staleTime: 0, // Always fetch fresh data
-      cacheTime: 0, // Don't cache the data
-      refetchOnWindowFocus: true // Refetch when window gains focus
+      retry: false,
+      staleTime: 0,
+      cacheTime: 0,
+      refetchOnWindowFocus: true,
+      onError: (error) => {
+        console.warn('Portfolio stats API not available:', error.response?.status);
+      }
     }
   );
 
@@ -119,17 +162,26 @@ const Dashboard = () => {
   const profile = profileData?.data?.data || {};
   const investments = investmentsData?.data?.data?.investments || [];
   const transactions = recentTransactions?.data?.data?.transactions || [];
-  // Handle multiple response formats for featured properties
+  // Handle multiple response formats for featured properties, with fallback
   const properties = featuredProperties?.data?.data?.properties || 
                      featuredProperties?.data?.properties || 
                      featuredProperties?.properties || 
                      featuredProperties?.data?.data || 
                      (Array.isArray(featuredProperties?.data) ? featuredProperties.data : []) ||
+                     // Fallback to getAll if featured endpoint failed
+                     fallbackProperties?.data?.data?.properties ||
+                     fallbackProperties?.data?.properties ||
+                     fallbackProperties?.properties ||
+                     fallbackProperties?.data?.data ||
+                     (Array.isArray(fallbackProperties?.data) ? fallbackProperties.data : []) ||
                      [];
   const userStats = statsData?.data?.data || statsData?.data || {};
 
 
-  if (portfolioLoading || summaryLoading || profileLoading) {
+  // Show loading only if we're actually loading critical data
+  const isLoading = portfolioLoading || summaryLoading || profileLoading;
+  
+  if (isLoading && !portfolioData && !profileData) {
     return (
       <Layout>
         <div className="min-h-screen bg-gray-50 py-8">
