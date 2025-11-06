@@ -327,7 +327,7 @@ const KYCManagement = () => {
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading KYC verifications...</p>
+          <p className="text-muted-foreground">Loading KYC verifications...</p>
         </div>
       </div>
     );
@@ -338,8 +338,8 @@ const KYCManagement = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">KYC Management</h1>
-          <p className="text-gray-600 mt-2">Review and manage user KYC verifications</p>
+          <h1 className="text-3xl font-bold text-card-foreground">KYC Management</h1>
+          <p className="text-muted-foreground mt-2">Review and manage user KYC verifications</p>
         </div>
         {selectedKYCs.length > 0 && (
           <div className="flex gap-2">
@@ -360,8 +360,8 @@ const KYCManagement = () => {
         <Card className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-500">Total Documents</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
+              <p className="text-sm font-medium text-muted-foreground">Total Documents</p>
+              <p className="text-2xl font-bold text-card-foreground">{stats.total}</p>
             </div>
             <Shield className="h-8 w-8 text-blue-500" />
           </div>
@@ -370,7 +370,7 @@ const KYCManagement = () => {
         <Card className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-500">Pending</p>
+              <p className="text-sm font-medium text-muted-foreground">Pending</p>
               <p className="text-2xl font-bold text-yellow-600">{stats.pending}</p>
             </div>
             <Clock className="h-8 w-8 text-yellow-500" />
@@ -380,7 +380,7 @@ const KYCManagement = () => {
         <Card className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-500">Verified</p>
+              <p className="text-sm font-medium text-muted-foreground">Verified</p>
               <p className="text-2xl font-bold text-green-600">{stats.verified}</p>
             </div>
             <CheckCircle className="h-8 w-8 text-green-500" />
@@ -390,7 +390,7 @@ const KYCManagement = () => {
         <Card className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-500">Rejected</p>
+              <p className="text-sm font-medium text-muted-foreground">Rejected</p>
               <p className="text-2xl font-bold text-red-600">{stats.rejected}</p>
             </div>
             <XCircle className="h-8 w-8 text-red-500" />
@@ -406,13 +406,13 @@ const KYCManagement = () => {
               placeholder="Search by name, email, user ID..."
               value={filters.search}
               onChange={(e) => setFilters({ ...filters, search: e.target.value })}
-              icon={<Search className="h-4 w-4 text-gray-400" />}
+              icon={<Search className="h-4 w-4 text-muted-foreground" />}
             />
           </div>
           
           <div>
             <select
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-border rounded-md bg-card text-card-foreground focus:outline-none focus:ring-2 focus:ring-primary-500"
               value={filters.status}
               onChange={(e) => setFilters({ ...filters, status: e.target.value })}
             >
@@ -425,7 +425,7 @@ const KYCManagement = () => {
 
           <div>
             <select
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-border rounded-md bg-card text-card-foreground focus:outline-none focus:ring-2 focus:ring-primary-500"
               value={filters.type}
               onChange={(e) => setFilters({ ...filters, type: e.target.value })}
             >
@@ -453,28 +453,28 @@ const KYCManagement = () => {
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-gray-200">
+              <tr className="border-b border-border">
                 <th className="px-4 py-3 text-left">
                   <input
                     type="checkbox"
                     checked={selectedKYCs.length > 0 && selectedKYCs.length === filteredKYCs.flatMap(g => g.documents.map(d => d.id)).length}
                     onChange={toggleSelectAll}
-                    className="rounded border-gray-300"
+                    className="rounded border-border"
                   />
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">User</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Document Type</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Submitted</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Reviewed</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">User</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Document Type</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Status</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Submitted</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Reviewed</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
+            <tbody className="divide-y divide-border">
               {filteredKYCs.length === 0 ? (
                 <tr>
-                  <td colSpan="7" className="px-4 py-8 text-center text-gray-500">
-                    <Shield className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                  <td colSpan="7" className="px-4 py-8 text-center text-muted-foreground">
+                    <Shield className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
                     <p>No KYC verifications found</p>
                   </td>
                 </tr>
@@ -483,39 +483,39 @@ const KYCManagement = () => {
                   group.documents.map((kyc) => {
                     const TypeIcon = getTypeIcon(kyc.type);
                     return (
-                      <tr key={kyc.id} className="hover:bg-gray-50">
+                      <tr key={kyc.id} className="hover:bg-accent/50">
                         <td className="px-4 py-3">
                           <input
                             type="checkbox"
                             checked={selectedKYCs.includes(kyc.id)}
                             onChange={() => toggleSelectKYC(kyc.id)}
-                            className="rounded border-gray-300"
+                            className="rounded border-border"
                           />
                         </td>
                         <td className="px-4 py-3">
                           <div>
-                            <p className="font-medium text-gray-900">{kyc.userId}</p>
+                            <p className="font-medium text-card-foreground">{kyc.userId}</p>
                             {group.user?.email && (
-                              <p className="text-sm text-gray-500">{group.user.email}</p>
+                              <p className="text-sm text-muted-foreground">{group.user.email}</p>
                             )}
                           </div>
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-2">
-                            <TypeIcon className="h-4 w-4 text-gray-400" />
-                            <span className="text-sm text-gray-900">{getTypeLabel(kyc.type)}</span>
+                            <TypeIcon className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm text-card-foreground">{getTypeLabel(kyc.type)}</span>
                           </div>
                         </td>
                         <td className="px-4 py-3">
                           {getStatusBadge(kyc.status)}
                         </td>
                         <td className="px-4 py-3">
-                          <p className="text-sm text-gray-900">{formatDate(kyc.submittedAt || kyc.createdAt)}</p>
+                          <p className="text-sm text-card-foreground">{formatDate(kyc.submittedAt || kyc.createdAt)}</p>
                         </td>
                         <td className="px-4 py-3">
-                          <p className="text-sm text-gray-900">{formatDate(kyc.reviewedAt)}</p>
+                          <p className="text-sm text-card-foreground">{formatDate(kyc.reviewedAt)}</p>
                           {kyc.reviewer && (
-                            <p className="text-xs text-gray-500">{kyc.reviewer}</p>
+                            <p className="text-xs text-muted-foreground">{kyc.reviewer}</p>
                           )}
                         </td>
                         <td className="px-4 py-3">
@@ -572,12 +572,12 @@ const KYCManagement = () => {
       {/* Document Viewer Modal */}
       {showDocumentModal && selectedKYC && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-card rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto border border-border">
             {/* Sticky Header */}
-            <div className="sticky top-0 z-10 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center shadow-sm">
+            <div className="sticky top-0 z-10 bg-card border-b border-border px-6 py-4 flex justify-between items-center shadow-sm">
               <div>
-                <h2 className="text-2xl font-bold text-gray-900">KYC Document Details</h2>
-                <p className="text-sm text-gray-500 mt-1">
+                <h2 className="text-2xl font-bold text-card-foreground">KYC Document Details</h2>
+                <p className="text-sm text-muted-foreground mt-1">
                   {getTypeLabel(selectedKYC.type)} - {selectedKYC.userId}
                 </p>
               </div>
@@ -586,7 +586,7 @@ const KYCManagement = () => {
                   setShowDocumentModal(false);
                   setSelectedKYC(null);
                 }}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
+                className="text-muted-foreground hover:text-card-foreground transition-colors"
               >
                 <X className="w-6 h-6" />
               </button>
@@ -596,26 +596,26 @@ const KYCManagement = () => {
             <div className="px-6 py-6 space-y-6">
               {/* User Information */}
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">User Information</h3>
+                <h3 className="text-lg font-semibold text-card-foreground mb-4">User Information</h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <p className="text-sm text-gray-500">User ID</p>
-                    <p className="font-medium">{selectedKYC.userId}</p>
+                    <p className="text-sm text-muted-foreground">User ID</p>
+                    <p className="font-medium text-card-foreground">{selectedKYC.userId}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500">Document Type</p>
-                    <p className="font-medium">{getTypeLabel(selectedKYC.type)}</p>
+                    <p className="text-sm text-muted-foreground">Document Type</p>
+                    <p className="font-medium text-card-foreground">{getTypeLabel(selectedKYC.type)}</p>
                   </div>
                   {userMap[selectedKYC.userId]?.name && (
                     <div>
-                      <p className="text-sm text-gray-500">Name</p>
-                      <p className="font-medium">{userMap[selectedKYC.userId].name}</p>
+                      <p className="text-sm text-muted-foreground">Name</p>
+                      <p className="font-medium text-card-foreground">{userMap[selectedKYC.userId].name}</p>
                     </div>
                   )}
                   {userMap[selectedKYC.userId]?.email && (
                     <div>
-                      <p className="text-sm text-gray-500">Email</p>
-                      <p className="font-medium">{userMap[selectedKYC.userId].email}</p>
+                      <p className="text-sm text-muted-foreground">Email</p>
+                      <p className="font-medium text-card-foreground">{userMap[selectedKYC.userId].email}</p>
                     </div>
                   )}
                 </div>
@@ -623,40 +623,40 @@ const KYCManagement = () => {
 
               {/* Verification Status */}
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Verification Status</h3>
+                <h3 className="text-lg font-semibold text-card-foreground mb-4">Verification Status</h3>
                 <div className="grid grid-cols-3 gap-4">
-                  <div className="p-4 border rounded-lg">
-                    <p className="text-sm text-gray-500 mb-2">Status</p>
+                  <div className="p-4 border border-border rounded-lg">
+                    <p className="text-sm text-muted-foreground mb-2">Status</p>
                     {getStatusBadge(selectedKYC.status)}
                   </div>
-                  <div className="p-4 border rounded-lg">
-                    <p className="text-sm text-gray-500 mb-2">Submitted</p>
-                    <p className="font-medium">{formatDate(selectedKYC.submittedAt || selectedKYC.createdAt)}</p>
+                  <div className="p-4 border border-border rounded-lg">
+                    <p className="text-sm text-muted-foreground mb-2">Submitted</p>
+                    <p className="font-medium text-card-foreground">{formatDate(selectedKYC.submittedAt || selectedKYC.createdAt)}</p>
                   </div>
-                  <div className="p-4 border rounded-lg">
-                    <p className="text-sm text-gray-500 mb-2">Reviewed</p>
-                    <p className="font-medium">{formatDate(selectedKYC.reviewedAt) || 'Not reviewed'}</p>
+                  <div className="p-4 border border-border rounded-lg">
+                    <p className="text-sm text-muted-foreground mb-2">Reviewed</p>
+                    <p className="font-medium text-card-foreground">{formatDate(selectedKYC.reviewedAt) || 'Not reviewed'}</p>
                     {selectedKYC.reviewer && (
-                      <p className="text-xs text-gray-500 mt-1">by {selectedKYC.reviewer}</p>
+                      <p className="text-xs text-muted-foreground mt-1">by {selectedKYC.reviewer}</p>
                     )}
                   </div>
                 </div>
                 {selectedKYC.rejectionReason && (
-                  <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-                    <p className="text-sm font-medium text-red-800 mb-1">Rejection Reason</p>
-                    <p className="text-sm text-red-700">{selectedKYC.rejectionReason}</p>
+                  <div className="mt-4 p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
+                    <p className="text-sm font-medium text-red-400 mb-1">Rejection Reason</p>
+                    <p className="text-sm text-red-300">{selectedKYC.rejectionReason}</p>
                   </div>
                 )}
               </div>
 
               {/* Documents */}
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Document Images</h3>
+                <h3 className="text-lg font-semibold text-card-foreground mb-4">Document Images</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {/* Front Document */}
                   {selectedKYC.documentFrontUrl && (
-                    <div className="border rounded-lg p-4">
-                      <p className="text-sm font-medium text-gray-700 mb-2">Front</p>
+                    <div className="border border-border rounded-lg p-4">
+                      <p className="text-sm font-medium text-card-foreground mb-2">Front</p>
                       <img
                         src={getDocumentUrl({ ...selectedKYC, documentFrontUrl: selectedKYC.documentFrontUrl })}
                         alt="Document Front"
@@ -677,8 +677,8 @@ const KYCManagement = () => {
 
                   {/* Back Document */}
                   {selectedKYC.documentBackUrl && (
-                    <div className="border rounded-lg p-4">
-                      <p className="text-sm font-medium text-gray-700 mb-2">Back</p>
+                    <div className="border border-border rounded-lg p-4">
+                      <p className="text-sm font-medium text-card-foreground mb-2">Back</p>
                       <img
                         src={getDocumentUrl({ ...selectedKYC, documentBackUrl: selectedKYC.documentBackUrl })}
                         alt="Document Back"
@@ -699,8 +699,8 @@ const KYCManagement = () => {
 
                   {/* Selfie */}
                   {selectedKYC.selfieUrl && (
-                    <div className="border rounded-lg p-4">
-                      <p className="text-sm font-medium text-gray-700 mb-2">Selfie</p>
+                    <div className="border border-border rounded-lg p-4">
+                      <p className="text-sm font-medium text-card-foreground mb-2">Selfie</p>
                       <img
                         src={getDocumentUrl({ ...selectedKYC, selfieUrl: selectedKYC.selfieUrl })}
                         alt="Selfie"
@@ -720,8 +720,8 @@ const KYCManagement = () => {
                   )}
 
                   {!selectedKYC.documentFrontUrl && !selectedKYC.documentBackUrl && !selectedKYC.selfieUrl && (
-                    <div className="col-span-3 text-center py-8 text-gray-500">
-                      <FileText className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                    <div className="col-span-3 text-center py-8 text-muted-foreground">
+                      <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
                       <p>No document images available</p>
                     </div>
                   )}
@@ -729,7 +729,7 @@ const KYCManagement = () => {
               </div>
 
               {/* Actions */}
-              <div className="flex gap-3 pt-4 border-t">
+              <div className="flex gap-3 pt-4 border-t border-border">
                 {selectedKYC.status !== 'verified' && (
                   <Button
                     onClick={() => handleApprove(selectedKYC)}
@@ -761,14 +761,14 @@ const KYCManagement = () => {
       {showBulkActionModal && bulkAction === 'reject' && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <Card className="w-full max-w-md p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Reject {selectedKYCs.length} KYC(s)</h3>
+            <h3 className="text-lg font-semibold text-card-foreground mb-4">Reject {selectedKYCs.length} KYC(s)</h3>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-card-foreground mb-2">
                   Rejection Reason
                 </label>
                 <textarea
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-border rounded-md bg-card text-card-foreground focus:outline-none focus:ring-2 focus:ring-primary-500"
                   rows="3"
                   value={rejectionReason}
                   onChange={(e) => setRejectionReason(e.target.value)}
