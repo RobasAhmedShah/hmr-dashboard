@@ -10,6 +10,17 @@ const api = axios.create({
   // For FormData, axios will set 'multipart/form-data' with boundary automatically
 });
 
+// Authentication API (User End)
+export const authAPI = {
+  login: (credentials) => api.post('/auth/login', credentials), // POST /api/auth/login
+  register: (userData) => api.post('/auth/register', userData), // POST /api/auth/register
+  registerWithPayment: (userData) => api.post('/auth/register-with-payment', userData), // POST /api/auth/register-with-payment
+  googleLogin: (googleData) => api.post('/auth/google', googleData), // POST /api/auth/google
+  refreshToken: (refreshToken) => api.post('/auth/refresh', { refreshToken }), // POST /api/auth/refresh
+  logout: () => api.post('/auth/logout'), // POST /api/auth/logout
+  getCurrentUser: () => api.get('/auth/me'), // GET /api/auth/me
+};
+
 // Request interceptor (no auth needed for demo)
 api.interceptors.request.use(
   (config) => {
@@ -25,24 +36,19 @@ api.interceptors.request.use(
   }
 );
 
-// Response interceptor (no auth redirects)
+// Response interceptor with error handling
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    // Log 404 errors as warnings instead of errors to reduce noise
+    if (error.response?.status === 404) {
+      console.warn(`API endpoint not found (404): ${error.config?.method?.toUpperCase()} ${error.config?.url}`);
+    } else if (error.response?.status >= 500) {
+      console.error(`Server error (${error.response.status}): ${error.config?.method?.toUpperCase()} ${error.config?.url}`);
+    }
     return Promise.reject(error);
   }
 );
-
-// Auth API
-export const authAPI = {
-  register: (userData) => api.post('/auth/register', userData),
-  registerWithPayment: (userData) => api.post('/auth/register-with-payment', userData),
-  login: (credentials) => api.post('/auth/login', credentials),
-  googleAuth: (googleData) => api.post('/auth/google', googleData),
-  refreshToken: (refreshToken) => api.post('/auth/refresh', { refreshToken }),
-  logout: () => api.post('/auth/logout'),
-  getCurrentUser: () => api.get('/auth/me'),
-};
 
 // Properties API (Complete)
 export const propertiesAPI = {
@@ -127,7 +133,7 @@ export const walletTransactionsAPI = {
   verifyOTP: (id, otp) => api.post(`/wallet-transactions/${id}/verify-otp`, { otp }), // POST /api/wallet-transactions/:id/verify-otp
   getById: (id) => api.get(`/wallet-transactions/${id}`), // GET /api/wallet-transactions/:id
   getBalance: () => api.get('/wallet-transactions/balance/current'), // GET /api/wallet-transactions/balance/current
-  getByUserId: (userId, params) => api.get(`/transactions/user/${userId}`, { params }), // GET /api/transactions/user/:userId (backend uses /transactions not /wallet-transactions)
+  getByUserId: (userId, params) => api.get(`/wallet-transactions/user/${userId}`, { params }), // GET /api/wallet-transactions/user/:userId
   // New on-chain and third-party deposit methods
   createOnChainDeposit: (data) => api.post('/wallet-transactions/deposit', {  // POST /api/wallet-transactions/deposit (with provider/blockchain)
     userId: data.userId,
@@ -255,18 +261,6 @@ export const portfolioAPI = {
   updateStats: (userId, statsData) => api.put(`/portfolio/stats/${userId}`, statsData), // PUT /api/portfolio/stats/:userId
 };
 
-// Calculator API (Mobile Optimized)
-export const calculatorAPI = {
-  calculateROI: (data) => api.post('/calculator/roi', data),
-  calculateInvestment: (data) => api.post('/calculator/investment', data),
-};
-
-// Support API (Mobile Optimized)
-export const supportAPI = {
-  submitContact: (data) => api.post('/support/contact', data),
-  getFAQ: () => api.get('/support/faq'),
-  getContactInfo: () => api.get('/support/contact-info'),
-};
 
 // Rewards API (Complete)
 export const rewardsAPI = {
@@ -296,17 +290,32 @@ export const docsAPI = {
   getDocs: () => api.get('/docs'),
 };
 
-// KYC API
+// KYC API (User End)
 export const kycAPI = {
-  submitKYC: (kycData) => api.post('/kyc/submit', kycData),
+  submit: (kycData) => api.post('/kyc/submit', kycData), // POST /api/kyc/submit
+  submitKYC: (kycData) => api.post('/kyc/submit', kycData), // Legacy alias
   uploadImage: (formData) => api.post('/kyc/upload-image', formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
     },
-  }),
-  getKYCStatus: (userId) => api.get(`/kyc/status/${userId}`),
-  updateKYCStatus: (kycId, statusData) => api.patch(`/kyc/update-status/${kycId}`, statusData),
-  detectCardType: (cardNumber) => api.post('/kyc/detect-card-type', { cardNumber }),
+  }), // POST /api/kyc/upload-image
+  getStatus: (userId) => api.get(`/kyc/status/${userId}`), // GET /api/kyc/status/:userId
+  getKYCStatus: (userId) => api.get(`/kyc/status/${userId}`), // Legacy alias
+  updateKYCStatus: (kycId, statusData) => api.patch(`/kyc/update-status/${kycId}`, statusData), // Admin only
+  detectCardType: (cardNumber) => api.post('/kyc/detect-card-type', { cardNumber }), // POST /api/kyc/detect-card-type
+};
+
+// Calculator API (User End)
+export const calculatorAPI = {
+  calculateROI: (data) => api.post('/calculator/roi', data), // POST /api/calculator/roi
+  calculateInvestment: (data) => api.post('/calculator/investment', data), // POST /api/calculator/investment
+};
+
+// Support API (User End)
+export const supportAPI = {
+  getFAQ: () => api.get('/support/faq'), // GET /api/support/faq
+  getContactInfo: () => api.get('/support/contact-info'), // GET /api/support/contact-info
+  submitContact: (contactData) => api.post('/support/contact', contactData), // POST /api/support/contact
 };
 
 export default api;

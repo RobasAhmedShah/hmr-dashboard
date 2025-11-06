@@ -58,41 +58,76 @@ const Wallet = () => {
   }, [openBuyTokens]);
   
 
-  // Fetch wallet balance data
-  const { data: walletBalanceData, isLoading: walletBalanceLoading } = useQuery(
+  // Fetch wallet balance data (from user_wallets table)
+  // Try GET /api/wallet/user/:userId first
+  const { data: walletBalanceData, isLoading: walletBalanceLoading, error: walletBalanceError } = useQuery(
     ['wallet-balance', userId],
     () => usersAPI.getWalletById(userId),
     { 
       enabled: !!userId,
+      retry: false,
       onSuccess: (data) => {
+        console.log('✅ Wallet balance API Success - Full Response:', data);
+        console.log('✅ Wallet balance data structure:', {
+          data: data?.data,
+          dataData: data?.data?.data,
+          direct: data
+        });
         console.log('Wallet balance data for', currentUser?.name || 'User', ':', data);
       },
       onError: (error) => {
-        console.error('Wallet balance error for', currentUser?.name || 'User', ':', error);
+        console.error('❌ Wallet balance API Error:', error);
+        console.error('❌ Error response:', error.response?.data);
+        console.error('❌ Error status:', error.response?.status);
+        console.error('❌ Error URL:', error.config?.url);
+        console.warn('Wallet balance API not available:', error.response?.status);
+      }
+    }
+  );
+  
+  // Fallback: Try current balance endpoint if main endpoint fails
+  const { data: currentBalanceData } = useQuery(
+    ['wallet-current-balance', userId],
+    () => walletTransactionsAPI.getBalance(),
+    {
+      enabled: !!userId && !!walletBalanceError,
+      retry: false,
+      onSuccess: (data) => {
+        console.log('✅ Current balance fallback success:', data);
+      },
+      onError: (error) => {
+        console.warn('Current balance fallback also failed:', error.response?.status);
       }
     }
   );
 
-  // Fetch wallet transactions
+  // Fetch wallet transactions (from wallet_transactions table)
   const { data: walletTransactionsData, isLoading: walletTransactionsLoading } = useQuery(
     ['wallet-transactions', userId],
-    () => walletTransactionsAPI.getByUserId(userId),
+    () => walletTransactionsAPI.getByUserId(userId, { limit: 50 }),
     { 
       enabled: !!userId,
+      retry: false,
       onSuccess: (data) => {
         console.log('Wallet transactions data for', currentUser?.name || 'User', ':', data);
       },
       onError: (error) => {
-        console.error('Wallet transactions error for', currentUser?.name || 'User', ':', error);
+        console.warn('Wallet transactions API not available:', error.response?.status);
       }
     }
   );
 
-  // Fetch payment methods
+  // Fetch payment methods (from payment_methods table)
   const { data: paymentMethodsData, isLoading: paymentMethodsLoading } = useQuery(
     ['paymentMethods', userId],
     () => paymentMethodsAPI.getAll(userId),
-    { enabled: !!userId }
+    { 
+      enabled: !!userId,
+      retry: false,
+      onError: (error) => {
+        console.warn('Payment methods API not available:', error.response?.status);
+      }
+    }
   );
 
   // Deposit mutation
@@ -124,22 +159,112 @@ const Wallet = () => {
   //   },
   // });
 
-  const wallet = walletBalanceData?.data?.data || {};
-  const transactions = Array.isArray(walletTransactionsData?.data?.data) ? walletTransactionsData.data.data : [];
-  const paymentMethods = Array.isArray(paymentMethodsData?.data?.data) ? paymentMethodsData.data.data : [];
+  // Extract wallet data with fallbacks for different API response formats
+  // From user_wallets table: total_balance, available_balance, locked_balance, total_tokens, total_investment, total_returns
+  // Also try fallback current balance endpoint
+  const wallet = walletBalanceData?.data?.data || 
+                 walletBalanceData?.data || 
+                 walletBalanceData ||
+                 currentBalanceData?.data?.data ||
+                 currentBalanceData?.data ||
+                 currentBalanceData ||
+                 {};
+  
+  // Extract wallet fields with fallbacks
+  // Handle both user_wallets table format and current balance endpoint format
+  const availableBalance = Number(wallet.availableBalance || 
+                          wallet.available_balance || 
+                          wallet.balance ||
+                          wallet.available_balance ||
+                          currentBalanceData?.data?.available_balance ||
+                          currentBalanceData?.data?.availableBalance ||
+                          0) || 0;
+  
+  const totalBalance = Number(wallet.totalBalance || 
+                     wallet.total_balance ||
+                     wallet.totalBalancePKR ||
+                     0) || 0;
+  
+  const lockedBalance = Number(wallet.lockedBalance || 
+                       wallet.locked_balance ||
+                       0) || 0;
+  
+  const totalTokens = Number(wallet.totalTokens || 
+                    wallet.total_tokens ||
+                    wallet.totalTokens ||
+                    0) || 0;
+  
+  const totalInvestment = Number(wallet.totalInvestment || 
+                        wallet.total_invested || 
+                        wallet.totalInvestment ||
+                        wallet.investedAmount ||
+                        0) || 0;
+  
+  const totalReturns = Number(wallet.totalReturns || 
+                     wallet.total_returns || 
+                     wallet.totalReturnsPKR ||
+                     wallet.returns ||
+                     0) || 0;
+
+  // Extract transactions from wallet_transactions table FIRST (needed for calculations)
+  // Fields: id, user_id, payment_method_id, transaction_type, amount, currency, exchange_rate, amount_in_pkr, status, description, reference_id, metadata, created_at
+  const transactions = walletTransactionsData?.data?.data || 
+                      walletTransactionsData?.data ||
+                      (Array.isArray(walletTransactionsData?.data) ? walletTransactionsData.data : []) ||
+                      [];
+  
+  // Calculate totalDeposited and totalWithdrawn from transactions if not in wallet data
+  const calculateFromTransactions = () => {
+    if (!Array.isArray(transactions) || transactions.length === 0) return { deposited: 0, withdrawn: 0 };
+    
+    const deposited = transactions
+      .filter(t => t.transaction_type === 'deposit' && t.status === 'completed')
+      .reduce((sum, t) => sum + (Number(t.amount_in_pkr || t.amount || 0)), 0);
+    
+    const withdrawn = transactions
+      .filter(t => t.transaction_type === 'withdrawal' && t.status === 'completed')
+      .reduce((sum, t) => sum + (Number(t.amount_in_pkr || t.amount || 0)), 0);
+    
+    return { deposited, withdrawn };
+  };
+  
+  const transactionTotals = calculateFromTransactions();
+  
+  const totalDeposited = Number(wallet.totalDeposited || 
+                        wallet.total_deposited ||
+                        wallet.totalDepositedPKR ||
+                        transactionTotals.deposited ||
+                        0) || 0;
+  
+  const totalWithdrawn = Number(wallet.totalWithdrawn || 
+                        wallet.total_withdrawn ||
+                        wallet.totalWithdrawnPKR ||
+                        transactionTotals.withdrawn ||
+                        0) || 0;
+  
+  // Extract payment methods from payment_methods table
+  // Fields: id, user_id, card_type, card_number_masked, card_holder_name, expiry_month, expiry_year, currency, is_default, is_verified, status
+  const paymentMethods = paymentMethodsData?.data?.data || 
+                        paymentMethodsData?.data ||
+                        (Array.isArray(paymentMethodsData?.data) ? paymentMethodsData.data : []) ||
+                        [];
 
   // Debug logging
-  console.log('Wallet data:', wallet);
-  console.log('Transactions data:', walletTransactionsData);
-  console.log('Transactions array:', transactions);
-  console.log('Payment methods for user', currentUser?.name || 'User', '(', userId, '):', paymentMethods);
+  console.log('Wallet - Full API Response:', walletBalanceData);
+  console.log('Wallet - Extracted wallet object:', wallet);
+  console.log('Wallet - Available Balance:', availableBalance);
+  console.log('Wallet - Total Deposited:', totalDeposited);
+  console.log('Wallet - Total Withdrawn:', totalWithdrawn);
+  console.log('Wallet - Transactions:', transactions);
+  console.log('Wallet - Payment methods:', paymentMethods);
 
+  // Filter transactions by type (deposit, withdrawal, investment, return, fee)
   const filteredTransactions = Array.isArray(transactions) ? transactions.filter(transaction => {
     if (filter === 'all') return true;
     if (filter === 'deposits') return transaction.transaction_type === 'deposit';
     if (filter === 'withdrawals') return transaction.transaction_type === 'withdrawal';
     if (filter === 'investments') return transaction.transaction_type === 'investment';
-    if (filter === 'returns') return transaction.transaction_type === 'return';
+    if (filter === 'returns') return transaction.transaction_type === 'return' || transaction.transaction_type === 'dividend';
     return true;
   }) : [];
 
@@ -186,10 +311,14 @@ const Wallet = () => {
       return;
     }
     
+    // POST /api/wallet-transactions/deposit
+    // Request Body: { userId, amount, currency, paymentMethodId, description, provider, action }
     depositMutation.mutate({
       userId: userId,
       amount: parseFloat(data.amount),
+      currency: data.currency || 'PKR',
       paymentMethodId: data.paymentMethodId,
+      description: data.description || 'Wallet deposit',
     });
   };
 
@@ -204,14 +333,29 @@ const Wallet = () => {
       return;
     }
     
+    // Check if withdrawal amount exceeds available balance
+    if (parseFloat(data.amount) > availableBalance) {
+      alert('Insufficient balance. Available: ' + formatCurrency(availableBalance));
+      return;
+    }
+    
+    // POST /api/wallet-transactions/withdrawal
+    // Request Body: { userId, amount, currency, paymentMethodId, description, metadata }
     withdrawMutation.mutate({
       userId: userId,
       amount: parseFloat(data.amount),
+      currency: data.currency || 'PKR',
       paymentMethodId: data.paymentMethodId,
+      description: data.description || 'Wallet withdrawal',
+      metadata: data.metadata || {},
     });
   };
 
-  if (walletBalanceLoading || walletTransactionsLoading || paymentMethodsLoading) {
+  // Only show loading if we're actually loading and have no data
+  const isLoading = (walletBalanceLoading || walletTransactionsLoading || paymentMethodsLoading) && 
+                     !walletBalanceData && !walletTransactionsData && !paymentMethodsData;
+  
+  if (isLoading) {
     return (
       <Layout>
         <div className="min-h-screen bg-gray-50 py-8">
@@ -251,9 +395,16 @@ const Wallet = () => {
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-900">Wallet</h1>
             <p className="text-gray-600 mt-2">Manage your funds and transaction history</p>
+            {walletBalanceError && (
+              <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+                <p className="text-yellow-800 text-sm">
+                  ⚠️ Wallet balance could not be loaded. Showing calculated values from transactions.
+                </p>
+              </div>
+            )}
           </div>
 
-          {/* Wallet Summary */}
+          {/* Wallet Summary - from user_wallets table */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             <Card className="p-6">
               <div className="flex items-center">
@@ -261,8 +412,11 @@ const Wallet = () => {
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-500">Available Balance</p>
                   <p className="text-2xl font-bold text-gray-900">
-                    {formatCurrency(wallet.availableBalance || 0)}
+                    {availableBalance > 0 ? `PKR ${availableBalance.toLocaleString()}` : 'PKR 0'}
                   </p>
+                  {walletBalanceError && (
+                    <p className="text-xs text-red-500 mt-1">Unable to load balance</p>
+                  )}
                 </div>
               </div>
             </Card>
@@ -273,8 +427,11 @@ const Wallet = () => {
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-500">Total Deposited</p>
                   <p className="text-2xl font-bold text-gray-900">
-                    {formatCurrency(wallet.totalDeposited || 0)}
+                    {totalDeposited > 0 ? `PKR ${totalDeposited.toLocaleString()}` : 'PKR 0'}
                   </p>
+                  {transactionTotals.deposited > 0 && totalDeposited === transactionTotals.deposited && (
+                    <p className="text-xs text-gray-500 mt-1">Calculated from transactions</p>
+                  )}
                 </div>
               </div>
             </Card>
@@ -285,8 +442,11 @@ const Wallet = () => {
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-500">Total Withdrawn</p>
                   <p className="text-2xl font-bold text-gray-900">
-                    {formatCurrency(wallet.totalWithdrawn || 0)}
+                    {totalWithdrawn > 0 ? `PKR ${totalWithdrawn.toLocaleString()}` : 'PKR 0'}
                   </p>
+                  {transactionTotals.withdrawn > 0 && totalWithdrawn === transactionTotals.withdrawn && (
+                    <p className="text-xs text-gray-500 mt-1">Calculated from transactions</p>
+                  )}
                 </div>
               </div>
             </Card>
@@ -347,48 +507,92 @@ const Wallet = () => {
               <div className="space-y-4">
                 {filteredTransactions.map((transaction) => {
                   const IconComponent = getTransactionIcon(transaction.transaction_type, transaction.status);
-                  const getTransactionLabel = (transactionType, metadata) => {
-                    // Parse metadata to get provider info
-                    let provider = '';
-                    try {
-                      if (metadata) {
-                        const meta = JSON.parse(metadata);
-                        provider = meta.provider || '';
-                      }
-                    } catch (e) {
-                      // Ignore parsing errors
+                  // Extract transaction data from wallet_transactions table
+                  // Fields: amount, currency, exchange_rate, amount_in_pkr, description, reference_id, metadata
+                  const amount = transaction.amount || transaction.amount_in_pkr || 0;
+                  const currency = transaction.currency || 'PKR';
+                  const amountInPKR = transaction.amount_in_pkr || amount;
+                  const exchangeRate = transaction.exchange_rate || 1;
+                  const referenceId = transaction.reference_id || '';
+                  
+                  // Parse metadata (can be string or object)
+                  let metadata = {};
+                  try {
+                    if (typeof transaction.metadata === 'string') {
+                      metadata = JSON.parse(transaction.metadata);
+                    } else if (transaction.metadata) {
+                      metadata = transaction.metadata;
                     }
-
+                  } catch (e) {
+                    // Ignore parsing errors
+                  }
+                  
+                  // Check if it's an on-chain or third-party deposit from metadata
+                  const isOnChain = metadata.provider || metadata.blockchain;
+                  const provider = metadata.provider || metadata.blockchain || '';
+                  
+                  const getTransactionLabel = (transactionType) => {
                     switch (transactionType) {
                       case 'deposit': 
                         if (provider === 'binance') return 'Binance Pay Deposit';
+                        if (provider) return `${provider} Deposit`;
                         return 'Deposit';
                       case 'withdrawal': return 'Withdrawal';
-                      case 'investment': return 'Investment';
+                      case 'investment': return 'Token Purchase';
                       case 'return': return 'Dividend';
+                      case 'fee': return 'Fee';
                       default: return 'Transaction';
                     }
                   };
+                  
                   return (
                     <div key={transaction.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                      <div className="flex items-center">
+                      <div className="flex items-center flex-1">
                         <IconComponent className={`h-5 w-5 mr-3 ${getTransactionColor(transaction.transaction_type, transaction.status)}`} />
-                        <div>
-                          <p className="text-sm font-medium text-gray-900">
-                            {getTransactionLabel(transaction.transaction_type, transaction.metadata)}
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm font-medium text-gray-900">
+                              {getTransactionLabel(transaction.transaction_type)}
+                            </p>
+                            {isOnChain && (
+                              <span className="px-2 py-0.5 text-xs bg-purple-100 text-purple-700 rounded">
+                                {provider}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs text-gray-500 mt-1">
+                            {transaction.description || 'No description'}
                           </p>
-                          <p className="text-xs text-gray-500">
-                            {transaction.description}
-                          </p>
-                          <p className="text-xs text-gray-400">
-                            {new Date(transaction.created_at).toLocaleDateString()}
-                          </p>
+                          <div className="flex items-center gap-4 mt-1">
+                            <p className="text-xs text-gray-400">
+                              {new Date(transaction.created_at || transaction.createdAt).toLocaleString()}
+                            </p>
+                            {referenceId && (
+                              <p className="text-xs text-gray-400">
+                                Ref: {referenceId}
+                              </p>
+                            )}
+                          </div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-3">
-                        <p className={`text-sm font-medium ${getTransactionColor(transaction.transaction_type, transaction.status)}`}>
-                          {formatCurrency(transaction.amount)}
-                        </p>
+                      <div className="flex items-center gap-3 text-right">
+                        <div>
+                          <p className={`text-sm font-medium ${getTransactionColor(transaction.transaction_type, transaction.status)}`}>
+                            {transaction.transaction_type === 'deposit' || transaction.transaction_type === 'return' ? '+' : '-'}
+                            {currency !== 'PKR' ? (
+                              <>
+                                {currency} {amount.toLocaleString()}
+                                {exchangeRate !== 1 && (
+                                  <span className="block text-xs text-gray-500">
+                                    (PKR {amountInPKR.toLocaleString()})
+                                  </span>
+                                )}
+                              </>
+                            ) : (
+                              `PKR ${amountInPKR.toLocaleString()}`
+                            )}
+                          </p>
+                        </div>
                         {getStatusBadge(transaction.status)}
                       </div>
                     </div>

@@ -33,6 +33,7 @@ import OrganizationsManagement from './OrganizationsManagement';
 import AdminSettings from './AdminSettings';
 import TokensManagement from './TokensManagement';
 import ReportsManagement from './ReportsManagement';
+import KYCManagement from './KYCManagement';
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
@@ -528,6 +529,8 @@ const AdminDashboard = () => {
         return <TokensManagement />;
       case 'reports':
         return <ReportsManagement />;
+      case 'kyc':
+        return <KYCManagement />;
       case 'settings':
         return <AdminSettings />;
       default:
