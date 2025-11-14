@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { 
   Search, 
@@ -99,22 +99,124 @@ const UsersManagement = () => {
   const createUserMutation = useMutation(
     (userData) => adminAPI.createUser(userData),
     {
-      onSuccess: () => {
+      onSuccess: (response) => {
         queryClient.invalidateQueries(['admin-users']);
         setShowUserForm(false);
         setEditingUser(null);
+        console.log('User created successfully:', response);
+        alert('✅ User created successfully!');
+      },
+      onError: (error) => {
+        console.error('Failed to create user:', error);
+        let errorMessage = 'Failed to create user.\n\n';
+        
+        if (error.response?.status === 400) {
+          errorMessage += error.response?.data?.message || 'Invalid data provided.';
+        } else if (error.response?.status === 409) {
+          errorMessage += 'User with this email already exists.';
+        } else {
+          errorMessage += error.response?.data?.message || error.message;
+        }
+        
+        alert(errorMessage);
       }
     }
   );
 
   // Update user mutation
+  // Try admin endpoint first, fallback to regular user endpoint if admin endpoint doesn't exist
   const updateUserMutation = useMutation(
-    ({ id, data }) => adminAPI.updateUser(id, data),
+    async ({ id, data }) => {
+      console.log('🔄 Starting user update mutation:', { id, data });
+      try {
+        // First try the admin endpoint (PATCH /admin/users/:id)
+        // Note: This endpoint may not exist yet, so 404 is expected and will trigger fallback
+        const response = await adminAPI.updateUser(id, data);
+        console.log('✅ Admin endpoint success:', response);
+        return response;
+      } catch (error) {
+        // If admin endpoint returns 404 or 405 (Method Not Allowed), try the regular user endpoint
+        // This is expected behavior - admin endpoint may not be implemented yet
+        if (error.response?.status === 404 || error.response?.status === 405) {
+          console.log(`ℹ️ Admin endpoint not available (${error.response?.status}), using regular user endpoint...`);
+          try {
+            const fallbackResponse = await usersAPI.updateUser(id, data);
+            console.log('✅ User updated successfully via fallback endpoint');
+            return fallbackResponse;
+          } catch (fallbackError) {
+            // If fallback also fails, throw the original error with context
+            console.error('❌ Both admin and user endpoints failed:', {
+              adminError: error.response?.status,
+              userError: fallbackError.response?.status
+            });
+            throw fallbackError; // Throw the fallback error as it's more recent
+          }
+        }
+        // For other errors (401, 403, 400, etc.), throw the original error
+        console.error('❌ Admin endpoint error:', {
+          status: error.response?.status,
+          message: error.message,
+          url: error.config?.url
+        });
+        throw error;
+      }
+    },
     {
-      onSuccess: () => {
-        queryClient.invalidateQueries(['admin-users']);
+      onSuccess: async (response) => {
+        console.log('✅ User updated successfully - Full response:', response);
+        console.log('📦 Response data:', response?.data);
+        
+        // Get the updated user from the response for logging
+        const updatedUser = response?.data?.data || response?.data?.user || response?.data;
+        console.log('👤 Updated user data:', updatedUser);
+        
+        // Close the form first to provide immediate feedback
         setShowUserForm(false);
         setEditingUser(null);
+        
+        // Invalidate and refetch the users list to get fresh data from server
+        console.log('🔄 Invalidating admin-users queries...');
+        queryClient.invalidateQueries(['admin-users']);
+        
+        // Refetch all admin-users queries to ensure UI updates
+        console.log('🔄 Refetching admin-users queries...');
+        try {
+          const refetchPromises = await queryClient.refetchQueries({
+            predicate: (query) => {
+              return Array.isArray(query.queryKey) && query.queryKey[0] === 'admin-users';
+            },
+            active: true
+          });
+          console.log('✅ Refetch completed, updated queries:', refetchPromises?.length || 0);
+        } catch (refetchError) {
+          console.warn('⚠️ Refetch error (non-critical):', refetchError);
+        }
+        
+        // Show success message
+        alert('✅ User updated successfully! The list will refresh automatically.');
+      },
+      onError: (error) => {
+        console.error('Failed to update user:', error);
+        let errorMessage = 'Failed to update user.\n\n';
+        
+        if (error.response?.status === 404) {
+          errorMessage += '⚠️ User not found (404)\n\n';
+          errorMessage += `Tried: ${error.config?.method?.toUpperCase()} ${error.config?.url}\n\n`;
+          errorMessage += 'The backend endpoint may not be implemented yet.\n';
+          errorMessage += 'Please check:\n';
+          errorMessage += '1. Backend has PUT /admin/users/:id or PATCH /users/:id endpoint\n';
+          errorMessage += '2. User ID or displayCode is correct\n';
+        } else if (error.response?.status === 401) {
+          errorMessage += 'Unauthorized. Admin access required.';
+        } else if (error.response?.status === 403) {
+          errorMessage += 'Forbidden. You may not have permission to update this user.';
+        } else if (error.response?.status === 400) {
+          errorMessage += error.response?.data?.message || 'Invalid data provided.';
+        } else {
+          errorMessage += error.response?.data?.message || error.message;
+        }
+        
+        alert(errorMessage);
       }
     }
   );
@@ -214,6 +316,96 @@ const UsersManagement = () => {
     setCurrentPage(1);
   };
 
+  // Get user KYC status helper function (needed for filtering)
+  // This will be defined later with allKYCData, but we need a placeholder here
+  // The actual function is defined after allKYCData is fetched
+
+  // Frontend filtering and sorting logic
+  const filteredUsers = useMemo(() => {
+    let filtered = [...users];
+    
+    // Filter by include_inactive
+    if (!filters.include_inactive) {
+      filtered = filtered.filter(user => {
+        const isActive = user.isActive !== undefined ? user.isActive : user.is_active;
+        return isActive;
+      });
+    }
+    
+    // Search filter
+    if (filters.search && filters.search.trim()) {
+      const searchLower = filters.search.toLowerCase();
+      filtered = filtered.filter(user => {
+        const name = (user.fullName || user.name || '').toLowerCase();
+        const email = (user.email || '').toLowerCase();
+        const id = (user.id || user.displayCode || '').toString().toLowerCase();
+        const phone = (user.phone || user.phoneNumber || '').toLowerCase();
+        
+        return name.includes(searchLower) ||
+               email.includes(searchLower) ||
+               id.includes(searchLower) ||
+               phone.includes(searchLower);
+      });
+    }
+    
+    // Status filter
+    if (filters.status && filters.status.trim()) {
+      filtered = filtered.filter(user => {
+        const isActive = user.isActive !== undefined ? user.isActive : user.is_active;
+        if (filters.status === 'active') {
+          return isActive;
+        } else if (filters.status === 'inactive') {
+          return !isActive;
+        }
+        return true;
+      });
+    }
+    
+    // KYC Status filter
+    if (filters.kyc_status && filters.kyc_status.trim()) {
+      filtered = filtered.filter(user => {
+        const userKYCStatus = getUserKYCStatus(user);
+        return userKYCStatus === filters.kyc_status;
+      });
+    }
+    
+    // Sorting
+    if (filters.sort_by) {
+      filtered.sort((a, b) => {
+        let aValue, bValue;
+        
+        switch (filters.sort_by) {
+          case 'created_at':
+            aValue = new Date(a.createdAt || a.created_at || 0);
+            bValue = new Date(b.createdAt || b.created_at || 0);
+            break;
+          case 'name':
+            aValue = (a.fullName || a.name || '').toLowerCase();
+            bValue = (b.fullName || b.name || '').toLowerCase();
+            break;
+          case 'email':
+            aValue = (a.email || '').toLowerCase();
+            bValue = (b.email || '').toLowerCase();
+            break;
+          case 'kyc_status':
+            aValue = getUserKYCStatus(a);
+            bValue = getUserKYCStatus(b);
+            break;
+          default:
+            return 0;
+        }
+        
+        if (filters.sort_order === 'asc') {
+          return aValue > bValue ? 1 : aValue < bValue ? -1 : 0;
+        } else {
+          return aValue < bValue ? 1 : aValue > bValue ? -1 : 0;
+        }
+      });
+    }
+    
+    return filtered;
+  }, [users, filters, allKYCData]);
+
   const handleStatusUpdate = (user) => {
     setSelectedUser(user);
     setShowModal(true);
@@ -240,7 +432,15 @@ const UsersManagement = () => {
 
   const handleSaveUser = (userData) => {
     if (editingUser) {
-      updateUserMutation.mutate({ id: editingUser.id, data: userData });
+      // Try using displayCode first, fallback to id
+      // Some endpoints accept displayCode instead of UUID
+      const userId = editingUser.displayCode || editingUser.id;
+      console.log('Saving user update:', {
+        userId,
+        userData,
+        editingUser: editingUser
+      });
+      updateUserMutation.mutate({ id: userId, data: userData });
     } else {
       createUserMutation.mutate(userData);
     }
@@ -447,6 +647,11 @@ const UsersManagement = () => {
                 placeholder="Search users..."
                 value={filters.search}
                 onChange={(e) => handleFilterChange('search', e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                  }
+                }}
                 className="w-full pl-10 pr-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
               />
             </div>
@@ -547,7 +752,18 @@ const UsersManagement = () => {
               </tr>
             </thead>
             <tbody className="bg-card divide-y divide-gray-200">
-              {users.map((user) => {
+              {filteredUsers.length === 0 ? (
+                <tr>
+                  <td colSpan="7" className="px-3 py-12 text-center text-muted-foreground">
+                    <div className="flex flex-col items-center">
+                      <Users className="w-12 h-12 text-muted-foreground mb-4" />
+                      <p className="text-lg font-medium">No users found</p>
+                      <p className="text-sm">Try adjusting your filters</p>
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                filteredUsers.map((user) => {
                 // Get real KYC status from KYC table
                 const userKYCStatus = getUserKYCStatus(user);
                 const kycInfo = getKYCStatusBadge(userKYCStatus);
@@ -729,15 +945,6 @@ const UsersManagement = () => {
                         </Button>
                         <Button 
                           variant="outline" 
-                          size="sm"
-                          className="h-7 w-7 p-0 flex-shrink-0"
-                          onClick={() => handleStatusUpdate(user)}
-                          title="Update status"
-                        >
-                          <Shield className="w-3.5 h-3.5" />
-                        </Button>
-                        <Button 
-                          variant="outline" 
                           size="sm" 
                           className={`h-7 w-7 p-0 flex-shrink-0 ${isDeleted ? 'text-muted-foreground cursor-not-allowed opacity-50' : 'text-red-600 hover:text-red-700 hover:bg-red-50'}`}
                           onClick={() => isDeleted ? null : handleDeleteUser(user)}
@@ -750,7 +957,8 @@ const UsersManagement = () => {
                     </td>
                   </tr>
                 );
-              })}
+              })
+              )}
             </tbody>
           </table>
         </div>

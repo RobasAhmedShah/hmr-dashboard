@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { 
   Plus, 
@@ -44,6 +44,7 @@ const PropertiesManagement = () => {
   const [propertyForReward, setPropertyForReward] = useState(null);
   const [rewardAmount, setRewardAmount] = useState('');
   const [rewardDistributionResult, setRewardDistributionResult] = useState(null);
+  const [statusModalOpen, setStatusModalOpen] = useState(null); // Track which property's status modal is open (stores property object)
 
   const queryClient = useQueryClient();
 
@@ -71,8 +72,8 @@ const PropertiesManagement = () => {
         queryClient.invalidateQueries(['admin-properties']);
         setShowModal(false);
         setSelectedProperty(null);
+        setStatusModalOpen(null);
         console.log('✅ Property status updated successfully:', response);
-        alert(`✅ Property status updated to "${selectedProperty.status}" successfully!`);
       },
       onError: (error) => {
         console.error('❌ Failed to update property status:', error);
@@ -584,9 +585,34 @@ const PropertiesManagement = () => {
       'construction': { variant: 'info', text: 'Under Construction' },
       'on-hold': { variant: 'secondary', text: 'On Hold' },
       'sold-out': { variant: 'danger', text: 'Sold Out' },
-      'completed': { variant: 'primary', text: 'Completed' }
+      'completed': { variant: 'primary', text: 'Completed' },
+      'generating-income': { variant: 'success', text: 'Generating Income' },
+      'funding': { variant: 'info', text: 'Funding' },
+      'pending': { variant: 'warning', text: 'Pending' }
     };
     return statusMap[status] || { variant: 'default', text: status };
+  };
+
+  // Available status options for 3x3 grid modal
+  const statusOptions = [
+    { value: 'coming-soon', label: 'Coming Soon' },
+    { value: 'active', label: 'Active' },
+    { value: 'construction', label: 'Under Construction' },
+    { value: 'funding', label: 'Funding' },
+    { value: 'generating-income', label: 'Generating Income' },
+    { value: 'on-hold', label: 'On Hold' },
+    { value: 'sold-out', label: 'Sold Out' },
+    { value: 'completed', label: 'Completed' },
+    { value: 'pending', label: 'Pending' }
+  ];
+
+  // Handle status change from modal
+  const handleStatusChange = (property, newStatus) => {
+    updateStatusMutation.mutate({
+      id: property.displayCode || property.id,
+      status: newStatus
+    });
+    setStatusModalOpen(null); // Close modal
   };
 
   const getPropertyTypeColor = (type) => {
@@ -728,6 +754,11 @@ const PropertiesManagement = () => {
                 placeholder="Search properties..."
                 value={filters.search}
                 onChange={(e) => handleFilterChange('search', e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                  }
+                }}
                 className={`w-full pl-10 pr-3 py-2 border rounded-lg bg-card text-card-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-ring focus:border-ring ${
                   filters.search ? 'border-primary bg-accent' : 'border-input'
                 }`}
@@ -751,9 +782,12 @@ const PropertiesManagement = () => {
               <option value="coming-soon">Coming Soon</option>
               <option value="active">Active</option>
               <option value="construction">Under Construction</option>
+              <option value="funding">Funding</option>
+              <option value="generating-income">Generating Income</option>
               <option value="on-hold">On Hold</option>
               <option value="sold-out">Sold Out</option>
               <option value="completed">Completed</option>
+              <option value="pending">Pending</option>
             </select>
           </div>
 
@@ -997,9 +1031,9 @@ const PropertiesManagement = () => {
                       <Badge 
                         variant={statusInfo.variant}
                         className="cursor-pointer hover:opacity-80 transition-opacity text-xs"
-                        onClick={() => {
-                          setSelectedProperty(mappedProperty);
-                          setShowModal(true);
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setStatusModalOpen(mappedProperty);
                         }}
                         title="Click to change status"
                       >
@@ -1569,6 +1603,72 @@ const PropertiesManagement = () => {
                   </div>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Status Update Modal with 3x3 Grid */}
+      {statusModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-card rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              {/* Header */}
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h2 className="text-xl font-semibold text-card-foreground">Change Property Status</h2>
+                  <p className="text-sm text-muted-foreground mt-1">{statusModalOpen.title}</p>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setStatusModalOpen(null)}
+                  className="h-8 w-8 p-0"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+
+              {/* 3x3 Grid of Status Options */}
+              <div className="grid grid-cols-3 gap-3">
+                {statusOptions.map((option) => {
+                  const optionStatusInfo = getStatusBadge(option.value);
+                  const isSelected = statusModalOpen.status === option.value;
+                  return (
+                    <button
+                      key={option.value}
+                      onClick={() => handleStatusChange(statusModalOpen, option.value)}
+                      className={`p-4 rounded-lg border-2 transition-all hover:scale-105 ${
+                        isSelected
+                          ? 'border-primary bg-primary/10 shadow-md'
+                          : 'border-border hover:border-primary/50 hover:bg-accent'
+                      }`}
+                    >
+                      <div className="flex flex-col items-center space-y-2">
+                        <Badge 
+                          variant={optionStatusInfo.variant}
+                          className="text-xs"
+                        >
+                          {optionStatusInfo.text}
+                        </Badge>
+                        {isSelected && (
+                          <div className="text-primary font-semibold text-xs">Current</div>
+                        )}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Cancel Button */}
+              <div className="flex justify-end mt-6">
+                <Button
+                  variant="outline"
+                  onClick={() => setStatusModalOpen(null)}
+                >
+                  Cancel
+                </Button>
+              </div>
             </div>
           </div>
         </div>

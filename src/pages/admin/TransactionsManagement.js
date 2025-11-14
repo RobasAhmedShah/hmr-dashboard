@@ -26,6 +26,7 @@ const TransactionsManagement = () => {
     search: '',
     status: '',
     transaction_type: '',
+    property: '',
     sort_by: 'created_at',
     sort_order: 'desc'
   });
@@ -53,6 +54,18 @@ const TransactionsManagement = () => {
                           transactionsData?.data?.transactions || 
                           transactionsData?.data || 
                           (Array.isArray(transactionsData) ? transactionsData : []);
+
+  // Get unique properties from transactions for filter dropdown
+  const uniqueProperties = useMemo(() => {
+    const propertySet = new Set();
+    allTransactions.forEach(transaction => {
+      const propertyTitle = transaction.property?.title || transaction.property_title;
+      if (propertyTitle) {
+        propertySet.add(propertyTitle);
+      }
+    });
+    return Array.from(propertySet).sort();
+  }, [allTransactions]);
   
   // Frontend filtering logic
   const filteredTransactions = useMemo(() => {
@@ -89,6 +102,15 @@ const TransactionsManagement = () => {
         const transactionType = (transaction.transaction_type || '').toLowerCase();
         const filterType = filters.transaction_type.toLowerCase();
         return transactionType === filterType;
+      });
+    }
+    
+    // Property filter
+    if (filters.property && filters.property.trim()) {
+      filtered = filtered.filter(transaction => {
+        const propertyTitle = (transaction.property?.title || transaction.property_title || '').toLowerCase();
+        const filterProperty = filters.property.toLowerCase();
+        return propertyTitle.includes(filterProperty);
       });
     }
     
@@ -333,7 +355,7 @@ const TransactionsManagement = () => {
 
       {/* Filters */}
       <Card className="p-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
           <div>
             <label className="block text-sm font-medium text-foreground mb-1">Search</label>
             <div className="relative">
@@ -343,6 +365,11 @@ const TransactionsManagement = () => {
                 placeholder="Search transactions..."
                 value={filters.search}
                 onChange={(e) => handleFilterChange('search', e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                  }
+                }}
                 className="w-full pl-10 pr-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
               />
             </div>
@@ -373,6 +400,22 @@ const TransactionsManagement = () => {
               <option value="">All Types</option>
               <option value="deposit">Deposit</option>
               <option value="withdrawal">Withdrawal</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-1">Property</label>
+            <select
+              value={filters.property}
+              onChange={(e) => handleFilterChange('property', e.target.value)}
+              className="w-full px-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
+            >
+              <option value="">All Properties</option>
+              {uniqueProperties.map((propertyTitle) => (
+                <option key={propertyTitle} value={propertyTitle}>
+                  {propertyTitle}
+                </option>
+              ))}
             </select>
           </div>
 

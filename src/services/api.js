@@ -222,7 +222,7 @@ export const adminAPI = {
   getUsers: (params) => api.get('/admin/users', { params }),
   getUser: (id) => api.get(`/admin/users/${id}`), // Not yet implemented
   createUser: (data) => api.post('/admin/users', data),
-  updateUser: (id, data) => api.put(`/admin/users/${id}`, data), // Not yet implemented
+  updateUser: (id, data) => api.patch(`/admin/users/${id}`, data), // Try PATCH instead of PUT
   deleteUser: (id) => api.delete(`/admin/users/${id}`), // Not yet implemented
   updateUserStatus: (id, data) => api.patch(`/admin/users/${id}/status`, data), // Not yet implemented
   
