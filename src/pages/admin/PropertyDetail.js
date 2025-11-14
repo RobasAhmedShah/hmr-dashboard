@@ -26,6 +26,7 @@ import Button from '../../components/ui/Button';
 import Badge from '../../components/ui/Badge';
 import { adminAPI, propertiesAPI, investmentsAPI, walletTransactionsAPI } from '../../services/api';
 import { useAdminAuth } from '../../components/admin/AdminAuth';
+import { getPropertyImage, getPropertyImages } from '../../utils/formatLocation';
 
 const PropertyDetail = () => {
   const { propertyId } = useParams();
@@ -576,6 +577,65 @@ const PropertyDetail = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Property Image Section */}
+        {(() => {
+          const mainImage = getPropertyImage(property);
+          const allImages = getPropertyImages(property);
+          
+          if (mainImage || allImages.length > 0) {
+            return (
+              <Card className="mb-8 overflow-hidden">
+                <div className="relative">
+                  {/* Main Image */}
+                  {mainImage && (
+                    <div className="w-full h-96 bg-muted flex items-center justify-center overflow-hidden">
+                      <img
+                        src={mainImage}
+                        alt={property.title || property.name || 'Property image'}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          console.error('Image failed to load:', mainImage);
+                          e.target.style.display = 'none';
+                          e.target.nextSibling.style.display = 'flex';
+                        }}
+                      />
+                      <div className="hidden w-full h-full items-center justify-center bg-muted">
+                        <Building2 className="w-16 h-16 text-muted-foreground" />
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Image Gallery (if multiple images) */}
+                  {allImages.length > 1 && (
+                    <div className="p-4 bg-accent border-t border-border">
+                      <h3 className="text-sm font-medium text-foreground mb-3">Additional Images</h3>
+                      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
+                        {allImages.map((imageUrl, index) => (
+                          <div
+                            key={index}
+                            className="relative aspect-square bg-muted rounded-lg overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
+                            onClick={() => window.open(imageUrl, '_blank')}
+                          >
+                            <img
+                              src={imageUrl}
+                              alt={`Property image ${index + 1}`}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                e.target.style.display = 'none';
+                              }}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </Card>
+            );
+          }
+          return null;
+        })()}
+
         {/* Navigation Tabs */}
         <div className="mb-8">
           <nav className="flex space-x-8">

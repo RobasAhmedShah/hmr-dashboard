@@ -4,6 +4,10 @@ import Card from '../ui/Card';
 import Button from '../ui/Button';
 import SimpleMap from './SimpleMap';
 import { adminAPI, uploadAPI } from '../../services/api';
+import { supabaseUpload } from '../../services/supabaseUpload';
+
+// Ensure we're using Supabase, not the old API
+console.log('✅ PropertyForm: Using Supabase for image uploads');
 
 const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
   const [formData, setFormData] = useState({
@@ -45,7 +49,7 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
     tokenization_token_price: '',
     unit_types: [],
     features: [],
-    images: {},
+    images: [], // Array of image URLs
     seo: {},
     investment_stats: {
       totalInvestors: 0,
@@ -113,6 +117,26 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
 
   useEffect(() => {
     if (property) {
+      // Handle images - can be JSON string or array
+      let imagesArray = [];
+      if (property.images) {
+        if (typeof property.images === 'string') {
+          try {
+            imagesArray = JSON.parse(property.images);
+          } catch (e) {
+            console.warn('Failed to parse images JSON:', e);
+            imagesArray = [];
+          }
+        } else if (Array.isArray(property.images)) {
+          imagesArray = property.images;
+        } else if (typeof property.images === 'object') {
+          // Handle old format: { main: { url: '...' }, gallery: { url: '...' } }
+          imagesArray = Object.values(property.images)
+            .map(img => (typeof img === 'object' && img.url ? img.url : img))
+            .filter(Boolean);
+        }
+      }
+      
       setFormData({
         ...formData,
         ...property,
@@ -122,6 +146,7 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
         unit_types: Array.isArray(property.unit_types) ? property.unit_types : [],
         documents: Array.isArray(property.documents) ? property.documents : [],
         property_features: Array.isArray(property.property_features) ? property.property_features : [],
+        images: imagesArray, // Use parsed array
       });
       if (property.seo) {
         setSeoData(property.seo);
@@ -215,13 +240,16 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
       features: {
         amenities: formData.amenities || [],
         unit_types: formData.unit_types || []
-      }
+      },
+      // Convert images array to JSON string format: ["url1", "url2"]
+      images: JSON.stringify(formData.images || [])
     };
     
     // Remove the redundant top-level fields since they're now in features
     delete finalData.amenities;
     delete finalData.unit_types;
     
+    console.log('📤 Submitting property with images:', finalData.images);
     onSave(finalData);
   };
 
@@ -590,31 +618,44 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
 
   // Images Management
   const addImage = () => {
-    if (newImage.url && newImage.alt) {
-      setFormData(prev => ({
-        ...prev,
-        images: {
-          ...prev.images,
-          [newImage.type]: {
-            url: newImage.url,
-            alt: newImage.alt
-          }
-        }
-      }));
+    if (newImage.url) {
+      // Add URL to images array
+      setFormData(prev => {
+        // Ensure images is always an array
+        const currentImages = Array.isArray(prev.images) 
+          ? prev.images 
+          : (typeof prev.images === 'string' 
+              ? (() => {
+                  try {
+                    const parsed = JSON.parse(prev.images);
+                    return Array.isArray(parsed) ? parsed : [];
+                  } catch {
+                    return [];
+                  }
+                })()
+              : []);
+        
+        return {
+          ...prev,
+          images: [...currentImages, newImage.url]
+        };
+      });
       setNewImage({ url: '', alt: '', type: 'main' });
+      alert('Image added successfully!');
     } else {
-      alert('Please fill in Image URL and Alt Text before adding.');
+      alert('Please upload an image first.');
     }
   };
 
   const handleImageFileUpload = async (event) => {
+    console.log('🚀 handleImageFileUpload called - Using Supabase!');
     const file = event.target.files?.[0];
     if (!file) return;
 
     // Validate file type
-    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'];
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
     if (!allowedTypes.includes(file.type)) {
-      alert('Invalid file type. Please upload JPG, PNG, GIF, WEBP, or SVG images.');
+      alert('Invalid file type. Please upload JPG, PNG, GIF, or WEBP images.');
       return;
     }
 
@@ -630,25 +671,47 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
 
     setUploadingImage(true);
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-
-      const response = await uploadAPI.uploadImage('properties', formData);
+      // Get property ID if editing
+      const propertyId = property?.id || property?.displayCode || null;
       
-      if (response.data?.success && response.data?.data) {
-        const uploadedFile = response.data.data;
-        // Set the uploaded file URL
-        setNewImage(prev => ({ 
-          ...prev, 
-          url: uploadedFile.url || uploadedFile.fullUrl || `/upload/file/properties/${uploadedFile.filename}` 
-        }));
-        alert('Image uploaded successfully! Please add alt text and click Add.');
-      } else {
-        throw new Error('Upload failed');
-      }
+      console.log('🖼️ Uploading image to Supabase...', { fileName: file.name, propertyId, fileSize: file.size });
+      console.log('📦 supabaseUpload object:', supabaseUpload);
+      
+      // IMPORTANT: Using Supabase, NOT the old uploadAPI
+      // Upload to Supabase
+      const result = await supabaseUpload.uploadImage(file, 'properties', propertyId);
+      
+      console.log('✅ Upload result:', result);
+      
+      // Set the uploaded file URL
+      setNewImage(prev => ({ 
+        ...prev, 
+        url: result.url // This is the Supabase public URL
+      }));
+      
+      alert('Image uploaded successfully! Click "Add Image" to add it to the property.');
     } catch (error) {
-      console.error('Image upload error:', error);
-      alert('Failed to upload image. Please try again.');
+      console.error('❌ Image upload error:', error);
+      console.error('Error details:', {
+        message: error.message,
+        name: error.name,
+        stack: error.stack
+      });
+      
+      // Show detailed error message with troubleshooting tips
+      let errorMessage = error.message || 'Unknown error occurred.';
+      
+      if (error.message?.includes('Bucket not found')) {
+        errorMessage += '\n\n💡 Solution: Make sure the bucket "property-images" exists in your Supabase dashboard.';
+      } else if (error.message?.includes('row-level security') || error.message?.includes('policy')) {
+        errorMessage += '\n\n💡 Solution: Check your Supabase storage policies. You need an INSERT policy that allows uploads.';
+      } else if (error.message?.includes('JWT') || error.message?.includes('auth')) {
+        errorMessage += '\n\n💡 Solution: Check your Supabase API keys in the .env file.';
+      }
+      
+      errorMessage += '\n\nCheck browser console (F12) for more details.';
+      
+      alert(`Failed to upload image:\n\n${errorMessage}`);
     } finally {
       setUploadingImage(false);
       // Reset file input
@@ -658,11 +721,14 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
     }
   };
 
-  const removeImage = (type) => {
+  const removeImage = (index) => {
     setFormData(prev => {
-      const newImages = { ...prev.images };
-      delete newImages[type];
-      return { ...prev, images: newImages };
+      // Ensure images is always an array
+      const currentImages = Array.isArray(prev.images) ? prev.images : [];
+      return {
+        ...prev,
+        images: currentImages.filter((_, i) => i !== index)
+      };
     });
   };
 
@@ -1782,62 +1848,58 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                 </div>
               </div>
 
-              {/* Manual URL Entry */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              {/* Manual URL Entry or Upload Result */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <input
                   type="url"
-                  placeholder="Image URL (or upload file above)"
+                  placeholder="Image URL (auto-filled after upload or enter manually)"
                   value={newImage.url}
                   onChange={(e) => setNewImage(prev => ({ ...prev, url: e.target.value }))}
-                  className="px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
+                  className="px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring md:col-span-2"
                 />
-                <input
-                  type="text"
-                  placeholder="Alt Text"
-                  value={newImage.alt}
-                  onChange={(e) => setNewImage(prev => ({ ...prev, alt: e.target.value }))}
-                  className="px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
-                />
-                <select
-                  value={newImage.type}
-                  onChange={(e) => setNewImage(prev => ({ ...prev, type: e.target.value }))}
-                  className="px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
-                >
-                  <option value="main">Main Image</option>
-                  <option value="gallery">Gallery</option>
-                  <option value="floor-plan">Floor Plan</option>
-                  <option value="location">Location</option>
-                </select>
                 <Button 
                   type="button" 
                   onClick={addImage} 
                   className="flex items-center justify-center space-x-2"
-                  disabled={uploadingImage}
+                  disabled={uploadingImage || !newImage.url}
                 >
                   <Plus className="w-4 h-4" />
-                  <span>Add</span>
+                  <span>Add Image</span>
                 </Button>
               </div>
-              {Object.entries(formData.images).map(([type, image]) => (
-                <div key={type} className="flex items-center justify-between p-3 bg-accent rounded-lg">
-                  <div className="flex space-x-4">
-                    <span className="font-medium capitalize">{type}</span>
-                    <span className="text-muted-foreground">{image.alt}</span>
-                    <a href={image.url} target="_blank" rel="noopener noreferrer" className="text-primary hover:text-blue-800">
-                      View Image
-                    </a>
+              {newImage.url && (
+                <p className="text-sm text-muted-foreground">
+                  ✅ Image URL ready. Click "Add Image" to add it to the property.
+                </p>
+              )}
+              {formData.images && formData.images.length > 0 ? (
+                formData.images.map((imageUrl, index) => (
+                  <div key={index} className="flex items-center justify-between p-3 bg-accent rounded-lg">
+                    <div className="flex space-x-4 items-center">
+                      <span className="font-medium text-sm">Image {index + 1}</span>
+                      <a 
+                        href={imageUrl} 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        className="text-primary hover:text-blue-800 text-sm truncate max-w-md"
+                      >
+                        {imageUrl}
+                      </a>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => removeImage(index)}
+                      className="text-red-600 hover:text-red-700"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
                   </div>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => removeImage(type)}
-                    className="text-red-600 hover:text-red-700"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                </div>
-              ))}
+                ))
+              ) : (
+                <p className="text-muted-foreground text-sm">No images added yet. Upload images above.</p>
+              )}
             </div>
           </Card>
 

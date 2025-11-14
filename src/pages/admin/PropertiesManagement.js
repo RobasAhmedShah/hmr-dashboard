@@ -1009,7 +1009,12 @@ const PropertiesManagement = () => {
                         <div className="ml-2 min-w-0 flex-1">
                           <div className="text-xs font-medium text-card-foreground truncate">
                             <button
-                              onClick={() => handleViewProperty(mappedProperty)}
+                              onClick={() => {
+                                const propertyId = mappedProperty.id || mappedProperty.displayCode;
+                                if (propertyId) {
+                                  window.location.href = `/admin/property/${propertyId}`;
+                                }
+                              }}
                               className="text-blue-600 hover:text-blue-800 hover:underline cursor-pointer text-left truncate max-w-full"
                             >
                               {mappedProperty.title}
