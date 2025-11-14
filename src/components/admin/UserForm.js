@@ -18,15 +18,34 @@ const UserForm = ({ user, onSave, onCancel, isLoading }) => {
 
   useEffect(() => {
     if (user) {
+      // Handle different field name variations from backend
+      const fullName = user.fullName || user.name || '';
+      const firstName = user.first_name || user.firstName || '';
+      const lastName = user.last_name || user.lastName || '';
+      const isActive = user.isActive !== undefined ? user.isActive : 
+                      (user.is_active !== undefined ? user.is_active : true);
+      
       setFormData({
-        name: user.name || '',
-        first_name: user.first_name || '',
-        last_name: user.last_name || '',
+        name: fullName,
+        first_name: firstName,
+        last_name: lastName,
         email: user.email || '',
         phone: user.phone || '',
         password: '', // Don't pre-fill password
         kyc_status: user.kyc_status || 'pending',
-        is_active: user.is_active !== undefined ? user.is_active : true
+        is_active: isActive
+      });
+    } else {
+      // Reset form when no user (creating new user)
+      setFormData({
+        name: '',
+        first_name: '',
+        last_name: '',
+        email: '',
+        phone: '',
+        password: '',
+        kyc_status: 'pending',
+        is_active: true
       });
     }
   }, [user]);
@@ -65,7 +84,15 @@ const UserForm = ({ user, onSave, onCancel, isLoading }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (validateForm()) {
-      onSave(formData);
+      // Prepare data for API - remove password if editing and not provided
+      const dataToSave = { ...formData };
+      
+      // If editing and password is empty, don't send it
+      if (user && !dataToSave.password) {
+        delete dataToSave.password;
+      }
+      
+      onSave(dataToSave);
     }
   };
 

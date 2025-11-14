@@ -46,6 +46,29 @@ const InvestmentsManagement = () => {
     }
   );
 
+  // Fetch properties for property filter dropdown
+  const { data: propertiesData } = useQuery(
+    ['admin-properties-for-filter'],
+    () => adminAPI.getProperties({ limit: 1000 }),
+    {
+      retry: 1,
+      refetchOnWindowFocus: false,
+      enabled: isAuthenticated
+    }
+  );
+
+  // Get unique properties from investments
+  const uniqueProperties = useMemo(() => {
+    const propertySet = new Set();
+    investments.forEach(inv => {
+      const propertyTitle = inv.property?.title || inv.property_title;
+      if (propertyTitle) {
+        propertySet.add(propertyTitle);
+      }
+    });
+    return Array.from(propertySet).sort();
+  }, [investments]);
+
   // Fetch dashboard stats for accurate investment totals
   const { data: dashboardData } = useQuery(
     ['admin-dashboard'],
@@ -156,6 +179,85 @@ const InvestmentsManagement = () => {
     setFilters(prev => ({ ...prev, [key]: value }));
     setCurrentPage(1);
   };
+
+  // Frontend filtering logic
+  const filteredInvestments = useMemo(() => {
+    let filtered = [...investments];
+    
+    // Search filter
+    if (filters.search && filters.search.trim()) {
+      const searchLower = filters.search.toLowerCase();
+      filtered = filtered.filter(investment => {
+        const id = (investment.id || investment.displayCode || '').toString().toLowerCase();
+        const userName = (investment.user?.fullName || investment.user_name || '').toLowerCase();
+        const userEmail = (investment.user?.email || investment.user_email || '').toLowerCase();
+        const propertyTitle = (investment.property?.title || investment.property_title || '').toLowerCase();
+        const amount = (investment.amountUSDT || investment.amount_invested || investment.amount || '').toString().toLowerCase();
+        
+        return id.includes(searchLower) ||
+               userName.includes(searchLower) ||
+               userEmail.includes(searchLower) ||
+               propertyTitle.includes(searchLower) ||
+               amount.includes(searchLower);
+      });
+    }
+    
+    // Status filter
+    if (filters.status && filters.status.trim()) {
+      filtered = filtered.filter(investment => {
+        const investmentStatus = (investment.status || '').toLowerCase();
+        const filterStatus = filters.status.toLowerCase();
+        return investmentStatus === filterStatus;
+      });
+    }
+    
+    // Property filter
+    if (filters.property && filters.property.trim()) {
+      filtered = filtered.filter(investment => {
+        const propertyTitle = (investment.property?.title || investment.property_title || '').toLowerCase();
+        const propertySlug = (investment.property?.slug || '').toLowerCase();
+        const filterProperty = filters.property.toLowerCase();
+        return propertyTitle.includes(filterProperty) ||
+               propertySlug.includes(filterProperty);
+      });
+    }
+    
+    // Sorting
+    if (filters.sort_by) {
+      filtered.sort((a, b) => {
+        let aValue, bValue;
+        
+        switch (filters.sort_by) {
+          case 'created_at':
+            aValue = new Date(a.createdAt || a.created_at || 0);
+            bValue = new Date(b.createdAt || b.created_at || 0);
+            break;
+          case 'investment_amount':
+            aValue = parseFloat(a.amountUSDT || a.amount_invested || a.amount || 0);
+            bValue = parseFloat(b.amountUSDT || b.amount_invested || b.amount || 0);
+            break;
+          case 'status':
+            aValue = (a.status || '').toLowerCase();
+            bValue = (b.status || '').toLowerCase();
+            break;
+          case 'property_title':
+            aValue = (a.property?.title || a.property_title || '').toLowerCase();
+            bValue = (b.property?.title || b.property_title || '').toLowerCase();
+            break;
+          default:
+            return 0;
+        }
+        
+        if (filters.sort_order === 'asc') {
+          return aValue > bValue ? 1 : aValue < bValue ? -1 : 0;
+        } else {
+          return aValue < bValue ? 1 : aValue > bValue ? -1 : 0;
+        }
+      });
+    }
+    
+    return filtered;
+  }, [investments, filters]);
 
   const getStatusBadge = (status) => {
     const statusMap = {
@@ -299,6 +401,11 @@ const InvestmentsManagement = () => {
                 placeholder="Search investments..."
                 value={filters.search}
                 onChange={(e) => handleFilterChange('search', e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                  }
+                }}
                 className="w-full pl-10 pr-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
               />
             </div>
@@ -328,9 +435,11 @@ const InvestmentsManagement = () => {
               className="w-full px-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
             >
               <option value="">All Properties</option>
-              <option value="hmr-waterfront-towers">HMR Waterfront Towers</option>
-              <option value="creek-vista-residences">Creek Vista Residences</option>
-              <option value="techno">Techno</option>
+              {uniqueProperties.map((propertyTitle) => (
+                <option key={propertyTitle} value={propertyTitle}>
+                  {propertyTitle}
+                </option>
+              ))}
             </select>
           </div>
 
@@ -395,7 +504,7 @@ const InvestmentsManagement = () => {
               </tr>
             </thead>
             <tbody className="bg-card divide-y divide-gray-200">
-              {investments.length === 0 ? (
+              {filteredInvestments.length === 0 ? (
                 <tr>
                   <td colSpan="6" className="px-6 py-12 text-center text-muted-foreground">
                     <div className="flex flex-col items-center">
@@ -406,7 +515,7 @@ const InvestmentsManagement = () => {
                   </td>
                 </tr>
               ) : (
-                investments.map((investment) => {
+                filteredInvestments.map((investment) => {
                   // Extract tokens directly from investment data
                   // Portfolio API is not working (returning 404), so use investment object directly
                   let tokens_bought = parseFloat(

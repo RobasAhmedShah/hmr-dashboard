@@ -406,6 +406,11 @@ const KYCManagement = () => {
               placeholder="Search by name, email, user ID..."
               value={filters.search}
               onChange={(e) => setFilters({ ...filters, search: e.target.value })}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                }
+              }}
               icon={<Search className="h-4 w-4 text-muted-foreground" />}
             />
           </div>
