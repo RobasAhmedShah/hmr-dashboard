@@ -57,18 +57,6 @@ const InvestmentsManagement = () => {
     }
   );
 
-  // Get unique properties from investments
-  const uniqueProperties = useMemo(() => {
-    const propertySet = new Set();
-    investments.forEach(inv => {
-      const propertyTitle = inv.property?.title || inv.property_title;
-      if (propertyTitle) {
-        propertySet.add(propertyTitle);
-      }
-    });
-    return Array.from(propertySet).sort();
-  }, [investments]);
-
   // Fetch dashboard stats for accurate investment totals
   const { data: dashboardData } = useQuery(
     ['admin-dashboard'],
@@ -80,10 +68,23 @@ const InvestmentsManagement = () => {
   );
 
   // Handle different response formats from backend
+  // IMPORTANT: This must be declared before any useMemo that uses it
   const investments = investmentsData?.data?.data?.investments || 
                      investmentsData?.data?.investments || 
                      investmentsData?.data || 
                      (Array.isArray(investmentsData) ? investmentsData : []);
+
+  // Get unique properties from investments
+  const uniqueProperties = useMemo(() => {
+    const propertySet = new Set();
+    investments.forEach(inv => {
+      const propertyTitle = inv.property?.title || inv.property_title;
+      if (propertyTitle) {
+        propertySet.add(propertyTitle);
+      }
+    });
+    return Array.from(propertySet).sort();
+  }, [investments]);
 
   // Get unique user IDs from investments (unused - commented out)
   // const uniqueUserIds = useMemo(() => {

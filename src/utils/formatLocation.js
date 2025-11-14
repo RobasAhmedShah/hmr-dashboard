@@ -149,25 +149,50 @@ export const getPropertyImage = (property) => {
     // Otherwise, assume it's a relative path and prepend API base URL with /
     return `${API_BASE_URL}/${url}`;
   };
+
+  // Parse images if it's a JSON string (from database)
+  // Database stores images as JSON string like: "[\"https://...\"]"
+  let images = property.images;
+  if (typeof images === 'string') {
+    const trimmed = images.trim();
+    // Check if it looks like a JSON array
+    if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+      try {
+        images = JSON.parse(images);
+        console.log('✅ getPropertyImage - Parsed JSON:', images);
+      } catch (e) {
+        console.warn('❌ getPropertyImage - Failed to parse JSON:', e, 'Raw:', images);
+        images = null;
+      }
+    } else {
+      console.log('⚠️ getPropertyImage - String but not JSON array:', images);
+    }
+  }
   
+  // Debug: Log what we're working with
+  if (property.images) {
+    console.log('🔍 getPropertyImage - Type:', typeof property.images, 'Value:', property.images);
+    console.log('🔍 getPropertyImage - Parsed:', images);
+  }
+   
   // Direct image property (from database)
   if (property.image) {
     return ensureFullUrl(property.image);
   }
   
   // Images object with thumbnail
-  if (property.images?.thumbnail) {
-    return ensureFullUrl(property.images.thumbnail);
+  if (images?.thumbnail) {
+    return ensureFullUrl(images.thumbnail);
   }
   
   // Images object with gallery array
-  if (property.images?.gallery && Array.isArray(property.images.gallery) && property.images.gallery.length > 0) {
-    return ensureFullUrl(property.images.gallery[0]);
+  if (images?.gallery && Array.isArray(images.gallery) && images.gallery.length > 0) {
+    return ensureFullUrl(images.gallery[0]);
   }
   
-  // Direct images array
-  if (property.images && Array.isArray(property.images) && property.images.length > 0) {
-    return ensureFullUrl(property.images[0]);
+  // Direct images array (from parsed JSON string or direct array)
+  if (images && Array.isArray(images) && images.length > 0) {
+    return ensureFullUrl(images[0]);
   }
   
   // Check for image_url field (common in databases)
@@ -208,15 +233,34 @@ export const getPropertyImages = (property) => {
     // Otherwise, assume it's a relative path and prepend API base URL with /
     return `${API_BASE_URL}/${url}`;
   };
-  
+
+  // Parse images if it's a JSON string (from database)
+  // Database stores images as JSON string like: "[\"https://...\"]"
+  let images = property.images;
+  if (typeof images === 'string') {
+    const trimmed = images.trim();
+    // Check if it looks like a JSON array
+    if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+      try {
+        images = JSON.parse(images);
+        console.log('✅ getPropertyImages - Parsed JSON:', images);
+      } catch (e) {
+        console.warn('❌ getPropertyImages - Failed to parse JSON:', e, 'Raw:', images);
+        images = null;
+      }
+    } else {
+      console.log('⚠️ getPropertyImages - String but not JSON array:', images);
+    }
+  }
+   
   // Images object with gallery array
-  if (property.images?.gallery && Array.isArray(property.images.gallery)) {
-    return property.images.gallery.map(img => ensureFullUrl(img)).filter(Boolean);
+  if (images?.gallery && Array.isArray(images.gallery)) {
+    return images.gallery.map(img => ensureFullUrl(img)).filter(Boolean);
   }
   
-  // Direct images array
-  if (property.images && Array.isArray(property.images)) {
-    return property.images.map(img => ensureFullUrl(img)).filter(Boolean);
+  // Direct images array (from parsed JSON string or direct array)
+  if (images && Array.isArray(images)) {
+    return images.map(img => ensureFullUrl(img)).filter(Boolean);
   }
   
   // Single image
