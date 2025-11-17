@@ -7,6 +7,7 @@ import Layout from '../../components/Layout/Layout';
 import PropertyCard from '../../components/PropertyCard';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
+import Badge from '../../components/ui/Badge';
 import Card from '../../components/ui/Card';
 
 const Properties = () => {
@@ -22,22 +23,57 @@ const Properties = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [showFilters, setShowFilters] = useState(false);
 
-  const handleInvest = (property) => {
-    navigate(`/wallet?buyTokens=1&propertyId=${property.id}`);
+  const handleInvest = (property, action = 'invest') => {
+    if (action === 'details') {
+      // Navigate to dedicated property detail page
+      const propertyId = property.id || property.displayCode || property.slug;
+      navigate(`/properties/${propertyId}`);
+    } else if (action === 'invest') {
+      navigate(`/wallet?buyTokens=1&propertyId=${property.id || property.displayCode}`);
+    }
+  };
+
+  // Build query params - only include non-empty values
+  const buildQueryParams = () => {
+    const params = {
+      page: currentPage,
+      limit: 12,
+    };
+    
+    // Only add filters if they have values
+    if (filters.search && filters.search.trim()) {
+      params.search = filters.search.trim();
+    }
+    
+    if (filters.status && filters.status.trim()) {
+      params.status = filters.status;
+    }
+    
+    if (filters.property_type && filters.property_type.trim()) {
+      params.property_type = filters.property_type;
+    }
+    
+    if (filters.city && filters.city.trim()) {
+      params.city = filters.city;
+    }
+    
+    // Featured filter - send as boolean or string depending on API
+    if (filters.featured) {
+      params.featured = true;
+    }
+    
+    return params;
   };
 
   const { data, isLoading, error, refetch } = useQuery(
     ['properties', filters, currentPage],
-    () => propertiesAPI.getAll({
-      ...filters,
-      page: currentPage,
-      limit: 12,
-    }),
+    () => propertiesAPI.getAll(buildQueryParams()),
     {
       keepPreviousData: true,
       onSuccess: (response) => {
         console.log('Properties API Response:', response);
         console.log('Properties Data:', response?.data);
+        console.log('Applied Filters:', filters);
       },
       onError: (error) => {
         console.error('Properties API Error:', error);
@@ -79,11 +115,16 @@ const Properties = () => {
   console.log('Pagination:', pagination);
 
   const handleFilterChange = (key, value) => {
-    setFilters(prev => ({
-      ...prev,
-      [key]: value,
-    }));
+    setFilters(prev => {
+      const newFilters = {
+        ...prev,
+        [key]: value,
+      };
+      console.log('Filter changed:', key, value, 'New filters:', newFilters);
+      return newFilters;
+    });
     setCurrentPage(1);
+    // Filters will automatically trigger refetch via useQuery dependency
   };
 
   const handleSearch = (e) => {
@@ -92,6 +133,7 @@ const Properties = () => {
   };
 
   const clearFilters = () => {
+    console.log('Clearing all filters');
     setFilters({
       search: '',
       status: '',
@@ -100,6 +142,7 @@ const Properties = () => {
       featured: false,
     });
     setCurrentPage(1);
+    // Filters will automatically trigger refetch via useQuery dependency
   };
 
   // Get filter options from database or use fallbacks
@@ -147,7 +190,15 @@ const Properties = () => {
                 type="text"
                 placeholder="Search properties by name, location, or description..."
                 value={filters.search}
-                onChange={(e) => handleFilterChange('search', e.target.value)}
+                onChange={(e) => {
+                  handleFilterChange('search', e.target.value);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    refetch();
+                  }
+                }}
                 className="pl-10"
               />
             </div>
@@ -188,7 +239,9 @@ const Properties = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
                 <select
                   value={filters.status}
-                  onChange={(e) => handleFilterChange('status', e.target.value)}
+                  onChange={(e) => {
+                    handleFilterChange('status', e.target.value);
+                  }}
                   className="input"
                 >
                   {statusOptions.map(option => (
@@ -203,7 +256,9 @@ const Properties = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Property Type</label>
                 <select
                   value={filters.property_type}
-                  onChange={(e) => handleFilterChange('property_type', e.target.value)}
+                  onChange={(e) => {
+                    handleFilterChange('property_type', e.target.value);
+                  }}
                   className="input"
                 >
                   {propertyTypeOptions.map(option => (
@@ -218,7 +273,9 @@ const Properties = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
                 <select
                   value={filters.city}
-                  onChange={(e) => handleFilterChange('city', e.target.value)}
+                  onChange={(e) => {
+                    handleFilterChange('city', e.target.value);
+                  }}
                   className="input"
                 >
                   {cityOptions.map(option => (
@@ -245,8 +302,10 @@ const Properties = () => {
                 type="checkbox"
                 id="featured"
                 checked={filters.featured}
-                onChange={(e) => handleFilterChange('featured', e.target.checked)}
-                className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                onChange={(e) => {
+                  handleFilterChange('featured', e.target.checked);
+                }}
+                className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded cursor-pointer"
               />
               <label htmlFor="featured" className="ml-2 text-sm text-gray-700">
                 Show only featured properties
@@ -256,11 +315,73 @@ const Properties = () => {
         )}
       </Card>
 
+      {/* Active Filters Indicator */}
+      {(filters.status || filters.property_type || filters.city || filters.featured || filters.search) && (
+        <div className="mb-4 flex flex-wrap items-center gap-2">
+          <span className="text-sm text-gray-600">Active filters:</span>
+          {filters.status && (
+            <Badge variant="default" className="text-xs">
+              Status: {statusOptions.find(opt => opt.value === filters.status)?.label || filters.status}
+              <button
+                onClick={() => handleFilterChange('status', '')}
+                className="ml-2 hover:text-red-600"
+              >
+                ×
+              </button>
+            </Badge>
+          )}
+          {filters.property_type && (
+            <Badge variant="default" className="text-xs">
+              Type: {propertyTypeOptions.find(opt => opt.value === filters.property_type)?.label || filters.property_type}
+              <button
+                onClick={() => handleFilterChange('property_type', '')}
+                className="ml-2 hover:text-red-600"
+              >
+                ×
+              </button>
+            </Badge>
+          )}
+          {filters.city && (
+            <Badge variant="default" className="text-xs">
+              City: {cityOptions.find(opt => opt.value === filters.city)?.label || filters.city}
+              <button
+                onClick={() => handleFilterChange('city', '')}
+                className="ml-2 hover:text-red-600"
+              >
+                ×
+              </button>
+            </Badge>
+          )}
+          {filters.featured && (
+            <Badge variant="default" className="text-xs">
+              Featured Only
+              <button
+                onClick={() => handleFilterChange('featured', false)}
+                className="ml-2 hover:text-red-600"
+              >
+                ×
+              </button>
+            </Badge>
+          )}
+          {filters.search && (
+            <Badge variant="default" className="text-xs">
+              Search: "{filters.search}"
+              <button
+                onClick={() => handleFilterChange('search', '')}
+                className="ml-2 hover:text-red-600"
+              >
+                ×
+              </button>
+            </Badge>
+          )}
+        </div>
+      )}
+
       {/* Results Header */}
       <div className="flex justify-between items-center mb-6">
         <div>
           <p className="text-gray-600">
-            {isLoading ? 'Loading...' : `${pagination.totalProperties || 0} properties found`}
+            {isLoading ? 'Loading...' : `${pagination.totalProperties || properties.length || 0} properties found`}
           </p>
         </div>
         <div className="flex items-center space-x-2">

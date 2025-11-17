@@ -31,7 +31,7 @@ import { getPropertyImage, getPropertyImages } from '../../utils/formatLocation'
 const PropertyDetail = () => {
   const { propertyId } = useParams();
   const navigate = useNavigate();
-  const { isAuthenticated } = useAdminAuth();
+  const { isAuthenticated, isLoading: authLoading } = useAdminAuth();
   const [activeTab, setActiveTab] = useState('overview');
 
   // Fetch property details
@@ -514,10 +514,24 @@ const PropertyDetail = () => {
     }
   };
 
-  if (!isAuthenticated) {
+  // Wait for auth to finish loading before checking authentication
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <span className="ml-2 text-muted-foreground">Checking authentication...</span>
+      </div>
+    );
+  }
+
+  // Only show login message if auth has finished loading and user is not authenticated
+  if (!isAuthenticated && !authLoading) {
     return (
       <div className="text-center py-12">
         <p className="text-muted-foreground">Please log in to view property details.</p>
+        <Button onClick={() => navigate('/admin/login')} className="mt-4">
+          Go to Login
+        </Button>
       </div>
     );
   }

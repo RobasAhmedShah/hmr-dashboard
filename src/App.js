@@ -15,7 +15,8 @@ import Profile from './pages/user/Profile';
 import Wallet from './pages/user/Wallet';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminLogin from './pages/admin/AdminLogin';
-import PropertyDetail from './pages/admin/PropertyDetail';
+import AdminPropertyDetail from './pages/admin/PropertyDetail';
+import PropertyDetail from './pages/PropertyDetail';
 import { AdminAuthProvider } from './components/admin/AdminAuth';
 
 // Organization Pages
@@ -45,6 +46,7 @@ function App() {
                 {/* Public Routes */}
                 <Route path="/" element={<Home />} />
                 <Route path="/properties" element={<Properties />} />
+                <Route path="/properties/:id" element={<PropertyDetail />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
                 <Route path="/dashboard" element={<Dashboard />} />
@@ -65,7 +67,7 @@ function App() {
                 } />
                 <Route path="/admin/property/:propertyId" element={
                   <AdminAuthProvider>
-                    <PropertyDetail />
+                    <AdminPropertyDetail />
                   </AdminAuthProvider>
                 } />
                 
