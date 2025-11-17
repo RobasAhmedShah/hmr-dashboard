@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Menu, X, User, Wallet, Home, Building2, PieChart, BarChart3, Shield } from 'lucide-react';
+import { Menu, X, User, Wallet, Home, Building2, PieChart, BarChart3 } from 'lucide-react';
 import ProfileSwitcher from '../ProfileSwitcher';
 import ThemeToggle from '../ThemeToggle';
 
@@ -13,7 +13,6 @@ const Header = () => {
     { name: 'Dashboard', href: '/dashboard', icon: BarChart3 },
     { name: 'Portfolio', href: '/portfolio', icon: PieChart },
     { name: 'Wallet', href: '/wallet', icon: Wallet },
-    { name: 'Admin', href: '/admin', icon: Shield },
     { name: 'Profile', href: '/profile', icon: User },
   ];
 

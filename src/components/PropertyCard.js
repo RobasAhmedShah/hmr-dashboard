@@ -1,6 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
-import { MapPin, Coins } from 'lucide-react';
+import { MapPin, Coins, Building2 } from 'lucide-react';
 import Card from './ui/Card';
 import Badge from './ui/Badge';
 import Button from './ui/Button';
@@ -11,16 +10,24 @@ const PropertyCard = ({ property, onInvest }) => {
   console.log('PropertyCard received property:', property);
 
   const getStatusBadge = (status) => {
-    const statusMap = {
-      'coming-soon': { variant: 'warning', text: 'Coming Soon' },
-      'active': { variant: 'success', text: 'Active' },
-      'construction': { variant: 'info', text: 'Under Construction' },
-      'sold-out': { variant: 'danger', text: 'Sold Out' },
-      'completed': { variant: 'primary', text: 'Completed' },
+    // Show EXACT DB value - no transformation
+    if (!status) return <Badge variant="default">N/A</Badge>;
+    
+    // Map for badge colors only, but display the EXACT DB value
+    const statusVariantMap = {
+      'coming-soon': 'warning',
+      'active': 'success',
+      'construction': 'info',
+      'funding': 'info',
+      'on-hold': 'secondary',
+      'sold-out': 'danger',
+      'completed': 'primary',
+      'pending': 'warning',
     };
     
-    const statusInfo = statusMap[status] || { variant: 'default', text: status };
-    return <Badge variant={statusInfo.variant}>{statusInfo.text}</Badge>;
+    const variant = statusVariantMap[status] || 'default';
+    // Display the EXACT database value - no transformation
+    return <Badge variant={variant}>{status}</Badge>;
   };
 
   const getPropertyTypeColor = (type) => {
@@ -74,11 +81,24 @@ const PropertyCard = ({ property, onInvest }) => {
                          property.available_tokens ||
                          0;
 
+  // Calculate price per token
+  const pricePerToken = property.pricePerTokenUSDT || 
+                       property.price_per_token_usdt || 
+                       property.pricePerToken ||
+                       property.tokenization?.pricePerToken ||
+                       property.tokenization_price_per_token ||
+                       (totalTokens > 0 && totalValue > 0 ? totalValue / totalTokens : 0);
+
   // Min Investment - check multiple possible field names
   const minInvestment = property.minInvestment || 
                        property.pricing?.minInvestment || 
                        property.min_investment ||
                        property.pricing_min_investment ||
+                       property.pricing?.min_investment ||
+                       property.minInvestmentUSDT ||
+                       property.min_investment_usdt ||
+                       // Calculate from price per token if available (minimum 1 token)
+                       (pricePerToken > 0 ? pricePerToken : null) ||
                        null;
 
   // Calculate funding percentage
@@ -87,22 +107,50 @@ const PropertyCard = ({ property, onInvest }) => {
       ? ((totalTokens - availableTokens) / totalTokens) * 100 
       : 0);
 
-  return (
-    <Card hover className="h-full flex flex-col">
-      <div className="relative mb-4">
-        {/* Images removed - no pictures displayed */}
-        <div className="flex gap-2">
-          {getStatusBadge(property.status)}
-          <Badge className={getPropertyTypeColor(property.propertyType || property.type)}>
-            {property.propertyType || property.type || 'Property'}
-          </Badge>
-          {property.isFeatured && (
-            <Badge variant="primary">Featured</Badge>
-          )}
-        </div>
-      </div>
+  const mainImage = getPropertyImage(property);
 
-      <div className="flex-1 flex flex-col">
+  return (
+    <Card hover className="h-full flex flex-col overflow-hidden">
+      {/* Property Image */}
+      {mainImage && (
+        <div className="relative w-full h-48 bg-muted overflow-hidden">
+          <img
+            src={mainImage}
+            alt={property.title || 'Property image'}
+            className="w-full h-full object-cover"
+            onError={(e) => {
+              e.target.style.display = 'none';
+            }}
+          />
+          <div className="absolute top-2 left-2 flex gap-2 flex-wrap">
+            {getStatusBadge(property.status)}
+            <Badge className={getPropertyTypeColor(property.propertyType || property.type || property.property_type)}>
+              {/* Show exact DB value - no transformation */}
+              {property.propertyType || property.type || property.property_type || 'Property'}
+            </Badge>
+            {property.isFeatured && (
+              <Badge variant="primary">Featured</Badge>
+            )}
+          </div>
+        </div>
+      )}
+      {!mainImage && (
+        <div className="relative w-full h-48 bg-muted flex items-center justify-center mb-4">
+          <Building2 className="w-16 h-16 text-muted-foreground" />
+          <div className="absolute top-2 left-2 flex gap-2 flex-wrap">
+            {getStatusBadge(property.status)}
+            <Badge className={getPropertyTypeColor(property.propertyType || property.type || property.property_type)}>
+              {/* Show exact DB value - no transformation */}
+              {property.propertyType || property.type || property.property_type || 'Property'}
+            </Badge>
+            {property.isFeatured && (
+              <Badge variant="primary">Featured</Badge>
+            )}
+          </div>
+        </div>
+      )}
+      
+      <div className="p-4 flex-1 flex flex-col">
         <h3 className="text-xl font-semibold text-card-foreground mb-2 line-clamp-2">
           {property.title}
         </h3>
@@ -111,21 +159,21 @@ const PropertyCard = ({ property, onInvest }) => {
           {property.shortDescription || property.description || 'No description available'}
         </p>
 
-        <div className="flex items-center text-gray-500 text-sm mb-4">
+        <div className="flex items-center text-white/80 text-sm mb-4">
           <MapPin className="w-4 h-4 mr-1" />
           <span>{formatLocation(location)}</span>
         </div>
 
         <div className="grid grid-cols-2 gap-4 mb-4">
           <div>
-            <p className="text-sm text-gray-500">Total Value</p>
-            <p className="font-semibold text-lg">
+            <p className="text-sm text-white/80">Total Value</p>
+            <p className="font-semibold text-lg text-white">
               {totalValue ? formatPrice(totalValue) : 'N/A'}
             </p>
           </div>
           <div>
-            <p className="text-sm text-gray-500">Expected ROI</p>
-            <p className="font-semibold text-lg text-green-600">
+            <p className="text-sm text-white/80">Expected ROI</p>
+            <p className="font-semibold text-lg text-green-400">
               {expectedROI ? `${expectedROI}%` : 'N/A'}
             </p>
           </div>
@@ -133,8 +181,8 @@ const PropertyCard = ({ property, onInvest }) => {
 
         <div className="mb-4">
           <div className="flex justify-between text-sm mb-1">
-            <span className="text-gray-500">Funding Progress</span>
-            <span className="font-medium">{Math.round(tokenPercentage)}%</span>
+            <span className="text-white/80">Funding Progress</span>
+            <span className="font-medium text-white">{Math.round(tokenPercentage)}%</span>
           </div>
           <div className="w-full bg-muted rounded-full h-2">
             <div
@@ -142,7 +190,7 @@ const PropertyCard = ({ property, onInvest }) => {
               style={{ width: `${tokenPercentage}%` }}
             ></div>
           </div>
-          <div className="flex justify-between text-xs text-gray-500 mt-1">
+          <div className="flex justify-between text-xs text-white/70 mt-1">
             <span>{availableTokens} available</span>
             <span>{totalTokens} total</span>
           </div>
@@ -150,28 +198,41 @@ const PropertyCard = ({ property, onInvest }) => {
 
         <div className="grid grid-cols-2 gap-2 mb-4 text-sm">
           <div className="flex items-center">
-            <Coins className="w-4 h-4 mr-1 text-gray-400" />
-            <span className="text-gray-500">Min Investment</span>
+            <Coins className="w-4 h-4 mr-1 text-white/70" />
+            <span className="text-white/80">Min Investment</span>
           </div>
-          <div className="text-right font-medium">
-            {minInvestment ? (typeof minInvestment === 'string' ? minInvestment : `PKR ${minInvestment.toLocaleString()}`) : 'PKR 0'}
+          <div className="text-right font-medium text-white">
+            {minInvestment ? (typeof minInvestment === 'string' ? minInvestment : `PKR ${minInvestment.toLocaleString()}`) : 'N/A'}
           </div>
         </div>
 
         <div className="mt-auto">
           <div className="flex gap-2">
             <Button
+              type="button"
               variant="outline"
               className="flex-1"
-              as={Link}
-              to={`/properties/${property.slug}`}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (onInvest) {
+                  onInvest(property, 'details');
+                }
+              }}
             >
-              View Details
+              More Info
             </Button>
             {property.status === 'active' && availableTokens > 0 && (
               <Button
+                type="button"
                 className="flex-1"
-                onClick={() => onInvest && onInvest(property)}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  if (onInvest) {
+                    onInvest(property, 'invest');
+                  }
+                }}
               >
                 Invest Now
               </Button>

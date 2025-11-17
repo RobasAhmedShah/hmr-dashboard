@@ -22,8 +22,14 @@ const Properties = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [showFilters, setShowFilters] = useState(false);
 
-  const handleInvest = (property) => {
-    navigate(`/wallet?buyTokens=1&propertyId=${property.id}`);
+  const handleInvest = (property, action = 'invest') => {
+    if (action === 'details') {
+      // Navigate to dedicated property detail page
+      const propertyId = property.id || property.displayCode || property.slug;
+      navigate(`/properties/${propertyId}`);
+    } else if (action === 'invest') {
+      navigate(`/wallet?buyTokens=1&propertyId=${property.id || property.displayCode}`);
+    }
   };
 
   const { data, isLoading, error, refetch } = useQuery(

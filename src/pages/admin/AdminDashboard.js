@@ -44,21 +44,6 @@ const AdminDashboard = () => {
   });
   const { adminUser, isAuthenticated, logout } = useAdminAuth();
   const navigate = useNavigate();
-  
-  // Fallback admin user from localStorage
-  const fallbackAdminUser = React.useMemo(() => {
-    if (adminUser) return adminUser;
-    const adminUserData = localStorage.getItem('adminUser');
-    if (adminUserData) {
-      try {
-        return JSON.parse(adminUserData);
-      } catch (error) {
-        console.error('Error parsing admin user data:', error);
-        return null;
-      }
-    }
-    return null;
-  }, [adminUser]);
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -574,7 +559,7 @@ const AdminDashboard = () => {
               </div>
               <div className="flex items-center space-x-4">
                 <div className="text-sm text-muted-foreground">
-                  Welcome, <span className="font-medium text-primary">{fallbackAdminUser?.name || adminUser?.name || 'Admin'}</span>
+                  Welcome, <span className="font-medium text-primary">{adminUser?.name || 'Admin'}</span>
                 </div>
                 <ThemeToggle />
                 <Button 

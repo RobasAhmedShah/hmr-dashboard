@@ -11,7 +11,8 @@ const Card = ({
     <div
       className={cn(
         'bg-card text-card-foreground rounded-lg shadow-sm border border-border p-6',
-        hover && 'hover:shadow-md transition-shadow duration-200',
+        'dark:bg-[#02080f] dark:border-[#0e171f] dark:text-[#e9eff5]', // Force dark mode colors
+        hover && 'hover:shadow-md dark:hover:bg-[#030a12] transition-shadow duration-200',
         className
       )}
       {...props}
