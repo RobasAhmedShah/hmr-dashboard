@@ -554,9 +554,28 @@ const PropertiesManagement = () => {
     setShowPropertyForm(true);
   };
 
-  const handleEditProperty = (property) => {
-    setEditingProperty(property);
-    setShowPropertyForm(true);
+  const handleEditProperty = async (property) => {
+    // Fetch full property data from backend to ensure all fields are loaded
+    const propertyId = property.id || property.displayCode;
+    if (propertyId) {
+      try {
+        console.log('📥 Fetching full property data for editing:', propertyId);
+        const response = await adminAPI.getProperty(propertyId);
+        const fullProperty = response?.data?.data || response?.data || property;
+        console.log('✅ Fetched full property data from backend:', fullProperty);
+        setEditingProperty(fullProperty);
+        setShowPropertyForm(true);
+      } catch (error) {
+        console.error('❌ Failed to fetch property data, using existing data:', error);
+        // Fallback to existing property data if fetch fails
+        setEditingProperty(property);
+        setShowPropertyForm(true);
+      }
+    } else {
+      // No ID, just use the property as-is
+      setEditingProperty(property);
+      setShowPropertyForm(true);
+    }
   };
 
   const handleSaveProperty = (propertyData) => {
@@ -627,13 +646,13 @@ const PropertiesManagement = () => {
   const formatPrice = (price) => {
     const num = parseFloat(price);
     if (num >= 1000000000) {
-      return `PKR ${(num / 1000000000).toFixed(1)}B`;
+      return `$${(num / 1000000000).toFixed(1)}B`;
     } else if (num >= 1000000) {
-      return `PKR ${(num / 1000000).toFixed(1)}M`;
+      return `$${(num / 1000000).toFixed(1)}M`;
     } else if (num >= 1000) {
-      return `PKR ${(num / 1000).toFixed(0)}K`;
+      return `$${(num / 1000).toFixed(0)}K`;
     }
-    return `PKR ${num.toFixed(0)}`;
+    return `$${num.toFixed(0)}`;
   };
 
   const calculateFundingPercentage = (total, available) => {

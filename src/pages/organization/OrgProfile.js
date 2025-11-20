@@ -18,33 +18,81 @@ const OrgProfile = () => {
   });
 
   const changePasswordMutation = useMutation(
-    (data) => orgAdminAPI.changeOrgAdminPassword(adminId, {
-      currentPassword: data.currentPassword,
-      newPassword: data.newPassword
-    }),
+    async (data) => {
+      try {
+        // Try the organization-specific endpoint first
+        return await orgAdminAPI.changeOrgAdminPassword(adminId, {
+          currentPassword: data.currentPassword,
+          newPassword: data.newPassword
+        });
+      } catch (error) {
+        // If endpoint doesn't exist (404), try alternative endpoint or show helpful error
+        if (error.response?.status === 404) {
+          throw new Error('Password change endpoint not available. Please contact support.');
+        }
+        throw error;
+      }
+    },
     {
       onSuccess: () => {
-        alert('Password changed successfully!');
+        alert('✅ Password changed successfully! Please log in again with your new password.');
         setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
         setShowChangePassword(false);
       },
       onError: (error) => {
         console.error('❌ Change password error:', error);
-        alert(`Error: ${error.response?.data?.message || error.message}`);
+        console.error('❌ Error response:', error.response);
+        const errorMessage = error.response?.data?.message || 
+                           error.message || 
+                           'Failed to change password. Please try again.';
+        alert(`Error: ${errorMessage}`);
       }
     }
   );
 
+  const validatePassword = (password) => {
+    if (password.length < 8) {
+      return 'Password must be at least 8 characters long';
+    }
+    if (!/[A-Z]/.test(password)) {
+      return 'Password must contain at least one uppercase letter';
+    }
+    if (!/[a-z]/.test(password)) {
+      return 'Password must contain at least one lowercase letter';
+    }
+    if (!/[0-9]/.test(password)) {
+      return 'Password must contain at least one number';
+    }
+    if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+      return 'Password must contain at least one special character';
+    }
+    return null;
+  };
+
   const handleChangePassword = (e) => {
     e.preventDefault();
     
+    // Validate current password is provided
+    if (!passwordData.currentPassword.trim()) {
+      alert('Please enter your current password');
+      return;
+    }
+
+    // Validate passwords match
     if (passwordData.newPassword !== passwordData.confirmPassword) {
       alert('New passwords do not match!');
       return;
     }
 
-    if (passwordData.newPassword.length < 8) {
-      alert('Password must be at least 8 characters long!');
+    // Validate password strength
+    const passwordError = validatePassword(passwordData.newPassword);
+    if (passwordError) {
+      alert(passwordError);
+      return;
+    }
+
+    if (!adminId) {
+      alert('Admin ID not found. Please log out and log in again.');
       return;
     }
 
@@ -145,30 +193,44 @@ const OrgProfile = () => {
               placeholder="Enter your current password"
             />
 
-            <Input
-              label="New Password"
-              type="password"
-              value={passwordData.newPassword}
-              onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
-              required
-              minLength={8}
-              placeholder="Enter new password (min 8 characters)"
-            />
+            <div>
+              <Input
+                label="New Password"
+                type="password"
+                value={passwordData.newPassword}
+                onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                required
+                minLength={8}
+                placeholder="Enter new password (min 8 characters)"
+              />
+              {passwordData.newPassword && validatePassword(passwordData.newPassword) && (
+                <p className="text-sm text-red-600 mt-1">{validatePassword(passwordData.newPassword)}</p>
+              )}
+              {passwordData.newPassword && !validatePassword(passwordData.newPassword) && (
+                <p className="text-sm text-green-600 mt-1">✓ Password meets requirements</p>
+              )}
+            </div>
 
-            <Input
-              label="Confirm New Password"
-              type="password"
-              value={passwordData.confirmPassword}
-              onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
-              required
-              minLength={8}
-              placeholder="Re-enter new password"
-            />
-
-            {passwordData.newPassword && passwordData.confirmPassword && 
-             passwordData.newPassword !== passwordData.confirmPassword && (
-              <p className="text-sm text-red-600">Passwords do not match!</p>
-            )}
+            <div>
+              <Input
+                label="Confirm New Password"
+                type="password"
+                value={passwordData.confirmPassword}
+                onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                required
+                minLength={8}
+                placeholder="Re-enter new password"
+              />
+              {passwordData.newPassword && passwordData.confirmPassword && 
+               passwordData.newPassword !== passwordData.confirmPassword && (
+                <p className="text-sm text-red-600 mt-1">Passwords do not match!</p>
+              )}
+              {passwordData.newPassword && passwordData.confirmPassword && 
+               passwordData.newPassword === passwordData.confirmPassword && 
+               !validatePassword(passwordData.newPassword) && (
+                <p className="text-sm text-green-600 mt-1">✓ Passwords match</p>
+              )}
+            </div>
 
             <div className="flex gap-3 pt-2">
               <Button

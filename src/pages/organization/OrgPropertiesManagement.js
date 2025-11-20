@@ -292,7 +292,7 @@ const OrgPropertiesManagement = ({ organizationId }) => {
                     variant="outline" 
                     size="sm" 
                     className="w-full flex items-center justify-center space-x-2"
-                    onClick={() => navigate(`/admin/property/${property.id}`)}
+                    onClick={() => navigate(`/orgdashboard/property/${property.id || property.displayCode}`)}
                   >
                     <Eye className="w-4 h-4" />
                     <span>View Details</span>

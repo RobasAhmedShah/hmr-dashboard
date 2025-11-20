@@ -8,7 +8,6 @@ import {
   Settings,
   HelpCircle,
   MoreVertical,
-  Zap,
   Building2,
   Coins,
   Shield,
@@ -42,10 +41,6 @@ const AdminSidebar = ({ activeTab, setActiveTab }) => {
               <p className="text-sm font-semibold text-sidebar-foreground">Admin Panel</p>
             </div>
           </div>
-          <button className="w-full bg-sidebar-primary text-sidebar-primary-foreground rounded-lg py-2.5 px-3 text-sm font-semibold hover:bg-sidebar-primary/90 transition-all duration-200 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl">
-            <Zap className="w-4 h-4" />
-            Quick Create
-          </button>
         </div>
 
         {/* Main Menu */}

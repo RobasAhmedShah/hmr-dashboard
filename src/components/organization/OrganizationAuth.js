@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { organizationsAPI, orgAdminAPI } from '../../services/api';
+import { organizationsAPI, orgAdminAPI, authAPI } from '../../services/api';
 
 const OrganizationAuthContext = createContext(null);
 
@@ -45,23 +45,77 @@ export const OrganizationAuthProvider = ({ children }) => {
     try {
       console.log('🔐 Organization Admin Login:', { email });
 
-      // Use new org admin login API
-      const response = await orgAdminAPI.orgAdminLogin({ email, password });
+      // Try the org-specific endpoint first, fallback to regular auth
+      let authResponse;
+      let loginData;
       
-      console.log('✅ Login API response:', response);
+      try {
+        // First, try the organization-specific login endpoint
+        authResponse = await orgAdminAPI.orgAdminLogin({ email, password });
+        loginData = authResponse.data || authResponse;
+        console.log('✅ Org admin login API response:', loginData);
+      } catch (orgError) {
+        // If org endpoint doesn't exist (404), try regular auth endpoint
+        if (orgError.response?.status === 404) {
+          console.log('⚠️ Org login endpoint not found, trying regular auth endpoint...');
+          authResponse = await authAPI.login({ email, password });
+          loginData = authResponse.data || authResponse;
+          console.log('✅ Regular auth login response:', loginData);
+        } else {
+          throw orgError;
+        }
+      }
 
-      const loginData = response.data || response;
-      const { organizationId, admin, organization } = loginData;
-
-      // If organization details not included in login response, fetch them
-      let orgDetails = organization;
+      // Extract user/admin data from response
+      const user = loginData.user || loginData.admin || loginData;
+      const organizationId = loginData.organizationId || user?.organizationId || user?.organization_id;
+      
+      // Fetch organization details
+      let orgDetails = loginData.organization;
       if (!orgDetails && organizationId) {
         try {
+          console.log('🔄 Fetching organization details for:', organizationId);
           const orgResponse = await organizationsAPI.getById(organizationId);
-          orgDetails = orgResponse.data?.organization || orgResponse.data;
+          orgDetails = orgResponse.data?.organization || orgResponse.data || orgResponse;
           console.log('✅ Fetched organization details:', orgDetails);
         } catch (err) {
           console.warn('⚠️ Could not fetch organization details:', err);
+          // Try to find organization by searching all orgs
+          try {
+            const allOrgsResponse = await organizationsAPI.getAll();
+            const allOrgs = allOrgsResponse.data?.organizations || allOrgsResponse.data || [];
+            orgDetails = allOrgs.find(org => 
+              org.id === organizationId || 
+              org._id === organizationId ||
+              org.displayCode === organizationId ||
+              org.display_code === organizationId
+            );
+            if (orgDetails) {
+              console.log('✅ Found organization in list:', orgDetails);
+            }
+          } catch (searchErr) {
+            console.warn('⚠️ Could not search organizations:', searchErr);
+          }
+        }
+      }
+
+      // If still no org details, try to find by email domain or use quick login mapping
+      if (!orgDetails) {
+        const quickLoginEntry = Object.values(ORGANIZATION_CREDENTIALS).find(
+          cred => cred.email === email
+        );
+        if (quickLoginEntry) {
+          // Try to find organization by name
+          try {
+            const allOrgsResponse = await organizationsAPI.getAll();
+            const allOrgs = allOrgsResponse.data?.organizations || allOrgsResponse.data || [];
+            orgDetails = allOrgs.find(org => 
+              org.name?.toLowerCase().includes('hmr') || 
+              org.name?.toLowerCase().includes('saima')
+            );
+          } catch (err) {
+            console.warn('⚠️ Could not search for organization by name:', err);
+          }
         }
       }
 
@@ -69,18 +123,26 @@ export const OrganizationAuthProvider = ({ children }) => {
       const quickLoginEntry = Object.values(ORGANIZATION_CREDENTIALS).find(
         cred => cred.email === email
       );
-      const displayName = quickLoginEntry?.displayName || orgDetails?.name || admin?.organizationName || 'Organization';
+      const displayName = quickLoginEntry?.displayName || orgDetails?.name || user?.organizationName || 'Organization';
+
+      // Determine organization ID from various sources
+      const finalOrgId = organizationId || 
+                        orgDetails?.id || 
+                        orgDetails?._id || 
+                        orgDetails?.displayCode ||
+                        orgDetails?.display_code ||
+                        (quickLoginEntry && email.includes('hmr') ? '85a17682-5df8-4dd9-98fe-9a64fce0d115' : null);
 
       // Store auth data
       const userData = {
-        email: admin?.email || email,
+        email: user?.email || email,
         organizationName: displayName,
         backendOrganizationName: orgDetails?.name,
-        organizationId: orgDetails?.id || orgDetails?._id || organizationId,
+        organizationId: finalOrgId,
         displayCode: orgDetails?.displayCode || orgDetails?.display_code,
         organizationSlug: orgDetails?.slug,
-        adminId: admin?.id || admin?._id,
-        adminFullName: admin?.fullName || admin?.full_name,
+        adminId: user?.id || user?._id || user?.adminId,
+        adminFullName: user?.fullName || user?.full_name || user?.name,
         role: 'organization_admin',
         loginTime: new Date().toISOString(),
         organizationData: orgDetails
@@ -101,7 +163,38 @@ export const OrganizationAuthProvider = ({ children }) => {
       return userData;
     } catch (error) {
       console.error('❌ Login error:', error);
-      const errorMessage = error.response?.data?.message || 'Login failed. Please check your credentials.';
+      console.error('❌ Error response:', error.response);
+      console.error('❌ Error response data:', error.response?.data);
+      console.error('❌ Error status:', error.response?.status);
+      console.error('❌ Error message:', error.message);
+      
+      // Provide more detailed error message
+      let errorMessage = 'Login failed. Please check your credentials.';
+      
+      if (error.response) {
+        // Server responded with error
+        const status = error.response.status;
+        const data = error.response.data;
+        
+        if (status === 401 || status === 403) {
+          errorMessage = data?.message || 'Invalid email or password. Please check your credentials.';
+        } else if (status === 404) {
+          errorMessage = 'Invalid email or password. Please check your credentials.';
+        } else if (status === 500) {
+          errorMessage = 'Server error. Please try again later.';
+        } else if (data?.message) {
+          errorMessage = data.message;
+        } else {
+          errorMessage = `Login failed (${status}). Please try again.`;
+        }
+      } else if (error.request) {
+        // Request was made but no response received
+        errorMessage = 'Unable to connect to server. Please check your internet connection.';
+      } else {
+        // Something else happened
+        errorMessage = error.message || 'An unexpected error occurred. Please try again.';
+      }
+      
       throw new Error(errorMessage);
     }
   };

@@ -35,6 +35,13 @@ const OrgLogin = () => {
       console.log('Organization login successful:', userData);
       navigate('/orgdashboard');
     } catch (err) {
+      console.error('Login error in OrgLogin:', err);
+      console.error('Error details:', {
+        message: err.message,
+        response: err.response,
+        status: err.response?.status,
+        data: err.response?.data
+      });
       setError(err.message || 'Invalid credentials');
       setIsLoading(false);
     }
@@ -47,19 +54,6 @@ const OrgLogin = () => {
     });
   };
 
-  const fillHMRCredentials = () => {
-    setFormData({
-      email: 'admin@hmr.com',
-      password: 'hmr123'
-    });
-  };
-
-  const fillSaimaCredentials = () => {
-    setFormData({
-      email: 'admin@saima.com',
-      password: 'saima123'
-    });
-  };
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative">
@@ -75,10 +69,6 @@ const OrgLogin = () => {
           <p className="mt-2 text-sm text-muted-foreground">
             Sign in to manage your organization
           </p>
-          <div className="mt-4 flex items-center justify-center space-x-2">
-            <Badge variant="blue" className="text-xs">HMR Company</Badge>
-            <Badge variant="purple" className="text-xs">Saima Company</Badge>
-          </div>
         </div>
 
         <Card className="p-8">
@@ -152,46 +142,7 @@ const OrgLogin = () => {
               )}
             </Button>
 
-            <div className="pt-4 border-t border-border">
-              <p className="text-sm text-muted-foreground mb-3">Quick Login:</p>
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={fillHMRCredentials}
-                  className="px-4 py-2 bg-primary/10 text-primary rounded-lg hover:bg-primary/20 transition-colors text-sm font-medium"
-                >
-                  🏢 HMR
-                </button>
-                <button
-                  type="button"
-                  onClick={fillSaimaCredentials}
-                  className="px-4 py-2 bg-primary/10 text-primary rounded-lg hover:bg-primary/20 transition-colors text-sm font-medium"
-                >
-                  🏢 Saima
-                </button>
-              </div>
-            </div>
           </form>
-
-          <div className="mt-6 p-4 bg-accent rounded-lg border border-border">
-            <h3 className="text-sm font-semibold text-card-foreground mb-3">Demo Credentials:</h3>
-            <div className="space-y-2">
-              <div className="bg-card p-2 rounded border border-border">
-                <p className="text-xs font-medium text-primary">HMR Company:</p>
-                <p className="text-xs text-muted-foreground">
-                  <strong>Email:</strong> admin@hmr.com<br />
-                  <strong>Password:</strong> hmr123
-                </p>
-              </div>
-              <div className="bg-card p-2 rounded border border-border">
-                <p className="text-xs font-medium text-primary">Saima Company:</p>
-                <p className="text-xs text-muted-foreground">
-                  <strong>Email:</strong> admin@saima.com<br />
-                  <strong>Password:</strong> saima123
-                </p>
-              </div>
-            </div>
-          </div>
         </Card>
 
         <div className="text-center">

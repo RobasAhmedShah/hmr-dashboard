@@ -42,7 +42,7 @@ export const formatLocation = (location) => {
  // Format prices
  export const formatPrice = (price) => {
   // If already formatted (contains $ or PKR), return as is
-  if (typeof price === 'string' && (price.includes('$') || price.includes('PKR') || price.includes('Rs'))) {
+  if (typeof price === 'string' && (price.includes('$') || price.includes('PKR') || price.includes('Rs') || price.includes('USD'))) {
     return price;
   }
   
@@ -69,17 +69,15 @@ export const formatLocation = (location) => {
 const formatNumericPrice = (num) => {
   if (isNaN(num)) return 'N/A';
   
-  // Format in PKR (Pakistani Rupees) instead of USD
+  // Format in USD (US Dollars)
   if (num >= 1000000000) {
-    return `PKR ${(num / 1000000000).toFixed(1)}B`;
-  } else if (num >= 10000000) {
-    return `PKR ${(num / 10000000).toFixed(1)}Cr`;
-  } else if (num >= 100000) {
-    return `PKR ${(num / 100000).toFixed(1)}L`;
+    return `$${(num / 1000000000).toFixed(1)}B`;
+  } else if (num >= 1000000) {
+    return `$${(num / 1000000).toFixed(1)}M`;
   } else if (num >= 1000) {
-    return `PKR ${(num / 1000).toFixed(0)}K`;
+    return `$${(num / 1000).toFixed(0)}K`;
   }
-  return `PKR ${num.toLocaleString()}`;
+  return `$${num.toLocaleString()}`;
 };
 
 
@@ -245,7 +243,7 @@ export const getPropertyImages = (property) => {
         images = JSON.parse(images);
         console.log('✅ getPropertyImages - Parsed JSON:', images);
       } catch (e) {
-        console.warn('❌ getPropertyImages - Failed to parse JSON:', e, 'Raw:', images);
+        console.warn('❌   getPropertyImages - Failed to parse JSON:', e, 'Raw:', images);
         images = null;
       }
     } else {
@@ -266,4 +264,70 @@ export const getPropertyImages = (property) => {
   // Single image
   const singleImage = getPropertyImage(property);
   return singleImage ? [singleImage] : [];
+};
+
+/**
+ * Get all documents from property data
+ * Handles JSON string parsing from database (similar to images)
+ * @param {object} property - Property object
+ * @returns {array} Array of document objects with name, url, and type
+ */
+export const getPropertyDocuments = (property) => {
+  if (!property) {
+    console.log('⚠️ getPropertyDocuments - No property provided');
+    return [];
+  }
+  
+  // Try multiple possible field names (documents, Documents, document, etc.)
+  let documents = property.documents;
+  console.log('🔍 getPropertyDocuments - Input:', {
+    hasProperty: !!property,
+    hasDocuments: !!documents,
+    documentsType: typeof documents,
+    documentsValue: documents,
+    isArray: Array.isArray(documents)
+  });
+  
+  // If documents is null or undefined, return empty array
+  if (!documents) {
+    console.log('⚠️ getPropertyDocuments - No documents field in property');
+    return [];
+  }
+  
+  // If documents is already an array (JSONB from database), use it directly
+  if (Array.isArray(documents)) {
+    const filtered = documents.filter(doc => doc && doc.url);
+    console.log('✅ getPropertyDocuments - Using array directly, filtered:', filtered);
+    return filtered; // Only return documents with URLs
+  }
+  
+  // Parse documents if it's a JSON string (from database)
+  // Database stores documents as JSONB which might come as JSON string
+  if (typeof documents === 'string') {
+    const trimmed = documents.trim();
+    // Check if it looks like a JSON array
+    if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+      try {
+        documents = JSON.parse(documents);
+        console.log('✅ getPropertyDocuments - Parsed JSON:', documents);
+      } catch (e) {
+        console.warn('❌ getPropertyDocuments - Failed to parse JSON:', e, 'Raw:', documents);
+        documents = null;
+      }
+    } else {
+      // Not a JSON array string
+      console.log('⚠️ getPropertyDocuments - String but not JSON array format');
+      return [];
+    }
+  }
+  
+  // Return array of documents
+  if (documents && Array.isArray(documents) && documents.length > 0) {
+    const filtered = documents.filter(doc => doc && doc.url);
+    console.log('✅ getPropertyDocuments - Returning filtered documents:', filtered);
+    return filtered; // Only return documents with URLs
+  }
+  
+  console.log('⚠️ getPropertyDocuments - No valid documents found');
+  return [];
 };

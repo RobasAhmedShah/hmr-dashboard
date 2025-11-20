@@ -16,9 +16,10 @@ export const testSupabaseConnection = async () => {
     console.log('✅ Available buckets:', buckets?.map(b => b.name));
     
     // Test 2: Check if property-images bucket exists
-    const bucketExists = buckets?.some(b => b.name === 'property-images');
+    const imagesBucketExists = buckets?.some(b => b.name === 'property-images');
+    const documentsBucketExists = buckets?.some(b => b.name === 'property-documents');
     
-    if (!bucketExists) {
+    if (!imagesBucketExists) {
       console.error('❌ Bucket "property-images" not found');
       return { 
         success: false, 
@@ -27,6 +28,12 @@ export const testSupabaseConnection = async () => {
     }
     
     console.log('✅ Bucket "property-images" exists');
+    
+    if (!documentsBucketExists) {
+      console.warn('⚠️ Bucket "property-documents" not found. Document uploads will fail until bucket is created.');
+    } else {
+      console.log('✅ Bucket "property-documents" exists');
+    }
     
     // Test 3: Try to list files in the bucket (tests SELECT policy)
     const { data: files, error: listError } = await supabase.storage
@@ -141,6 +148,117 @@ export const supabaseUpload = {
     );
     
     return Promise.all(uploadPromises);
+  },
+
+  /**
+   * Upload document to Supabase Storage
+   * @param {File} file - The document file to upload (PDF, DOC, DOCX, etc.)
+   * @param {string} folder - Folder path in Supabase (e.g., 'properties')
+   * @param {string} propertyId - Property ID for unique naming
+   * @returns {Promise<{url: string, path: string, success: boolean}>}
+   */
+  uploadDocument: async (file, folder = 'properties', propertyId = null) => {
+    try {
+      console.log('📤 Starting Supabase document upload...', { file: file.name, folder, propertyId });
+      
+      // Generate unique filename
+      const fileExt = file.name.split('.').pop();
+      const fileName = propertyId 
+        ? `${propertyId}_${Date.now()}.${fileExt}`
+        : `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+      
+      const filePath = `${folder}/${fileName}`;
+      console.log('📁 Document file path:', filePath);
+
+      // Upload file to Supabase Storage
+      // NOTE: Bucket name is case-sensitive! Must match exactly: 'property-documents'
+      console.log('📦 Attempting document upload to bucket: property-documents');
+      
+      const { data, error } = await supabase.storage
+        .from('property-documents') // Your bucket name for documents (case-sensitive)
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (error) {
+        console.error('❌ Supabase document upload error:', error);
+        console.error('Error details:', {
+          message: error.message,
+          statusCode: error.statusCode,
+          error: error.error,
+          name: error.name
+        });
+        
+        // Provide more helpful error messages
+        if (error.message?.includes('Bucket not found') || error.message?.includes('does not exist')) {
+          throw new Error('Storage bucket "property-documents" not found. Please create it in Supabase dashboard.');
+        } else if (error.message?.includes('new row violates row-level security') || 
+                   error.message?.includes('row-level security') ||
+                   error.message?.includes('policy') ||
+                   error.statusCode === 403) {
+          const detailedError = `Storage policy error. Please check your Supabase storage policies.\n\nError: ${error.message}\n\nMake sure you have:\n1. An INSERT policy for "anon" role (since we use anon key)\n2. Policy expression: bucket_id = 'property-documents'\n3. WITH CHECK expression: bucket_id = 'property-documents'`;
+          throw new Error(detailedError);
+        } else if (error.message?.includes('JWT') || error.message?.includes('auth')) {
+          throw new Error('Authentication error. Please check your Supabase API keys.');
+        }
+        
+        throw new Error(error.message || 'Document upload failed. Check browser console for details.');
+      }
+
+      console.log('✅ Document upload successful:', data);
+
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from('property-documents')
+        .getPublicUrl(filePath);
+
+      const publicUrl = urlData.publicUrl;
+      console.log('🔗 Document public URL:', publicUrl);
+
+      return {
+        url: publicUrl,
+        path: filePath,
+        success: true
+      };
+    } catch (error) {
+      console.error('❌ Supabase document upload error:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Upload multiple documents
+   * @param {File[]} files - Array of document files to upload
+   * @param {string} folder - Folder path in Supabase
+   * @param {string} propertyId - Property ID for unique naming
+   * @returns {Promise<Array<{url: string, path: string, success: boolean}>>}
+   */
+  uploadDocuments: async (files, folder = 'properties', propertyId = null) => {
+    const uploadPromises = files.map(file => 
+      supabaseUpload.uploadDocument(file, folder, propertyId)
+    );
+    
+    return Promise.all(uploadPromises);
+  },
+
+  /**
+   * Delete document from Supabase
+   * @param {string} filePath - Path to the file in Supabase storage
+   * @returns {Promise<{success: boolean}>}
+   */
+  deleteDocument: async (filePath) => {
+    try {
+      const { error } = await supabase.storage
+        .from('property-documents')
+        .remove([filePath]);
+
+      if (error) throw error;
+      return { success: true };
+    } catch (error) {
+      console.error('Supabase document delete error:', error);
+      throw error;
+    }
   },
 
   /**

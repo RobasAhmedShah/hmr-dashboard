@@ -22,6 +22,7 @@ import { AdminAuthProvider } from './components/admin/AdminAuth';
 // Organization Pages
 import OrgDashboard from './pages/organization/OrgDashboard';
 import OrgLogin from './pages/organization/OrgLogin';
+import OrgPropertyDetail from './pages/organization/OrgPropertyDetail';
 import { OrganizationAuthProvider } from './components/organization/OrganizationAuth';
 
 // Create a client
@@ -80,6 +81,11 @@ function App() {
                 <Route path="/orgdashboard" element={
                   <OrganizationAuthProvider>
                     <OrgDashboard />
+                  </OrganizationAuthProvider>
+                } />
+                <Route path="/orgdashboard/property/:propertyId" element={
+                  <OrganizationAuthProvider>
+                    <OrgPropertyDetail />
                   </OrganizationAuthProvider>
                 } />
                 

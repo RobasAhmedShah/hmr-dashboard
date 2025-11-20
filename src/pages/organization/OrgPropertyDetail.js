@@ -26,14 +26,14 @@ import {
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import Badge from '../../components/ui/Badge';
-import { adminAPI, propertiesAPI, investmentsAPI, walletTransactionsAPI } from '../../services/api';
-import { useAdminAuth } from '../../components/admin/AdminAuth';
+import { organizationsAPI, propertiesAPI, investmentsAPI, walletTransactionsAPI } from '../../services/api';
+import { useOrganizationAuth } from '../../components/organization/OrganizationAuth';
 import { getPropertyImage, getPropertyImages, getPropertyDocuments } from '../../utils/formatLocation';
 
-const PropertyDetail = () => {
+const OrgPropertyDetail = () => {
   const { propertyId } = useParams();
   const navigate = useNavigate();
-  const { isAuthenticated, isLoading: authLoading } = useAdminAuth();
+  const { isAuthenticated, isLoading: authLoading, organizationId } = useOrganizationAuth();
   const [activeTab, setActiveTab] = useState('overview');
 
   // Fetch property details
@@ -45,30 +45,25 @@ const PropertyDetail = () => {
     }
   );
 
-  // Fetch investments for this property
+  // Fetch investments for this property (filtered by organization)
   const { data: investmentsData, isLoading: investmentsLoading } = useQuery(
-    ['property-investments', propertyId],
-    () => adminAPI.getInvestments({ limit: 1000 }),
+    ['property-investments', propertyId, organizationId],
+    () => organizationsAPI.getInvestments(organizationId, { limit: 1000 }),
     {
-      enabled: Boolean(isAuthenticated && propertyId)
+      enabled: Boolean(isAuthenticated && propertyId && organizationId)
     }
   );
 
-  // Fetch transactions for this property
+  // Fetch transactions for this property (filtered by organization)
   const { data: transactionsData, isLoading: transactionsLoading } = useQuery(
-    ['property-transactions', propertyId],
-    () => walletTransactionsAPI.getAll({ limit: 1000 }),
+    ['property-transactions', propertyId, organizationId],
+    () => organizationsAPI.getTransactions(organizationId),
     {
-      enabled: Boolean(isAuthenticated && propertyId)
+      enabled: Boolean(isAuthenticated && propertyId && organizationId)
     }
   );
 
   const property = propertyData?.data || propertyData || {};
-  
-  // Debug: Log documents specifically
-  console.log('🔍 Property.documents from API:', property.documents);
-  console.log('🔍 Property.documents type:', typeof property.documents);
-  console.log('🔍 Property.documents isArray:', Array.isArray(property.documents));
   const allInvestments = investmentsData?.data?.investments || investmentsData?.data || (Array.isArray(investmentsData) ? investmentsData : []);
   const allTransactions = transactionsData?.data?.transactions || transactionsData?.data || (Array.isArray(transactionsData) ? transactionsData : []);
 
@@ -214,7 +209,7 @@ const PropertyDetail = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <StatCard
           title="Price Per Token"
-          value={formatPrice(metrics.pricePerToken || 0)}
+          value={formatPrice(metrics.pricePerToken || 0, 'USD')}
           icon={Award}
           color="indigo"
         />
@@ -536,7 +531,7 @@ const PropertyDetail = () => {
     return (
       <div className="text-center py-12">
         <p className="text-muted-foreground">Please log in to view property details.</p>
-        <Button onClick={() => navigate('/admin/login')} className="mt-4">
+        <Button onClick={() => navigate('/org/login')} className="mt-4">
           Go to Login
         </Button>
       </div>
@@ -572,26 +567,16 @@ const PropertyDetail = () => {
             <div className="flex items-center space-x-4">
               <Button
                 variant="outline"
-                onClick={() => navigate('/admin')}
+                onClick={() => navigate('/orgdashboard')}
                 className="flex items-center space-x-2"
               >
                 <ArrowLeft className="w-4 h-4" />
-                <span>Back to Admin</span>
+                <span>Back to Dashboard</span>
               </Button>
               <div>
                 <h1 className="text-2xl font-bold text-card-foreground">{property.title || property.name || 'Property Details'}</h1>
                 <p className="text-sm text-muted-foreground">{property.city || property.location_city || property.location || 'Location not specified'}</p>
               </div>
-            </div>
-            <div className="flex items-center space-x-4">
-              <Button variant="outline" className="flex items-center space-x-2">
-                <Edit className="w-4 h-4" />
-                <span>Edit Property</span>
-              </Button>
-              <Button variant="outline" className="flex items-center space-x-2">
-                <Settings className="w-4 h-4" />
-                <span>Settings</span>
-              </Button>
             </div>
           </div>
         </div>
@@ -660,11 +645,6 @@ const PropertyDetail = () => {
         {/* Property Documents Section */}
         {(() => {
           const documents = getPropertyDocuments(property);
-          console.log('📄 Property documents:', documents);
-          console.log('📄 Property data:', property);
-          console.log('📄 Property.documents raw:', property.documents);
-          console.log('📄 Property.documents type:', typeof property.documents);
-          console.log('📄 Property.documents isArray:', Array.isArray(property.documents));
           
           if (documents && documents.length > 0) {
             return (
@@ -742,4 +722,5 @@ const PropertyDetail = () => {
   );
 };
 
-export default PropertyDetail;
+export default OrgPropertyDetail;
+
