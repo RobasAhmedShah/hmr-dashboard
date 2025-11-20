@@ -156,6 +156,7 @@ const PropertyDetail = () => {
 
   const tabs = [
     { id: 'overview', label: 'Overview', icon: BarChart3 },
+    { id: 'documents', label: 'Documents', icon: FileText },
     { id: 'investments', label: 'Investments', icon: TrendingUp },
     { id: 'tokens', label: 'Token Activity', icon: PieChart },
     { id: 'transactions', label: 'Transactions', icon: Activity }
@@ -506,10 +507,75 @@ const PropertyDetail = () => {
     </div>
   );
 
+  const renderDocuments = () => {
+    const documents = getPropertyDocuments(property);
+    
+    if (!documents || documents.length === 0) {
+      return (
+        <Card className="p-12">
+          <div className="text-center">
+            <FileText className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-card-foreground mb-2">No Documents Available</h3>
+            <p className="text-sm text-muted-foreground">No documents have been uploaded for this property yet.</p>
+          </div>
+        </Card>
+      );
+    }
+
+    return (
+      <div className="space-y-6">
+        <Card className="p-6">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h3 className="text-lg font-semibold text-card-foreground flex items-center">
+                <FileText className="w-5 h-5 mr-2" />
+                Property Documents
+              </h3>
+              <p className="text-sm text-muted-foreground mt-1">
+                {documents.length} {documents.length === 1 ? 'document' : 'documents'} available
+              </p>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {documents.map((doc, index) => (
+              <div
+                key={index}
+                className="flex items-center justify-between p-4 bg-accent rounded-lg border border-border hover:bg-accent/80 transition-colors"
+              >
+                <div className="flex items-center space-x-3 flex-1 min-w-0">
+                  <FileText className="w-5 h-5 text-primary flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-card-foreground truncate">
+                      {doc.name || `Document ${index + 1}`}
+                    </p>
+                    <p className="text-xs text-muted-foreground capitalize">
+                      {doc.type || 'document'}
+                    </p>
+                  </div>
+                </div>
+                <a
+                  href={doc.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="ml-3 p-2 text-primary hover:text-primary/80 transition-colors"
+                  title="View Document"
+                >
+                  <Download className="w-5 h-5" />
+                </a>
+              </div>
+            ))}
+          </div>
+        </Card>
+      </div>
+    );
+  };
+
   const renderTabContent = () => {
     switch (activeTab) {
       case 'overview':
         return renderOverview();
+      case 'documents':
+        return renderDocuments();
       case 'investments':
         return renderInvestments();
       case 'tokens':
@@ -657,60 +723,6 @@ const PropertyDetail = () => {
           return null;
         })()}
 
-        {/* Property Documents Section */}
-        {(() => {
-          const documents = getPropertyDocuments(property);
-          console.log('📄 Property documents:', documents);
-          console.log('📄 Property data:', property);
-          console.log('📄 Property.documents raw:', property.documents);
-          console.log('📄 Property.documents type:', typeof property.documents);
-          console.log('📄 Property.documents isArray:', Array.isArray(property.documents));
-          
-          if (documents && documents.length > 0) {
-            return (
-              <Card className="mb-8">
-                <div className="px-6 py-4 border-b border-border">
-                  <h3 className="text-lg font-semibold text-card-foreground flex items-center">
-                    <FileText className="w-5 h-5 mr-2" />
-                    Property Documents
-                  </h3>
-                </div>
-                <div className="p-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {documents.map((doc, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center justify-between p-4 bg-accent rounded-lg border border-border hover:bg-accent/80 transition-colors"
-                      >
-                        <div className="flex items-center space-x-3 flex-1 min-w-0">
-                          <FileText className="w-5 h-5 text-primary flex-shrink-0" />
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-card-foreground truncate">
-                              {doc.name || `Document ${index + 1}`}
-                            </p>
-                            <p className="text-xs text-muted-foreground capitalize">
-                              {doc.type || 'document'}
-                            </p>
-                          </div>
-                        </div>
-                        <a
-                          href={doc.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="ml-3 p-2 text-primary hover:text-primary/80 transition-colors"
-                          title="View Document"
-                        >
-                          <Download className="w-5 h-5" />
-                        </a>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </Card>
-            );
-          }
-          return null;
-        })()}
 
         {/* Navigation Tabs */}
         <div className="mb-8">

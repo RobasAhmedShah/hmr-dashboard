@@ -114,10 +114,33 @@ const PropertiesManagement = () => {
   // Create property mutation - POST /properties
   const createPropertyMutation = useMutation(
     (propertyData) => {
+      // Explicitly verify documents are included
       console.log('📤 Creating new property:', {
         endpoint: 'POST /properties',
-        data: propertyData
+        hasDocuments: 'documents' in propertyData,
+        documentsCount: propertyData?.documents?.length || 0,
+        documents: propertyData?.documents,
+        fullData: propertyData
       });
+      
+      // Ensure documents field is present (even if empty)
+      if (!propertyData.documents) {
+        console.warn('⚠️ Documents field missing! Adding empty array.');
+        propertyData.documents = [];
+      }
+      
+      // Verify documents format
+      if (propertyData.documents && propertyData.documents.length > 0) {
+        const allValid = propertyData.documents.every(doc => 
+          doc && typeof doc === 'object' && doc.url && doc.name && doc.type
+        );
+        if (!allValid) {
+          console.error('❌ Some documents have invalid format!', propertyData.documents);
+        } else {
+          console.log('✅ All documents are valid and will be sent to backend');
+        }
+      }
+      
       return adminAPI.createProperty(propertyData);
     },
     {
@@ -200,7 +223,35 @@ const PropertiesManagement = () => {
 
   // Update property mutation
   const updatePropertyMutation = useMutation(
-    ({ id, data }) => adminAPI.updateProperty(id, data),
+    ({ id, data }) => {
+      // Explicitly verify documents are included
+      console.log('📤 Updating property:', {
+        endpoint: `PATCH /properties/${id}`,
+        hasDocuments: 'documents' in data,
+        documentsCount: data?.documents?.length || 0,
+        documents: data?.documents
+      });
+      
+      // Ensure documents field is present (even if empty)
+      if (!data.documents) {
+        console.warn('⚠️ Documents field missing in update! Adding empty array.');
+        data.documents = [];
+      }
+      
+      // Verify documents format
+      if (data.documents && data.documents.length > 0) {
+        const allValid = data.documents.every(doc => 
+          doc && typeof doc === 'object' && doc.url && doc.name && doc.type
+        );
+        if (!allValid) {
+          console.error('❌ Some documents have invalid format!', data.documents);
+        } else {
+          console.log('✅ All documents are valid and will be sent to backend');
+        }
+      }
+      
+      return adminAPI.updateProperty(id, data);
+    },
     {
       onSuccess: (response) => {
         queryClient.invalidateQueries(['admin-properties']);

@@ -633,8 +633,16 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
       // Images - backend expects array, not JSON string
       images: Array.isArray(formData.images) ? formData.images : [],
       
-      // Documents - ensure it's an array and properly formatted
-      documents: Array.isArray(formData.documents) ? formData.documents : [],
+      // Documents - ensure it's an array and properly formatted for JSONB
+      documents: (() => {
+        const docs = Array.isArray(formData.documents) ? formData.documents : [];
+        // Ensure each document has the required fields: url, name, type
+        return docs.map(doc => ({
+          url: doc.url || '',
+          name: doc.name || 'Document',
+          type: doc.type || 'document'
+        })).filter(doc => doc.url); // Only include documents with URLs
+      })(),
       
       // Property features
       property_features: formData.property_features || [],
@@ -664,6 +672,11 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
     delete finalData.investment_stats;
     delete finalData.listing_price_formatted;
     
+    // Ensure documents field is always present (even if empty array)
+    if (!finalData.documents) {
+      finalData.documents = [];
+    }
+    
     // Log documents specifically to verify they're being sent
     console.log('📤 Submitting property data:', JSON.stringify(finalData, null, 2));
     console.log('📄 Documents being sent:', JSON.stringify(finalData.documents, null, 2));
@@ -671,18 +684,30 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
     console.log('📄 Documents type check:', {
       isArray: Array.isArray(finalData.documents),
       type: typeof finalData.documents,
-      value: finalData.documents
+      value: finalData.documents,
+      hasDocuments: 'documents' in finalData
     });
     
     // Verify documents format for JSONB compatibility
     if (finalData.documents && finalData.documents.length > 0) {
       const isValidFormat = finalData.documents.every(doc => 
-        doc && typeof doc === 'object' && doc.name && doc.url && doc.type
+        doc && typeof doc === 'object' && doc.url && doc.name && doc.type
       );
       console.log('✅ Documents format valid for JSONB:', isValidFormat);
       if (!isValidFormat) {
         console.error('❌ Invalid document format! Each document must have: name, url, type');
+        console.error('❌ Documents that failed validation:', finalData.documents);
+      } else {
+        console.log('✅ All documents are properly formatted for backend JSONB column');
       }
+    } else {
+      console.warn('⚠️ No documents to send. Property will be created without documents.');
+    }
+    
+    // Final verification: Ensure documents field exists in finalData
+    if (!('documents' in finalData)) {
+      console.error('❌ CRITICAL: documents field missing from finalData!');
+      finalData.documents = [];
     }
     
     onSave(finalData);
