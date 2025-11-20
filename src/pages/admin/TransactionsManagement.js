@@ -225,7 +225,7 @@ const TransactionsManagement = () => {
     return type === 'deposit' ? 'text-green-600' : 'text-red-600';
   };
 
-  const formatPrice = (amount, currency = 'PKR') => {
+  const formatPrice = (amount, currency = 'USD') => {
     const num = parseFloat(amount);
     if (num >= 1000000000) {
       return `${currency} ${(num / 1000000000).toFixed(1)}B`;

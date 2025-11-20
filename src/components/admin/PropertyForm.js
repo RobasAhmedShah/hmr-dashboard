@@ -3,11 +3,11 @@ import { X, Save, Building2, MapPin, DollarSign, TrendingUp, Hash, Plus, Trash2,
 import Card from '../ui/Card';
 import Button from '../ui/Button';
 import SimpleMap from './SimpleMap';
-import { adminAPI, uploadAPI } from '../../services/api';
+import { adminAPI, uploadAPI, propertiesAPI } from '../../services/api';
 import { supabaseUpload } from '../../services/supabaseUpload';
 
 // Ensure we're using Supabase, not the old API
-console.log('✅ PropertyForm: Using Supabase for image uploads');
+console.log('✅ PropertyForm: Using Supabase for image and document uploads');
 
 const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
   const [formData, setFormData] = useState({
@@ -17,7 +17,8 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
     status: 'active', // Required: one of the allowed values
     totalValueUSDT: 0, // Required: number
     totalTokens: 1000, // Required: number
-    expectedROI: 0, // Required: number
+    expectedROI: 0, // Required: number (calculated based on construction progress)
+    fullROI: 0, // Base/full ROI when construction is 100%
     
     // Other fields
     title: '',
@@ -67,7 +68,7 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
     amenities: [],
     documents: [],
     property_features: [],
-    listing_price_formatted: 'PKR 0'
+    listing_price_formatted: '$0'
   });
 
   const [newUnitType, setNewUnitType] = useState({ type: '', size: '', count: '' });
@@ -85,6 +86,30 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
   const [seoData, setSeoData] = useState({ title: '', description: '', keywords: '' });
   const [organizations, setOrganizations] = useState([]);
   const [loadingOrgs, setLoadingOrgs] = useState(false);
+  const [fullPropertyData, setFullPropertyData] = useState(null);
+
+  // Fetch full property data from backend when editing
+  useEffect(() => {
+    const fetchFullProperty = async () => {
+      if (property && (property.id || property.displayCode)) {
+        const propertyId = property.id || property.displayCode;
+        try {
+          console.log('📥 PropertyForm: Fetching full property data from backend:', propertyId);
+          const response = await propertiesAPI.getById(propertyId);
+          const fullData = response?.data?.data || response?.data || response;
+          console.log('✅ PropertyForm: Received full property data:', fullData);
+          setFullPropertyData(fullData);
+        } catch (error) {
+          console.error('❌ PropertyForm: Failed to fetch property data:', error);
+          setFullPropertyData(property); // Use provided property as fallback
+        }
+      } else {
+        setFullPropertyData(null);
+      }
+    };
+    
+    fetchFullProperty();
+  }, [property?.id, property?.displayCode]);
 
   // Fetch organizations from database
   useEffect(() => {
@@ -116,44 +141,255 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
   }, []);
 
   useEffect(() => {
-    if (property) {
+    // Use fullPropertyData if available (from backend), otherwise use property prop
+    const propertyToLoad = fullPropertyData || property;
+    
+    if (propertyToLoad) {
+      console.log('📥 Loading property data for editing:', propertyToLoad);
+      
       // Handle images - can be JSON string or array
       let imagesArray = [];
-      if (property.images) {
-        if (typeof property.images === 'string') {
+      if (propertyToLoad.images) {
+        if (typeof propertyToLoad.images === 'string') {
           try {
-            imagesArray = JSON.parse(property.images);
+            imagesArray = JSON.parse(propertyToLoad.images);
           } catch (e) {
             console.warn('Failed to parse images JSON:', e);
             imagesArray = [];
           }
-        } else if (Array.isArray(property.images)) {
-          imagesArray = property.images;
-        } else if (typeof property.images === 'object') {
+        } else if (Array.isArray(propertyToLoad.images)) {
+          imagesArray = propertyToLoad.images;
+        } else if (typeof propertyToLoad.images === 'object') {
           // Handle old format: { main: { url: '...' }, gallery: { url: '...' } }
-          imagesArray = Object.values(property.images)
+          imagesArray = Object.values(propertyToLoad.images)
             .map(img => (typeof img === 'object' && img.url ? img.url : img))
             .filter(Boolean);
         }
       }
       
-      setFormData({
-        ...formData,
-        ...property,
-        // Ensure arrays are always arrays
-        features: Array.isArray(property.features) ? property.features : [],
-        amenities: Array.isArray(property.amenities) ? property.amenities : [],
-        unit_types: Array.isArray(property.unit_types) ? property.unit_types : [],
-        documents: Array.isArray(property.documents) ? property.documents : [],
-        property_features: Array.isArray(property.property_features) ? property.property_features : [],
-        images: imagesArray, // Use parsed array
-      });
-      if (property.seo) {
-        setSeoData(property.seo);
+      // Extract amenities and unit_types from features object (if nested)
+      let amenities = [];
+      let unit_types = [];
+      
+      if (propertyToLoad.features) {
+        if (typeof propertyToLoad.features === 'object' && !Array.isArray(propertyToLoad.features)) {
+          // Features is an object: { amenities: [...], unit_types: [...] }
+          amenities = Array.isArray(propertyToLoad.features.amenities) ? propertyToLoad.features.amenities : [];
+          unit_types = Array.isArray(propertyToLoad.features.unit_types) ? propertyToLoad.features.unit_types : [];
+        } else if (Array.isArray(propertyToLoad.features)) {
+          // Features is an array (old format)
+          amenities = propertyToLoad.features;
+        }
       }
+      
+      // If amenities/unit_types exist at top level, use those instead
+      if (Array.isArray(propertyToLoad.amenities) && propertyToLoad.amenities.length > 0) {
+        amenities = propertyToLoad.amenities;
+      }
+      if (Array.isArray(propertyToLoad.unit_types) && propertyToLoad.unit_types.length > 0) {
+        unit_types = propertyToLoad.unit_types;
+      }
+      
+      // Map location fields (database might have city/state/country or location_city/location_state/location_country)
+      // Check multiple possible field names from backend
+      const location_city = propertyToLoad.location_city || 
+                           propertyToLoad.city || 
+                           propertyToLoad.location?.city ||
+                           (propertyToLoad.location && typeof propertyToLoad.location === 'string' ? propertyToLoad.location.split(',')[0] : null) ||
+                           'Karachi';
+      const location_state = propertyToLoad.location_state || 
+                            propertyToLoad.state || 
+                            propertyToLoad.location?.state ||
+                            (propertyToLoad.location && typeof propertyToLoad.location === 'string' ? propertyToLoad.location.split(',')[1]?.trim() : null) ||
+                            'Sindh';
+      const location_country = propertyToLoad.location_country || 
+                              propertyToLoad.country || 
+                              propertyToLoad.location?.country ||
+                              'Pakistan';
+      const location_address = propertyToLoad.location_address || 
+                              propertyToLoad.address || 
+                              propertyToLoad.location?.address ||
+                              '';
+      const location_latitude = propertyToLoad.location_latitude || 
+                               propertyToLoad.latitude || 
+                               propertyToLoad.location?.latitude ||
+                               '';
+      const location_longitude = propertyToLoad.location_longitude || 
+                                propertyToLoad.longitude || 
+                                propertyToLoad.location?.longitude ||
+                                '';
+      
+      // Map organizationId (could be organizationId or organization_id)
+      const organizationId = propertyToLoad.organizationId || propertyToLoad.organization_id || '';
+      
+      // Load all form data from property
+      setFormData({
+        // Required backend fields
+        organizationId: organizationId,
+        type: propertyToLoad.type || 'residential',
+        status: propertyToLoad.status || 'active',
+        totalValueUSDT: propertyToLoad.totalValueUSDT || propertyToLoad.total_value_usdt || 0,
+        totalTokens: propertyToLoad.totalTokens || propertyToLoad.total_tokens || 1000,
+        expectedROI: propertyToLoad.expectedROI || propertyToLoad.expected_roi || 0,
+        // Calculate full ROI: if construction is 100%, full ROI = expected ROI
+        // Otherwise, full ROI = expected ROI / (construction progress / 100)
+        fullROI: (() => {
+          const constructionProgress = propertyToLoad.construction_progress || 0;
+          const expectedROI = propertyToLoad.expectedROI || propertyToLoad.expected_roi || 0;
+          if (constructionProgress === 100) {
+            return expectedROI;
+          } else if (constructionProgress > 0 && expectedROI > 0) {
+            return (expectedROI / (constructionProgress / 100));
+          }
+          return expectedROI || 0; // Default to expected ROI if construction is 0
+        })(),
+        
+        // Basic information
+        title: propertyToLoad.title || propertyToLoad.name || '',
+        slug: propertyToLoad.slug || '',
+        description: propertyToLoad.description || '',
+        short_description: propertyToLoad.short_description || propertyToLoad.shortDescription || '',
+        
+        // Location - map from database format to form format
+        location_address: location_address,
+        location_city: location_city,
+        location_state: location_state,
+        location_country: location_country,
+        location_latitude: location_latitude ? String(location_latitude) : '',
+        location_longitude: location_longitude ? String(location_longitude) : '',
+        
+        // Property details
+        property_type: propertyToLoad.property_type || propertyToLoad.type || 'residential',
+        project_type: propertyToLoad.project_type || '',
+        floors: propertyToLoad.floors ? String(propertyToLoad.floors) : '',
+        total_units: propertyToLoad.total_units ? String(propertyToLoad.total_units) : '',
+        construction_progress: propertyToLoad.construction_progress || 0,
+        start_date: propertyToLoad.start_date || '',
+        expected_completion: propertyToLoad.expected_completion || '',
+        handover_date: propertyToLoad.handover_date || '',
+        
+        // Pricing
+        pricing_total_value: propertyToLoad.pricing_total_value ? String(propertyToLoad.pricing_total_value) : '',
+        pricing_market_value: propertyToLoad.pricing_market_value ? String(propertyToLoad.pricing_market_value) : '',
+        pricing_appreciation: propertyToLoad.pricing_appreciation ? String(propertyToLoad.pricing_appreciation) : '',
+        pricing_expected_roi: propertyToLoad.pricing_expected_roi ? String(propertyToLoad.pricing_expected_roi) : '',
+        pricing_min_investment: propertyToLoad.pricing_min_investment ? String(propertyToLoad.pricing_min_investment) : '',
+        
+        // Tokenization
+        tokenization_total_tokens: propertyToLoad.tokenization_total_tokens || propertyToLoad.totalTokens || 1000,
+        tokenization_available_tokens: propertyToLoad.tokenization_available_tokens || propertyToLoad.availableTokens || 1000,
+        tokenization_price_per_token: propertyToLoad.tokenization_price_per_token ? String(propertyToLoad.tokenization_price_per_token) : '',
+        tokenization_token_price: propertyToLoad.tokenization_token_price ? String(propertyToLoad.tokenization_token_price) : '',
+        
+        // Specifications
+        bedrooms: propertyToLoad.bedrooms || 2,
+        bathrooms: propertyToLoad.bathrooms || 2,
+        area_sqm: propertyToLoad.area_sqm || propertyToLoad.area || 100.00,
+        is_rented: propertyToLoad.is_rented || false,
+        appreciation_percentage: propertyToLoad.appreciation_percentage || 20.00,
+        
+        // Features and amenities (extracted from nested structure)
+        features: Array.isArray(propertyToLoad.features) ? propertyToLoad.features : [],
+        amenities: amenities,
+        unit_types: unit_types,
+        
+        // Documents
+        documents: Array.isArray(propertyToLoad.documents) ? propertyToLoad.documents : [],
+        
+        // Property features
+        property_features: Array.isArray(propertyToLoad.property_features) ? propertyToLoad.property_features : [],
+        
+        // Images (parsed from JSON string)
+        images: imagesArray,
+        
+        // Status
+        is_active: propertyToLoad.is_active !== undefined ? propertyToLoad.is_active : (propertyToLoad.status === 'active'),
+        is_featured: propertyToLoad.is_featured || false,
+        sort_order: propertyToLoad.sort_order || 0,
+        
+        // Not sent to backend but kept for form state
+        investment_stats: propertyToLoad.investment_stats || {
+          totalInvestors: 0,
+          totalInvestment: 0,
+          averageInvestment: 0
+        },
+        listing_price_formatted: propertyToLoad.listing_price_formatted || '$0'
+      });
+      
+      // Load SEO data
+      if (propertyToLoad.seo) {
+        setSeoData({
+          title: propertyToLoad.seo.title || '',
+          description: propertyToLoad.seo.description || '',
+          keywords: propertyToLoad.seo.keywords || ''
+        });
+      } else {
+        setSeoData({ title: '', description: '', keywords: '' });
+      }
+      
+      console.log('✅ Property data loaded into form');
+    } else {
+      // Reset form when no property (creating new)
+      setFormData({
+        organizationId: '',
+        type: 'residential',
+        status: 'active',
+        totalValueUSDT: 0,
+        totalTokens: 1000,
+        expectedROI: 0,
+        fullROI: 0,
+        title: '',
+        slug: '',
+        description: '',
+        short_description: '',
+        location_address: '',
+        location_city: 'Karachi',
+        location_state: 'Sindh',
+        location_country: 'Pakistan',
+        location_latitude: '',
+        location_longitude: '',
+        property_type: 'residential',
+        project_type: '',
+        floors: '',
+        total_units: '',
+        construction_progress: 0,
+        start_date: '',
+        expected_completion: '',
+        handover_date: '',
+        pricing_total_value: '',
+        pricing_market_value: '',
+        pricing_appreciation: '',
+        pricing_expected_roi: '',
+        pricing_min_investment: '',
+        tokenization_total_tokens: 1000,
+        tokenization_available_tokens: 1000,
+        tokenization_price_per_token: '',
+        tokenization_token_price: '',
+        unit_types: [],
+        features: [],
+        images: [],
+        amenities: [],
+        documents: [],
+        property_features: [],
+        is_active: true,
+        is_featured: false,
+        sort_order: 0,
+        bedrooms: 2,
+        bathrooms: 2,
+        area_sqm: 100.00,
+        is_rented: false,
+        appreciation_percentage: 20.00,
+        investment_stats: {
+          totalInvestors: 0,
+          totalInvestment: 0,
+          averageInvestment: 0
+        },
+        listing_price_formatted: '$0'
+      });
+      setSeoData({ title: '', description: '', keywords: '' });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [property]);
+  }, [property, fullPropertyData]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -164,6 +400,82 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
         [name]: type === 'checkbox' ? checked : value
       };
 
+      // Auto-sync pricing_total_value from totalValueUSDT
+      if (name === 'totalValueUSDT' && value) {
+        const totalValue = parseFloat(value);
+        if (!isNaN(totalValue)) {
+          newData.pricing_total_value = totalValue.toString();
+        }
+      }
+      
+      // Auto-sync tokenization_total_tokens from totalTokens
+      if (name === 'totalTokens' && value) {
+        const totalTokens = parseFloat(value);
+        if (!isNaN(totalTokens)) {
+          newData.tokenization_total_tokens = totalTokens;
+          // If Available Tokens exceeds new Total Tokens, cap it at Total Tokens
+          const currentAvailable = parseFloat(prev.tokenization_available_tokens) || 0;
+          if (currentAvailable > totalTokens) {
+            newData.tokenization_available_tokens = totalTokens;
+          }
+        }
+      }
+      
+      // Validate Available Tokens doesn't exceed Total Tokens
+      if (name === 'tokenization_available_tokens' && value) {
+        const availableTokens = parseFloat(value);
+        const totalTokens = parseFloat(prev.totalTokens) || parseFloat(prev.tokenization_total_tokens) || 0;
+        if (!isNaN(availableTokens) && !isNaN(totalTokens)) {
+          if (availableTokens > totalTokens) {
+            // Cap at Total Tokens
+            newData.tokenization_available_tokens = totalTokens;
+          } else if (availableTokens < 0) {
+            // Don't allow negative values
+            newData.tokenization_available_tokens = 0;
+          }
+        }
+      }
+      
+      // Auto-calculate Expected ROI based on Construction Progress
+      if (name === 'construction_progress' && value !== undefined) {
+        const constructionProgress = parseFloat(value);
+        const fullROI = parseFloat(prev.fullROI) || parseFloat(prev.expectedROI) || 0;
+        if (!isNaN(constructionProgress) && !isNaN(fullROI) && fullROI > 0) {
+          // Calculate ROI as percentage of construction progress
+          const calculatedROI = (constructionProgress / 100) * fullROI;
+          newData.expectedROI = parseFloat(calculatedROI.toFixed(2));
+          newData.pricing_expected_roi = calculatedROI.toFixed(2).toString();
+        } else if (constructionProgress === 100 && fullROI > 0) {
+          // At 100%, ROI equals full ROI
+          newData.expectedROI = fullROI;
+          newData.pricing_expected_roi = fullROI.toString();
+        }
+      }
+      
+      // When full ROI is set, recalculate expected ROI based on construction progress
+      if (name === 'fullROI' && value) {
+        const fullROI = parseFloat(value);
+        const constructionProgress = parseFloat(prev.construction_progress) || 0;
+        if (!isNaN(fullROI) && !isNaN(constructionProgress)) {
+          const calculatedROI = (constructionProgress / 100) * fullROI;
+          newData.expectedROI = parseFloat(calculatedROI.toFixed(2));
+          newData.pricing_expected_roi = calculatedROI.toFixed(2).toString();
+        }
+      }
+      
+      // Auto-sync pricing_expected_roi from expectedROI (for manual edits)
+      if (name === 'expectedROI' && value) {
+        const expectedROI = parseFloat(value);
+        if (!isNaN(expectedROI)) {
+          newData.pricing_expected_roi = expectedROI.toString();
+          // If construction is 100%, update full ROI
+          const constructionProgress = parseFloat(prev.construction_progress) || 0;
+          if (constructionProgress === 100) {
+            newData.fullROI = expectedROI;
+          }
+        }
+      }
+      
       // Auto-calculate Expected ROI when Total Value changes
       if (name === 'pricing_total_value' && value) {
         const totalValue = parseFloat(value);
@@ -175,21 +487,43 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
       }
 
       // Auto-calculate Price Per Token when Total Tokens changes
-      if (name === 'tokenization_total_tokens' && value && prev.pricing_total_value) {
+      if (name === 'totalTokens' && value && prev.totalValueUSDT) {
         const totalTokens = parseFloat(value);
-        const totalValue = parseFloat(prev.pricing_total_value);
+        const totalValue = parseFloat(prev.totalValueUSDT);
         if (totalTokens > 0 && totalValue > 0) {
           const pricePerToken = (totalValue / totalTokens).toFixed(2);
           newData.tokenization_price_per_token = pricePerToken;
           newData.tokenization_token_price = pricePerToken;
         }
       }
-
+      
       // Auto-calculate Price Per Token when Total Value changes (if Total Tokens is set)
+      if (name === 'totalValueUSDT' && value && prev.totalTokens) {
+        const totalValue = parseFloat(value);
+        const totalTokens = parseFloat(prev.totalTokens);
+        if (totalValue > 0 && totalTokens > 0) {
+          const pricePerToken = (totalValue / totalTokens).toFixed(2);
+          newData.tokenization_price_per_token = pricePerToken;
+          newData.tokenization_token_price = pricePerToken;
+        }
+      }
+      
+      // Auto-calculate Price Per Token when pricing_total_value changes (if tokenization_total_tokens is set)
       if (name === 'pricing_total_value' && value && prev.tokenization_total_tokens) {
         const totalValue = parseFloat(value);
         const totalTokens = parseFloat(prev.tokenization_total_tokens);
         if (totalValue > 0 && totalTokens > 0) {
+          const pricePerToken = (totalValue / totalTokens).toFixed(2);
+          newData.tokenization_price_per_token = pricePerToken;
+          newData.tokenization_token_price = pricePerToken;
+        }
+      }
+      
+      // Auto-calculate Price Per Token when tokenization_total_tokens changes (if pricing_total_value is set)
+      if (name === 'tokenization_total_tokens' && value && prev.pricing_total_value) {
+        const totalTokens = parseFloat(value);
+        const totalValue = parseFloat(prev.pricing_total_value);
+        if (totalTokens > 0 && totalValue > 0) {
           const pricePerToken = (totalValue / totalTokens).toFixed(2);
           newData.tokenization_price_per_token = pricePerToken;
           newData.tokenization_token_price = pricePerToken;
@@ -235,21 +569,122 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
     
     // Format data to match backend structure
     const finalData = {
-      ...formData,
-      seo: seoData,
+      // Required backend fields (ensure they are numbers, not strings)
+      organizationId: formData.organizationId,
+      type: formData.type,
+      status: formData.status,
+      totalValueUSDT: parseFloat(formData.totalValueUSDT) || 0,
+      totalTokens: parseInt(formData.totalTokens) || 1000,
+      expectedROI: parseFloat(formData.expectedROI) || 0,
+      
+      // Basic information
+      title: formData.title || '',
+      slug: formData.slug || '',
+      description: formData.description || '',
+      short_description: formData.short_description || '',
+      
+      // Location - convert location_* to backend expected format
+      address: formData.location_address || '',
+      city: formData.location_city || 'Karachi',
+      state: formData.location_state || 'Sindh',
+      country: formData.location_country || 'Pakistan',
+      latitude: formData.location_latitude ? parseFloat(formData.location_latitude) : null,
+      longitude: formData.location_longitude ? parseFloat(formData.location_longitude) : null,
+      
+      // Property details
+      property_type: formData.property_type || 'residential',
+      project_type: formData.project_type || '',
+      floors: formData.floors || '',
+      total_units: formData.total_units || '',
+      construction_progress: parseInt(formData.construction_progress) || 0,
+      start_date: formData.start_date || '',
+      expected_completion: formData.expected_completion || '',
+      handover_date: formData.handover_date || '',
+      
+      // Pricing
+      pricing_total_value: formData.pricing_total_value || '',
+      pricing_market_value: formData.pricing_market_value || '',
+      pricing_appreciation: formData.pricing_appreciation || '',
+      pricing_expected_roi: formData.pricing_expected_roi || '',
+      pricing_min_investment: formData.pricing_min_investment || '',
+      
+      // Tokenization
+      tokenization_total_tokens: parseInt(formData.tokenization_total_tokens) || 1000,
+      tokenization_available_tokens: Math.min(
+        parseInt(formData.tokenization_available_tokens) || 1000,
+        parseInt(formData.totalTokens) || 1000
+      ),
+      tokenization_price_per_token: formData.tokenization_price_per_token || '',
+      tokenization_token_price: formData.tokenization_token_price || '',
+      
+      // Specifications
+      bedrooms: parseInt(formData.bedrooms) || 0,
+      bathrooms: parseInt(formData.bathrooms) || 0,
+      area_sqm: parseFloat(formData.area_sqm) || 0,
+      is_rented: formData.is_rented || false,
+      appreciation_percentage: parseFloat(formData.appreciation_percentage) || 0,
+      
+      // Features - backend expects object with amenities array
       features: {
         amenities: formData.amenities || [],
         unit_types: formData.unit_types || []
       },
-      // Convert images array to JSON string format: ["url1", "url2"]
-      images: JSON.stringify(formData.images || [])
+      
+      // Images - backend expects array, not JSON string
+      images: Array.isArray(formData.images) ? formData.images : [],
+      
+      // Documents - ensure it's an array and properly formatted
+      documents: Array.isArray(formData.documents) ? formData.documents : [],
+      
+      // Property features
+      property_features: formData.property_features || [],
+      
+      // SEO
+      seo: seoData || {},
+      
+      // Status
+      is_active: formData.is_active !== undefined ? formData.is_active : true,
+      is_featured: formData.is_featured || false,
+      sort_order: parseInt(formData.sort_order) || 0
     };
     
-    // Remove the redundant top-level fields since they're now in features
+    // Remove location_* fields since we've converted them
+    delete finalData.location_address;
+    delete finalData.location_city;
+    delete finalData.location_state;
+    delete finalData.location_country;
+    delete finalData.location_latitude;
+    delete finalData.location_longitude;
+    
+    // Remove top-level amenities and unit_types since they're in features
     delete finalData.amenities;
     delete finalData.unit_types;
     
-    console.log('📤 Submitting property with images:', finalData.images);
+    // Remove fields that shouldn't be sent to backend
+    delete finalData.investment_stats;
+    delete finalData.listing_price_formatted;
+    
+    // Log documents specifically to verify they're being sent
+    console.log('📤 Submitting property data:', JSON.stringify(finalData, null, 2));
+    console.log('📄 Documents being sent:', JSON.stringify(finalData.documents, null, 2));
+    console.log('📄 Documents count:', finalData.documents?.length || 0);
+    console.log('📄 Documents type check:', {
+      isArray: Array.isArray(finalData.documents),
+      type: typeof finalData.documents,
+      value: finalData.documents
+    });
+    
+    // Verify documents format for JSONB compatibility
+    if (finalData.documents && finalData.documents.length > 0) {
+      const isValidFormat = finalData.documents.every(doc => 
+        doc && typeof doc === 'object' && doc.name && doc.url && doc.type
+      );
+      console.log('✅ Documents format valid for JSONB:', isValidFormat);
+      if (!isValidFormat) {
+        console.error('❌ Invalid document format! Each document must have: name, url, type');
+      }
+    }
+    
     onSave(finalData);
   };
 
@@ -302,8 +737,8 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
     const orgId = randomOrg ? (randomOrg.displayCode || randomOrg.id) : 'ORG-000001';
     
     // Generate random pricing values
-    const totalValue = Math.floor(Math.random() * 20000000000) + 1000000000; // 1B to 20B PKR
-    const totalValueUSDT = Math.floor(totalValue / 280); // Convert PKR to USDT (approx rate)
+    const totalValueUSDT = Math.floor(Math.random() * 70000000) + 3500000; // 3.5M to 70M USD
+    const totalValue = totalValueUSDT; // Already in USD
     const minInvestment = Math.floor(Math.random() * 1000000) + 100000; // 100K to 1M
     const roi = (Math.random() * 15 + 5).toFixed(1); // 5% to 20%
     const totalTokens = Math.floor(Math.random() * 200000) + 10000; // 10K to 200K
@@ -367,14 +802,7 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
         'Power Backup',
         'Water Treatment'
       ],
-      images: {
-        main: 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=800',
-        gallery: [
-          'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=800',
-          'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=800',
-          'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800'
-        ]
-      },
+      images: [], // Don't autofill images - user must upload them
       seo: {
         title: `${randomTitle} - Premium Real Estate Investment`,
         description: `Invest in ${randomTitle}, a premium ${randomPropertyType} development offering ${roi}% ROI.`,
@@ -405,13 +833,7 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
         'Club House',
         'Playground'
       ],
-      documents: [
-        { name: 'Approval Letter', url: 'https://example.com/approval.pdf', type: 'approval' },
-        { name: 'Floor Plan', url: 'https://example.com/floorplan.pdf', type: 'floorplan' },
-        { name: 'Legal Documents', url: 'https://example.com/legal.pdf', type: 'legal' },
-        { name: 'Property Deed', url: 'https://example.com/deed.pdf', type: 'legal' },
-        { name: 'Survey Report', url: 'https://example.com/survey.pdf', type: 'technical' }
-      ],
+      documents: [], // Don't autofill documents - user must upload them
       property_features: [
         'Modern Architecture',
         'Energy Efficient',
@@ -420,7 +842,7 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
         'High Ceilings',
         'Balcony Access'
       ],
-      listing_price_formatted: `PKR ${(totalValue / 1000000).toFixed(1)}M`
+      listing_price_formatted: `$${(totalValueUSDT / 1000000).toFixed(1)}M`
     });
     
     setSeoData({
@@ -529,13 +951,31 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
   // Documents Management
   const addDocument = () => {
     if (newDocument.name && newDocument.url && newDocument.type) {
-      setFormData(prev => ({
-        ...prev,
-        documents: [...prev.documents, { ...newDocument }]
-      }));
+      const documentToAdd = {
+        name: newDocument.name.trim(),
+        url: newDocument.url.trim(),
+        type: newDocument.type
+      };
+      
+      console.log('➕ Adding document to formData:', documentToAdd);
+      
+      setFormData(prev => {
+        const updatedDocuments = [...prev.documents, documentToAdd];
+        console.log('📄 Updated documents array:', updatedDocuments);
+        return {
+          ...prev,
+          documents: updatedDocuments
+        };
+      });
+      
       setNewDocument({ name: '', url: '', type: '' });
+      console.log('✅ Document added successfully. Total documents:', formData.documents.length + 1);
     } else {
-      alert('Please fill in all document fields (Name, URL, and Type)');
+      const missingFields = [];
+      if (!newDocument.name) missingFields.push('Name');
+      if (!newDocument.url) missingFields.push('URL');
+      if (!newDocument.type) missingFields.push('Type');
+      alert(`Please fill in all document fields:\n- ${missingFields.join('\n- ')}`);
     }
   };
 
@@ -544,10 +984,10 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
     if (!file) return;
 
     // Validate file type
-    const allowedTypes = ['.pdf', '.doc', '.docx', '.txt'];
+    const allowedTypes = ['.pdf', '.doc', '.docx', '.txt', '.xls', '.xlsx', '.ppt', '.pptx'];
     const fileExt = '.' + file.name.split('.').pop().toLowerCase();
     if (!allowedTypes.includes(fileExt)) {
-      alert('Invalid file type. Please upload PDF, DOC, DOCX, or TXT files.');
+      alert('Invalid file type. Please upload PDF, DOC, DOCX, TXT, XLS, XLSX, PPT, or PPTX files.');
       return;
     }
 
@@ -563,25 +1003,42 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
 
     setUploadingDocument(true);
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-
-      const response = await uploadAPI.uploadDocument('properties', formData);
+      console.log('🚀 handleDocumentFileUpload called - Using Supabase!');
       
-      if (response.data?.success && response.data?.data) {
-        const uploadedFile = response.data.data;
-        // Set the uploaded file URL
-        setNewDocument(prev => ({ 
-          ...prev, 
-          url: uploadedFile.url || uploadedFile.fullUrl || `/upload/file/properties/${uploadedFile.filename}` 
-        }));
-        alert('Document uploaded successfully! Please select a document type and click Add.');
-      } else {
-        throw new Error('Upload failed');
-      }
+      // Get property ID for folder organization
+      const propertyId = property?.id || property?.displayCode || 'temp';
+      
+      console.log('📄 Uploading document to Supabase...', { fileName: file.name, propertyId, fileSize: file.size });
+      
+      // IMPORTANT: Using Supabase, NOT the old uploadAPI
+      // Upload to Supabase
+      const result = await supabaseUpload.uploadDocument(file, 'properties', propertyId);
+      
+      console.log('✅ Document uploaded successfully:', result);
+      
+      // Set the uploaded file URL
+      setNewDocument(prev => ({ 
+        ...prev, 
+        url: result.url // This is the Supabase public URL
+      }));
+      
+      console.log('📄 Document URL set in form:', result.url);
+      console.log('📄 Current newDocument state:', { ...newDocument, url: result.url });
+      
+      alert('✅ Document uploaded successfully! Please select a document type and click "Add Document" to include it.');
     } catch (error) {
-      console.error('Document upload error:', error);
-      alert('Failed to upload document. Please try again.');
+      console.error('❌ Document upload error:', error);
+      let errorMessage = 'Failed to upload document. Please try again.';
+      
+      if (error.message?.includes('Bucket not found')) {
+        errorMessage += '\n\n💡 Solution: Make sure the bucket "property-documents" exists in your Supabase dashboard.';
+      } else if (error.message?.includes('policy') || error.message?.includes('row-level security')) {
+        errorMessage += '\n\n💡 Solution: Check your Supabase storage policies. You need an INSERT policy that allows uploads.';
+      } else if (error.message?.includes('JWT') || error.message?.includes('auth')) {
+        errorMessage += '\n\n💡 Solution: Check your Supabase API keys in the .env file.';
+      }
+      
+      alert(errorMessage);
     } finally {
       setUploadingDocument(false);
       // Reset file input
@@ -835,10 +1292,104 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                   step="1"
                   className="w-full px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
                 />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Total token supply for this property (e.g., 20000)
+                </p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-1">
+                  Construction Progress (%) *
+                </label>
+                <div className="space-y-3">
+                  {/* Quick Progress Buttons */}
+                  <div className="flex space-x-2">
+                    <button
+                      type="button"
+                      onClick={() => handleChange({ target: { name: 'construction_progress', value: '25' } })}
+                      className={`px-3 py-1 text-sm rounded-md border ${
+                        formData.construction_progress === 25
+                          ? 'bg-accent0 text-white border-blue-500'
+                          : 'bg-card text-foreground border-input hover:bg-accent'
+                      }`}
+                    >
+                      25%
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleChange({ target: { name: 'construction_progress', value: '50' } })}
+                      className={`px-3 py-1 text-sm rounded-md border ${
+                        formData.construction_progress === 50
+                          ? 'bg-accent0 text-white border-blue-500'
+                          : 'bg-card text-foreground border-input hover:bg-accent'
+                      }`}
+                    >
+                      50%
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleChange({ target: { name: 'construction_progress', value: '75' } })}
+                      className={`px-3 py-1 text-sm rounded-md border ${
+                        formData.construction_progress === 75
+                          ? 'bg-accent0 text-white border-blue-500'
+                          : 'bg-card text-foreground border-input hover:bg-accent'
+                      }`}
+                    >
+                      75%
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleChange({ target: { name: 'construction_progress', value: '100' } })}
+                      className={`px-3 py-1 text-sm rounded-md border ${
+                        formData.construction_progress === 100
+                          ? 'bg-accent0 text-white border-blue-500'
+                          : 'bg-card text-foreground border-input hover:bg-accent'
+                      }`}
+                    >
+                      100%
+                    </button>
+                  </div>
+                  
+                  {/* Manual Input Field */}
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    name="construction_progress"
+                    value={formData.construction_progress}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
+                    placeholder="Enter custom progress (0-100)"
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Used to calculate Expected ROI below
+                </p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-1">
+                  Full ROI (%) *
+                  <span className="text-xs text-muted-foreground ml-2">
+                    (ROI at 100% completion)
+                  </span>
+                </label>
+                <input
+                  type="number"
+                  name="fullROI"
+                  value={formData.fullROI}
+                  onChange={handleChange}
+                  required
+                  min="0"
+                  step="0.1"
+                  className="w-full px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
+                  placeholder="Enter full ROI (e.g., 11.5)"
+                />
               </div>
               <div>
                 <label className="block text-sm font-medium text-foreground mb-1">
                   Expected ROI (%) *
+                  <span className="text-xs text-primary ml-2">
+                    (Auto-calculated: {formData.construction_progress || 0}% of Full ROI)
+                  </span>
                 </label>
                 <input
                   type="number"
@@ -848,8 +1399,12 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                   required
                   min="0"
                   step="0.1"
-                  className="w-full px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
+                  readOnly
+                  className="w-full px-3 py-2 border border-input bg-accent text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring cursor-not-allowed"
                 />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Calculated as: ({formData.construction_progress || 0}% construction) × ({formData.fullROI || 0}% full ROI) = {formData.expectedROI || 0}%
+                </p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-foreground mb-1">
@@ -1121,108 +1676,47 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                   Unit types will be automatically generated based on this number
                 </p>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-1">
-                  Construction Progress (%)
-                </label>
-                <div className="space-y-3">
-                  {/* Quick Progress Buttons */}
-                  <div className="flex space-x-2">
-                    <button
-                      type="button"
-                      onClick={() => setFormData(prev => ({ ...prev, construction_progress: 25 }))}
-                      className={`px-3 py-1 text-sm rounded-md border ${
-                        formData.construction_progress === 25
-                          ? 'bg-accent0 text-white border-blue-500'
-                          : 'bg-card text-foreground border-input hover:bg-accent'
-                      }`}
-                    >
-                      25%
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setFormData(prev => ({ ...prev, construction_progress: 50 }))}
-                      className={`px-3 py-1 text-sm rounded-md border ${
-                        formData.construction_progress === 50
-                          ? 'bg-accent0 text-white border-blue-500'
-                          : 'bg-card text-foreground border-input hover:bg-accent'
-                      }`}
-                    >
-                      50%
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setFormData(prev => ({ ...prev, construction_progress: 75 }))}
-                      className={`px-3 py-1 text-sm rounded-md border ${
-                        formData.construction_progress === 75
-                          ? 'bg-accent0 text-white border-blue-500'
-                          : 'bg-card text-foreground border-input hover:bg-accent'
-                      }`}
-                    >
-                      75%
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setFormData(prev => ({ ...prev, construction_progress: 100 }))}
-                      className={`px-3 py-1 text-sm rounded-md border ${
-                        formData.construction_progress === 100
-                          ? 'bg-accent0 text-white border-blue-500'
-                          : 'bg-card text-foreground border-input hover:bg-accent'
-                      }`}
-                    >
-                      100%
-                    </button>
+              {/* Date fields - only show when construction is below 100% */}
+              {formData.construction_progress < 100 && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-1">
+                      Start Date
+                    </label>
+                    <input
+                      type="date"
+                      name="start_date"
+                      value={formData.start_date}
+                      onChange={handleChange}
+                      className="w-full px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
+                    />
                   </div>
-                  
-                  {/* Manual Input Field */}
-                  <input
-                    type="number"
-                    min="0"
-                    max="100"
-                    name="construction_progress"
-                    value={formData.construction_progress}
-                    onChange={handleChange}
-                    className="w-full px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
-                    placeholder="Enter custom progress (0-100)"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-1">
-                  Start Date
-                </label>
-                <input
-                  type="date"
-                  name="start_date"
-                  value={formData.start_date}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-1">
-                  Expected Completion
-                </label>
-                <input
-                  type="date"
-                  name="expected_completion"
-                  value={formData.expected_completion}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-1">
-                  Handover Date
-                </label>
-                <input
-                  type="date"
-                  name="handover_date"
-                  value={formData.handover_date}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
-                />
-              </div>
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-1">
+                      Expected Completion
+                    </label>
+                    <input
+                      type="date"
+                      name="expected_completion"
+                      value={formData.expected_completion}
+                      onChange={handleChange}
+                      className="w-full px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-1">
+                      Handover Date
+                    </label>
+                    <input
+                      type="date"
+                      name="handover_date"
+                      value={formData.handover_date}
+                      onChange={handleChange}
+                      className="w-full px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
+                    />
+                  </div>
+                </>
+              )}
             </div>
           </Card>
 
@@ -1232,24 +1726,13 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
               <DollarSign className="w-5 h-5 mr-2" />
               Pricing Information
             </h4>
+            <p className="text-sm text-muted-foreground mb-4">
+              💡 Note: Total Value and Expected ROI are set in Basic Information above and will auto-sync here.
+            </p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-foreground mb-1">
-                  Total Value (PKR) *
-                </label>
-                <input
-                  type="text"
-                  name="pricing_total_value"
-                  value={formData.pricing_total_value}
-                  onChange={handleChange}
-                  required
-                  placeholder="e.g., 12000000000"
-                  className="w-full px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-1">
-                  Market Value (PKR) *
+                  Market Value (USD) *
                 </label>
                 <input
                   type="text"
@@ -1276,22 +1759,7 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
               </div>
               <div>
                 <label className="block text-sm font-medium text-foreground mb-1">
-                  Expected ROI (%) * 
-                  <span className="text-xs text-primary ml-1">(Auto-calculated)</span>
-                </label>
-                <input
-                  type="text"
-                  name="pricing_expected_roi"
-                  value={formData.pricing_expected_roi}
-                  onChange={handleChange}
-                  required
-                  placeholder="e.g., 11"
-                  className="w-full px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring bg-accent"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-1">
-                  Min Investment (PKR) *
+                  Min Investment (USD) *
                 </label>
                 <input
                   type="text"
@@ -1312,7 +1780,7 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                   name="listing_price_formatted"
                   value={formData.listing_price_formatted}
                   onChange={handleChange}
-                  placeholder="e.g., PKR 12B"
+                  placeholder="e.g., $12B"
                   className="w-full px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
                 />
               </div>
@@ -1325,23 +1793,18 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
               <Hash className="w-5 h-5 mr-2" />
               Tokenization Information
             </h4>
+            <p className="text-sm text-muted-foreground mb-4">
+              💡 Note: Total Tokens is set in Basic Information above. Available Tokens cannot exceed Total Tokens. You can increase Available Tokens over time (up to Total Tokens limit). Price Per Token is auto-calculated.
+            </p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-foreground mb-1">
-                  Total Tokens *
-                </label>
-                <input
-                  type="number"
-                  name="tokenization_total_tokens"
-                  value={formData.tokenization_total_tokens}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-1">
                   Available Tokens *
+                  {formData.totalTokens && formData.tokenization_available_tokens && (
+                    <span className={`ml-2 text-xs ${parseFloat(formData.tokenization_available_tokens) > parseFloat(formData.totalTokens) ? 'text-red-500' : 'text-green-500'}`}>
+                      ({formData.tokenization_available_tokens} / {formData.totalTokens})
+                    </span>
+                  )}
                 </label>
                 <input
                   type="number"
@@ -1349,12 +1812,29 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                   value={formData.tokenization_available_tokens}
                   onChange={handleChange}
                   required
-                  className="w-full px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
+                  min="0"
+                  max={formData.totalTokens || undefined}
+                  step="1"
+                  className={`w-full px-3 py-2 border ${
+                    formData.totalTokens && formData.tokenization_available_tokens && 
+                    parseFloat(formData.tokenization_available_tokens) > parseFloat(formData.totalTokens)
+                      ? 'border-red-500 focus:ring-red-500' 
+                      : 'border-input focus:ring-ring'
+                  } bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:border-ring`}
                 />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Tokens available to the public (cannot exceed {formData.totalTokens || 'Total Tokens'})
+                </p>
+                {formData.totalTokens && formData.tokenization_available_tokens && 
+                 parseFloat(formData.tokenization_available_tokens) > parseFloat(formData.totalTokens) && (
+                  <p className="text-xs text-red-500 mt-1">
+                    ⚠️ Available Tokens cannot exceed Total Tokens. It will be automatically capped.
+                  </p>
+                )}
               </div>
               <div>
                 <label className="block text-sm font-medium text-foreground mb-1">
-                  Price Per Token (PKR) * 
+                  Price Per Token (USD) * 
                   <span className="text-xs text-primary ml-1">(Auto-calculated)</span>
                 </label>
                 <input
@@ -1369,7 +1849,7 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
               </div>
               <div>
                 <label className="block text-sm font-medium text-foreground mb-1">
-                  Token Price (PKR) * 
+                  Token Price (USD) * 
                   <span className="text-xs text-primary ml-1">(Auto-calculated)</span>
                 </label>
                 <input
@@ -1682,7 +2162,7 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                   <input
                     ref={documentFileInputRef}
                     type="file"
-                    accept=".pdf,.doc,.docx,.txt"
+                    accept=".pdf,.doc,.docx,.txt,.xls,.xlsx,.ppt,.pptx"
                     onChange={handleDocumentFileUpload}
                     className="hidden"
                     id="document-file-upload"
@@ -1695,17 +2175,17 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                     {uploadingDocument ? (
                       <>
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                        Uploading...
+                        Uploading to Supabase...
                       </>
                     ) : (
                       <>
                         <Upload className="w-4 h-4 mr-2" />
-                        Choose File
+                        Choose File (Supabase)
                       </>
                     )}
                   </label>
                   <span className="text-sm text-muted-foreground">
-                    Supported: PDF, DOC, DOCX, TXT (Max 10MB)
+                    Supported: PDF, DOC, DOCX, TXT, XLS, XLSX, PPT, PPTX (Max 10MB) - Stored in Supabase
                   </span>
                 </div>
               </div>
@@ -1991,16 +2471,18 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
 
           {/* Form Actions */}
           <div className="flex justify-between pt-6">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={fillRandomValues}
-              disabled={isLoading}
-              className="flex items-center space-x-2"
-            >
-              <Settings className="w-4 h-4" />
-              <span>Fill Random Values</span>
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={fillRandomValues}
+                disabled={isLoading}
+                className="flex items-center space-x-2"
+              >
+                <Settings className="w-4 h-4" />
+                <span>Fill Random Values</span>
+              </Button>
+            </div>
             
             <div className="flex space-x-3">
               <Button
