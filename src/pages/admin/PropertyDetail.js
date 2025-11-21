@@ -510,7 +510,12 @@ const PropertyDetail = () => {
   const renderDocuments = () => {
     const documents = getPropertyDocuments(property);
     
-    if (!documents || documents.length === 0) {
+    // Check if any documents exist
+    const hasDocuments = documents?.brochure || 
+                         documents?.floorPlan || 
+                         (Array.isArray(documents?.compliance) && documents.compliance.length > 0);
+    
+    if (!hasDocuments) {
       return (
         <Card className="p-12">
           <div className="text-center">
@@ -524,48 +529,131 @@ const PropertyDetail = () => {
 
     return (
       <div className="space-y-6">
-        <Card className="p-6">
-          <div className="flex items-center justify-between mb-6">
-            <div>
+        {/* Brochure */}
+        {documents?.brochure && (
+          <Card className="p-6">
+            <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-card-foreground flex items-center">
                 <FileText className="w-5 h-5 mr-2" />
-                Property Documents
+                Brochure
               </h3>
-              <p className="text-sm text-muted-foreground mt-1">
-                {documents.length} {documents.length === 1 ? 'document' : 'documents'} available
-              </p>
             </div>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {documents.map((doc, index) => (
-              <div
-                key={index}
-                className="flex items-center justify-between p-4 bg-accent rounded-lg border border-border hover:bg-accent/80 transition-colors"
-              >
-                <div className="flex items-center space-x-3 flex-1 min-w-0">
-                  <FileText className="w-5 h-5 text-primary flex-shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-card-foreground truncate">
-                      {doc.name || `Document ${index + 1}`}
+            <div className="p-4 bg-accent rounded-lg border border-border">
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-card-foreground">
+                    {documents.brochure.name}
+                  </p>
+                  {documents.brochure.notes && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {documents.brochure.notes}
                     </p>
-                    <p className="text-xs text-muted-foreground capitalize">
-                      {doc.type || 'document'}
+                  )}
+                  {documents.brochure.uploadedAt && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Uploaded: {new Date(documents.brochure.uploadedAt).toLocaleDateString()}
                     </p>
-                  </div>
+                  )}
                 </div>
                 <a
-                  href={doc.url}
+                  href={documents.brochure.url}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="ml-3 p-2 text-primary hover:text-primary/80 transition-colors"
-                  title="View Document"
+                  title="View Brochure"
                 >
                   <Download className="w-5 h-5" />
                 </a>
               </div>
-            ))}
-          </div>
-        </Card>
+            </div>
+          </Card>
+        )}
+
+        {/* Floor Plan */}
+        {documents?.floorPlan && (
+          <Card className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-card-foreground flex items-center">
+                <FileText className="w-5 h-5 mr-2" />
+                Floor Plan
+              </h3>
+            </div>
+            <div className="p-4 bg-accent rounded-lg border border-border">
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-card-foreground">
+                    Version {documents.floorPlan.version}
+                  </p>
+                  {documents.floorPlan.mimeType && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {documents.floorPlan.mimeType}
+                    </p>
+                  )}
+                </div>
+                <a
+                  href={documents.floorPlan.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="ml-3 p-2 text-primary hover:text-primary/80 transition-colors"
+                  title="View Floor Plan"
+                >
+                  <Download className="w-5 h-5" />
+                </a>
+              </div>
+            </div>
+          </Card>
+        )}
+
+        {/* Compliance Documents */}
+        {Array.isArray(documents?.compliance) && documents.compliance.length > 0 && (
+          <Card className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-card-foreground flex items-center">
+                <FileText className="w-5 h-5 mr-2" />
+                Compliance Documents
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                {documents.compliance.length} {documents.compliance.length === 1 ? 'document' : 'documents'}
+              </p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {documents.compliance.map((comp, index) => (
+                <div
+                  key={index}
+                  className="flex items-center justify-between p-4 bg-accent rounded-lg border border-border hover:bg-accent/80 transition-colors"
+                >
+                  <div className="flex items-center space-x-3 flex-1 min-w-0">
+                    <FileText className="w-5 h-5 text-primary flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-card-foreground truncate">
+                        {comp.type}
+                      </p>
+                      {comp.issuedAt && (
+                        <p className="text-xs text-muted-foreground">
+                          Issued: {comp.issuedAt}
+                        </p>
+                      )}
+                      {comp.issuedBy && (
+                        <p className="text-xs text-muted-foreground">
+                          By: {comp.issuedBy}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <a
+                    href={comp.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="ml-3 p-2 text-primary hover:text-primary/80 transition-colors"
+                    title="View Document"
+                  >
+                    <Download className="w-5 h-5" />
+                  </a>
+                </div>
+              ))}
+            </div>
+          </Card>
+        )}
       </div>
     );
   };

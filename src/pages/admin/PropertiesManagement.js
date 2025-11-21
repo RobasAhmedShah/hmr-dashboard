@@ -20,7 +20,7 @@ import Button from '../../components/ui/Button';
 import Badge from '../../components/ui/Badge';
 import Input from '../../components/ui/Input';
 import PropertyForm from '../../components/admin/PropertyForm';
-import { adminAPI, rewardsAPI, investmentsAPI } from '../../services/api';
+import { adminAPI, rewardsAPI, investmentsAPI, blocksBackendAPI } from '../../services/api';
 import { useAdminAuth } from '../../components/admin/AdminAuth';
 
 const PropertiesManagement = () => {
@@ -114,14 +114,34 @@ const PropertiesManagement = () => {
   // Create property mutation - POST /properties
   const createPropertyMutation = useMutation(
     (propertyData) => {
-      // Explicitly verify documents are included
+      // Explicitly verify images and documents are included
       console.log('📤 Creating new property:', {
         endpoint: 'POST /properties',
+        hasImages: 'images' in propertyData,
+        imagesCount: propertyData?.images?.length || 0,
+        images: propertyData?.images,
         hasDocuments: 'documents' in propertyData,
         documentsCount: propertyData?.documents?.length || 0,
-        documents: propertyData?.documents,
-        fullData: propertyData
+        documents: propertyData?.documents
       });
+      
+      // Ensure images field is present (even if empty)
+      if (!propertyData.images) {
+        console.warn('⚠️ Images field missing! Adding empty array.');
+        propertyData.images = [];
+      }
+      
+      // Verify images format
+      if (propertyData.images && propertyData.images.length > 0) {
+        const allValid = propertyData.images.every(img => 
+          typeof img === 'string' && img.length > 0
+        );
+        if (!allValid) {
+          console.error('❌ Some images have invalid format!', propertyData.images);
+        } else {
+          console.log('✅ All images are valid and will be sent to backend');
+        }
+      }
       
       // Ensure documents field is present (even if empty)
       if (!propertyData.documents) {
@@ -144,14 +164,37 @@ const PropertiesManagement = () => {
       return adminAPI.createProperty(propertyData);
     },
     {
-      onSuccess: (response) => {
+      onSuccess: async (response, variables) => {
         queryClient.invalidateQueries(['admin-properties']);
         setShowPropertyForm(false);
         setEditingProperty(null);
         console.log('✅ Property created successfully:', response);
         
         const newProperty = response?.data?.data || response?.data;
+        const propertyId = newProperty?.id || newProperty?.displayCode;
         const displayCode = newProperty?.displayCode || 'New Property';
+        
+        // Post documents to blocks backend if property was created and has documents
+        // variables contains the propertyData that was passed to the mutation
+        const propertyData = variables;
+        // Check if documents exist (object structure: { brochure, floorPlan, compliance })
+        const hasDocuments = propertyData?.documents && (
+          propertyData.documents.brochure || 
+          propertyData.documents.floorPlan || 
+          (Array.isArray(propertyData.documents.compliance) && propertyData.documents.compliance.length > 0)
+        );
+        
+        if (propertyId && hasDocuments) {
+          try {
+            console.log('📤 PATCH posting documents to blocks backend for property:', propertyId, propertyData.documents);
+            await blocksBackendAPI.postPropertyDocuments(propertyId, propertyData.documents);
+            console.log('✅ Documents posted to blocks backend successfully');
+          } catch (docError) {
+            console.error('⚠️ Failed to post documents to blocks backend:', docError);
+            // Don't fail the whole operation if documents posting fails
+            console.warn('⚠️ Property created but documents not saved to blocks backend');
+          }
+        }
         
         alert(`✅ Property "${displayCode}" created successfully!`);
       },
@@ -224,13 +267,34 @@ const PropertiesManagement = () => {
   // Update property mutation
   const updatePropertyMutation = useMutation(
     ({ id, data }) => {
-      // Explicitly verify documents are included
+      // Explicitly verify images and documents are included
       console.log('📤 Updating property:', {
         endpoint: `PATCH /properties/${id}`,
+        hasImages: 'images' in data,
+        imagesCount: data?.images?.length || 0,
+        images: data?.images,
         hasDocuments: 'documents' in data,
         documentsCount: data?.documents?.length || 0,
         documents: data?.documents
       });
+      
+      // Ensure images field is present (even if empty)
+      if (!data.images) {
+        console.warn('⚠️ Images field missing in update! Adding empty array.');
+        data.images = [];
+      }
+      
+      // Verify images format
+      if (data.images && data.images.length > 0) {
+        const allValid = data.images.every(img => 
+          typeof img === 'string' && img.length > 0
+        );
+        if (!allValid) {
+          console.error('❌ Some images have invalid format!', data.images);
+        } else {
+          console.log('✅ All images are valid and will be sent to backend');
+        }
+      }
       
       // Ensure documents field is present (even if empty)
       if (!data.documents) {
@@ -253,11 +317,34 @@ const PropertiesManagement = () => {
       return adminAPI.updateProperty(id, data);
     },
     {
-      onSuccess: (response) => {
+      onSuccess: async (response, variables) => {
         queryClient.invalidateQueries(['admin-properties']);
         setShowPropertyForm(false);
         setEditingProperty(null);
         console.log('Property updated successfully:', response);
+        
+        // Update documents in blocks backend if property has documents
+        // variables contains { id, data } that was passed to the mutation
+        const { id, data } = variables;
+        // Check if documents exist (object structure: { brochure, floorPlan, compliance })
+        const hasDocuments = data?.documents && (
+          data.documents.brochure || 
+          data.documents.floorPlan || 
+          (Array.isArray(data.documents.compliance) && data.documents.compliance.length > 0)
+        );
+        
+        if (id && hasDocuments) {
+          try {
+            console.log('📤 PATCH updating documents in blocks backend for property:', id, data.documents);
+            await blocksBackendAPI.updatePropertyDocuments(id, data.documents);
+            console.log('✅ Documents updated in blocks backend successfully');
+          } catch (docError) {
+            console.error('⚠️ Failed to update documents in blocks backend:', docError);
+            // Don't fail the whole operation if documents update fails
+            console.warn('⚠️ Property updated but documents not saved to blocks backend');
+          }
+        }
+        
         alert('✅ Property updated successfully!');
       },
       onError: (error) => {
