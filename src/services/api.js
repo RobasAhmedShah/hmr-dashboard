@@ -1,13 +1,22 @@
 import axios from 'axios';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://hmr-backend.vercel.app';
+const BLOCKS_BACKEND_URL = 'https://blocks-backend.vercel.app';
 
-// Create axios instance
+// Create axios instance for main backend
 const api = axios.create({
   baseURL: API_BASE_URL,
   // Don't set default Content-Type - let axios set it based on data type
   // For JSON requests, axios will set 'application/json'
   // For FormData, axios will set 'multipart/form-data' with boundary automatically
+});
+
+// Create separate axios instance for blocks backend (for documents)
+const blocksApi = axios.create({
+  baseURL: BLOCKS_BACKEND_URL,
+  headers: {
+    'Content-Type': 'application/json'
+  }
 });
 
 // Authentication API (User End)
@@ -316,6 +325,159 @@ export const supportAPI = {
   getFAQ: () => api.get('/support/faq'), // GET /api/support/faq
   getContactInfo: () => api.get('/support/contact-info'), // GET /api/support/contact-info
   submitContact: (contactData) => api.post('/support/contact', contactData), // POST /api/support/contact
+};
+
+// Blocks Backend API (for document storage)
+// Note: Endpoint paths are configurable - update if backend uses different paths
+const BLOCKS_DOCUMENTS_ENDPOINT = process.env.REACT_APP_BLOCKS_DOCUMENTS_ENDPOINT || '/property-documents';
+const BLOCKS_DOCUMENTS_ENDPOINT_ALT = '/documents'; // Alternative endpoint
+const BLOCKS_DOCUMENTS_ENDPOINT_ALT2 = '/properties/documents'; // Another alternative
+
+export const blocksBackendAPI = {
+  // Upload document to blocks backend
+  // POST /upload/document/properties
+  uploadDocument: async (file, propertyId = null) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    if (propertyId) {
+      formData.append('propertyId', propertyId);
+    }
+    
+    console.log('📤 Uploading document to blocks backend:', {
+      fileName: file.name,
+      fileSize: file.size,
+      propertyId,
+      endpoint: `${BLOCKS_BACKEND_URL}/upload/document/properties`
+    });
+    
+    try {
+      const response = await blocksApi.post('/upload/document/properties', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      
+      console.log('✅ Document uploaded to blocks backend:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('❌ Failed to upload document to blocks backend:', error);
+      throw error;
+    }
+  },
+  
+  // Post property documents to blocks backend using PATCH
+  // Tries multiple endpoint patterns if one fails
+  postPropertyDocuments: async (propertyId, documents) => {
+    // documents is now an object: { brochure, floorPlan, compliance }
+    const payload = {
+      documents: documents || { brochure: null, floorPlan: null, compliance: [] }
+    };
+    
+    console.log('📤 PATCH posting documents to blocks backend:', {
+      propertyId,
+      endpoint: `${BLOCKS_BACKEND_URL}/properties/${propertyId}`,
+      payload
+    });
+    
+    // Use PATCH to /properties/:id with documents in body
+    try {
+      return await blocksApi.patch(`/properties/${propertyId}`, payload);
+    } catch (error) {
+      console.error('❌ PATCH failed, trying alternative endpoints:', error);
+      if (error.response?.status === 404) {
+        console.warn(`⚠️ Endpoint /properties/${propertyId} not found (404), trying alternatives...`);
+        
+        // Try alternative endpoints
+        const alternatives = [
+          BLOCKS_DOCUMENTS_ENDPOINT,
+          BLOCKS_DOCUMENTS_ENDPOINT_ALT,
+          BLOCKS_DOCUMENTS_ENDPOINT_ALT2
+        ];
+        for (const altEndpoint of alternatives) {
+          try {
+            console.log(`🔄 Trying alternative endpoint: ${altEndpoint}`);
+            const altPayload = { propertyId, documents: payload.documents };
+            return await blocksApi.post(altEndpoint, altPayload);
+          } catch (altError) {
+            if (altError.response?.status !== 404) {
+              // If it's not a 404, throw the error (might be auth, validation, etc.)
+              throw altError;
+            }
+          }
+        }
+        
+        // If all endpoints return 404, throw original error with helpful message
+        throw new Error(`All document endpoints returned 404. Please check backend routes.`);
+      }
+      throw error;
+    }
+  },
+  
+  // Update property documents in blocks backend using PATCH
+  updatePropertyDocuments: async (propertyId, documents) => {
+    // documents is now an object: { brochure, floorPlan, compliance }
+    const payload = {
+      documents: documents || { brochure: null, floorPlan: null, compliance: [] }
+    };
+    
+    console.log('📤 PATCH updating documents in blocks backend:', {
+      propertyId,
+      endpoint: `${BLOCKS_BACKEND_URL}/properties/${propertyId}`,
+      payload
+    });
+    
+    try {
+      // Use PATCH to /properties/:id with documents in body
+      return await blocksApi.patch(`/properties/${propertyId}`, payload);
+    } catch (error) {
+      console.error('❌ PATCH failed, trying alternative endpoints:', error);
+      if (error.response?.status === 404) {
+        // Try alternative endpoints
+        const alternatives = [
+          `${BLOCKS_DOCUMENTS_ENDPOINT}/${propertyId}`,
+          `${BLOCKS_DOCUMENTS_ENDPOINT_ALT}/${propertyId}`,
+          `${BLOCKS_DOCUMENTS_ENDPOINT_ALT2}/${propertyId}`
+        ];
+        for (const altEndpoint of alternatives) {
+          try {
+            console.log(`🔄 Trying alternative endpoint: ${altEndpoint}`);
+            return await blocksApi.patch(altEndpoint, payload);
+          } catch (altError) {
+            if (altError.response?.status !== 404) {
+              throw altError;
+            }
+          }
+        }
+        throw new Error(`All document update endpoints returned 404. Please check backend routes.`);
+      }
+      throw error;
+    }
+  },
+  
+  // Get property documents from blocks backend
+  getPropertyDocuments: async (propertyId) => {
+    try {
+      return await blocksApi.get(`${BLOCKS_DOCUMENTS_ENDPOINT}/${propertyId}`);
+    } catch (error) {
+      if (error.response?.status === 404) {
+        // Try alternative endpoints
+        const alternatives = [
+          `${BLOCKS_DOCUMENTS_ENDPOINT_ALT}/${propertyId}`,
+          `${BLOCKS_DOCUMENTS_ENDPOINT_ALT2}/${propertyId}`
+        ];
+        for (const altEndpoint of alternatives) {
+          try {
+            return await blocksApi.get(altEndpoint);
+          } catch (altError) {
+            if (altError.response?.status !== 404) {
+              throw altError;
+            }
+          }
+        }
+      }
+      throw error;
+    }
+  }
 };
 
 export default api;

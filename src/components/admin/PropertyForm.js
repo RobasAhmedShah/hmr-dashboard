@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Save, Building2, MapPin, DollarSign, TrendingUp, Hash, Plus, Trash2, Settings, Edit, Upload } from 'lucide-react';
+import { X, Save, Building2, MapPin, DollarSign, TrendingUp, Hash, Plus, Trash2, Settings, Edit, Upload, FileText } from 'lucide-react';
 import Card from '../ui/Card';
 import Button from '../ui/Button';
 import SimpleMap from './SimpleMap';
-import { adminAPI, uploadAPI, propertiesAPI } from '../../services/api';
+import { adminAPI, uploadAPI, propertiesAPI, blocksBackendAPI } from '../../services/api';
 import { supabaseUpload } from '../../services/supabaseUpload';
 
-// Ensure we're using Supabase, not the old API
-console.log('✅ PropertyForm: Using Supabase for image and document uploads');
+// Using Supabase for both document and image uploads
+console.log('✅ PropertyForm: Using Supabase for document and image uploads');
 
 const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
   const [formData, setFormData] = useState({
@@ -66,7 +66,11 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
     is_rented: false,
     appreciation_percentage: 20.00,
     amenities: [],
-    documents: [],
+    documents: {
+      brochure: null,
+      floorPlan: null,
+      compliance: []
+    },
     property_features: [],
     listing_price_formatted: '$0'
   });
@@ -76,7 +80,15 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
   const [editingUnit, setEditingUnit] = useState({ type: '', size: '', count: '' });
   const [newFeature, setNewFeature] = useState('');
   const [newAmenity, setNewAmenity] = useState('');
-  const [newDocument, setNewDocument] = useState({ name: '', url: '', type: '' });
+  const [newDocument, setNewDocument] = useState({ 
+    name: '', 
+    url: '', 
+    type: '', // 'brochure', 'floorPlan', or 'compliance'
+    notes: '', // For brochure
+    version: '', // For floorPlan
+    issuedAt: '', // For compliance
+    issuedBy: '' // For compliance
+  });
   const [uploadingDocument, setUploadingDocument] = useState(false);
   const documentFileInputRef = useRef(null);
   const [newPropertyFeature, setNewPropertyFeature] = useState('');
@@ -293,8 +305,54 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
         amenities: amenities,
         unit_types: unit_types,
         
-        // Documents
-        documents: Array.isArray(propertyToLoad.documents) ? propertyToLoad.documents : [],
+        // Documents - new object structure: { brochure, floorPlan, compliance }
+        documents: (() => {
+          const docs = propertyToLoad.documents;
+          if (!docs) {
+            return { brochure: null, floorPlan: null, compliance: [] };
+          }
+          // If it's the old array format, convert it
+          if (Array.isArray(docs)) {
+            // Try to map old array to new structure
+            const brochure = docs.find(d => d.type === 'brochure' || d.name?.toLowerCase().includes('brochure'));
+            const floorPlan = docs.find(d => d.type === 'floor_plan' || d.type === 'floor-plan' || d.name?.toLowerCase().includes('floor'));
+            const compliance = docs.filter(d => 
+              d.type === 'compliance' || 
+              d.type === 'legal' || 
+              d.type === 'noc' ||
+              (d.name?.toLowerCase().includes('permit') || d.name?.toLowerCase().includes('clearance'))
+            );
+            return {
+              brochure: brochure ? {
+                url: brochure.url,
+                name: brochure.name || 'Brochure',
+                notes: brochure.notes || '',
+                uploadedAt: brochure.uploadedAt || new Date().toISOString(),
+                uploadedBy: brochure.uploadedBy || 'admin'
+              } : null,
+              floorPlan: floorPlan ? {
+                url: floorPlan.url,
+                version: floorPlan.version || 'A',
+                mimeType: floorPlan.mimeType || 'application/pdf'
+              } : null,
+              compliance: compliance.map(c => ({
+                url: c.url,
+                type: c.type === 'compliance' ? c.name : c.type,
+                issuedAt: c.issuedAt || '',
+                issuedBy: c.issuedBy || ''
+              }))
+            };
+          }
+          // If it's already the new object structure, use it
+          if (typeof docs === 'object' && !Array.isArray(docs)) {
+            return {
+              brochure: docs.brochure || null,
+              floorPlan: docs.floorPlan || null,
+              compliance: Array.isArray(docs.compliance) ? docs.compliance : []
+            };
+          }
+          return { brochure: null, floorPlan: null, compliance: [] };
+        })(),
         
         // Property features
         property_features: Array.isArray(propertyToLoad.property_features) ? propertyToLoad.property_features : [],
@@ -369,7 +427,11 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
         features: [],
         images: [],
         amenities: [],
-        documents: [],
+        documents: {
+          brochure: null,
+          floorPlan: null,
+          compliance: []
+        },
         property_features: [],
         is_active: true,
         is_featured: false,
@@ -562,7 +624,11 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
     e.preventDefault();
     
     // Validate required fields
-    if (formData.documents.length === 0) {
+    // Check if any documents exist (brochure, floorPlan, or compliance)
+    const hasDocuments = formData.documents?.brochure || 
+                         formData.documents?.floorPlan || 
+                         (Array.isArray(formData.documents?.compliance) && formData.documents.compliance.length > 0);
+    if (!hasDocuments) {
       alert('Please add at least one document before saving the property.');
       return;
     }
@@ -633,8 +699,53 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
       // Images - backend expects array, not JSON string
       images: Array.isArray(formData.images) ? formData.images : [],
       
-      // Documents - ensure it's an array and properly formatted
-      documents: Array.isArray(formData.documents) ? formData.documents : [],
+      // Documents - new object structure: only include fields that have data
+      documents: (() => {
+        const docs = formData.documents || { brochure: null, floorPlan: null, compliance: [] };
+        
+        // Build the object structure - only include fields with actual data
+        const result = {};
+        
+        // Add brochure only if it exists and has a URL
+        if (docs.brochure && docs.brochure.url) {
+          result.brochure = {
+            url: docs.brochure.url,
+            name: docs.brochure.name || 'Brochure',
+            notes: docs.brochure.notes || '',
+            uploadedAt: docs.brochure.uploadedAt || new Date().toISOString(),
+            uploadedBy: docs.brochure.uploadedBy || 'admin'
+          };
+        }
+        
+        // Add floorPlan only if it exists and has a URL
+        if (docs.floorPlan && docs.floorPlan.url) {
+          result.floorPlan = {
+            url: docs.floorPlan.url,
+            version: docs.floorPlan.version || 'A',
+            mimeType: docs.floorPlan.mimeType || 'application/pdf'
+          };
+        }
+        
+        // Add compliance array only if it has items
+        if (Array.isArray(docs.compliance) && docs.compliance.length > 0) {
+          const validCompliance = docs.compliance
+            .filter(c => c && c.url) // Only include valid compliance docs
+            .map(c => ({
+              url: c.url,
+              type: c.type || 'Compliance Document',
+              issuedAt: c.issuedAt || '',
+              issuedBy: c.issuedBy || ''
+            }));
+          
+          // Only add compliance if there are valid items
+          if (validCompliance.length > 0) {
+            result.compliance = validCompliance;
+          }
+        }
+        
+        // Return empty object if no documents, or only include fields with data
+        return result;
+      })(),
       
       // Property features
       property_features: formData.property_features || [],
@@ -664,25 +775,60 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
     delete finalData.investment_stats;
     delete finalData.listing_price_formatted;
     
-    // Log documents specifically to verify they're being sent
+    // Only include documents if it has any data (object with at least one key)
+    if (finalData.documents && Object.keys(finalData.documents).length === 0) {
+      delete finalData.documents; // Remove empty documents object
+    }
+    
+    // Ensure images field is always present (even if empty array)
+    if (!finalData.images) {
+      finalData.images = [];
+    }
+    
+    // Log images and documents specifically to verify they're being sent
     console.log('📤 Submitting property data:', JSON.stringify(finalData, null, 2));
+    console.log('🖼️ Images being sent:', JSON.stringify(finalData.images, null, 2));
+    console.log('🖼️ Images count:', finalData.images?.length || 0);
+    console.log('🖼️ Images type check:', {
+      isArray: Array.isArray(finalData.images),
+      type: typeof finalData.images,
+      value: finalData.images,
+      hasImages: 'images' in finalData
+    });
     console.log('📄 Documents being sent:', JSON.stringify(finalData.documents, null, 2));
     console.log('📄 Documents count:', finalData.documents?.length || 0);
     console.log('📄 Documents type check:', {
       isArray: Array.isArray(finalData.documents),
       type: typeof finalData.documents,
-      value: finalData.documents
+      value: finalData.documents,
+      hasDocuments: 'documents' in finalData
     });
     
-    // Verify documents format for JSONB compatibility
-    if (finalData.documents && finalData.documents.length > 0) {
-      const isValidFormat = finalData.documents.every(doc => 
-        doc && typeof doc === 'object' && doc.name && doc.url && doc.type
+    // Verify documents format for JSONB compatibility (new object structure)
+    // Only check if documents object has any keys (meaning at least one document type exists)
+    const hasDocumentsInFinalData = finalData.documents && Object.keys(finalData.documents).length > 0;
+    if (hasDocumentsInFinalData) {
+      // Validate structure
+      const isValidFormat = (
+        (!finalData.documents.brochure || (finalData.documents.brochure.url && finalData.documents.brochure.name)) &&
+        (!finalData.documents.floorPlan || finalData.documents.floorPlan.url) &&
+        (!Array.isArray(finalData.documents.compliance) || finalData.documents.compliance.every(c => c && c.url && c.type))
       );
       console.log('✅ Documents format valid for JSONB:', isValidFormat);
       if (!isValidFormat) {
         console.error('❌ Invalid document format! Each document must have: name, url, type');
+        console.error('❌ Documents that failed validation:', finalData.documents);
+      } else {
+        console.log('✅ All documents are properly formatted for backend JSONB column');
       }
+    } else {
+      console.warn('⚠️ No documents to send. Property will be created without documents.');
+    }
+    
+    // Final verification: Ensure documents field exists in finalData
+    if (!('documents' in finalData)) {
+      console.error('❌ CRITICAL: documents field missing from finalData!');
+      finalData.documents = [];
     }
     
     onSave(finalData);
@@ -833,7 +979,11 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
         'Club House',
         'Playground'
       ],
-      documents: [], // Don't autofill documents - user must upload them
+      documents: {
+        brochure: null,
+        floorPlan: null,
+        compliance: []
+      }, // Don't autofill documents - user must upload them
       property_features: [
         'Modern Architecture',
         'Energy Efficient',
@@ -948,34 +1098,105 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
     }));
   };
 
-  // Documents Management
+  // Documents Management - New object structure
   const addDocument = () => {
-    if (newDocument.name && newDocument.url && newDocument.type) {
-      const documentToAdd = {
-        name: newDocument.name.trim(),
-        url: newDocument.url.trim(),
-        type: newDocument.type
-      };
-      
-      console.log('➕ Adding document to formData:', documentToAdd);
-      
-      setFormData(prev => {
-        const updatedDocuments = [...prev.documents, documentToAdd];
-        console.log('📄 Updated documents array:', updatedDocuments);
-        return {
-          ...prev,
-          documents: updatedDocuments
-        };
-      });
-      
-      setNewDocument({ name: '', url: '', type: '' });
-      console.log('✅ Document added successfully. Total documents:', formData.documents.length + 1);
-    } else {
-      const missingFields = [];
-      if (!newDocument.name) missingFields.push('Name');
-      if (!newDocument.url) missingFields.push('URL');
-      if (!newDocument.type) missingFields.push('Type');
-      alert(`Please fill in all document fields:\n- ${missingFields.join('\n- ')}`);
+    if (!newDocument.url || !newDocument.type) {
+      alert('Please provide a URL and select a document type.');
+      return;
+    }
+
+    const type = newDocument.type;
+    
+    if (type === 'brochure') {
+      if (!newDocument.name) {
+        alert('Please provide a name for the brochure.');
+        return;
+      }
+      setFormData(prev => ({
+        ...prev,
+        documents: {
+          ...prev.documents,
+          brochure: {
+            url: newDocument.url.trim(),
+            name: newDocument.name.trim(),
+            notes: newDocument.notes || '',
+            uploadedAt: new Date().toISOString(),
+            uploadedBy: 'admin' // TODO: Get from auth context
+          }
+        }
+      }));
+    } else if (type === 'floorPlan') {
+      setFormData(prev => ({
+        ...prev,
+        documents: {
+          ...prev.documents,
+          floorPlan: {
+            url: newDocument.url.trim(),
+            version: newDocument.version || 'A',
+            mimeType: newDocument.mimeType || 'application/pdf'
+          }
+        }
+      }));
+    } else if (type === 'compliance') {
+      if (!newDocument.name) {
+        alert('Please provide a type for the compliance document (e.g., Building Permit).');
+        return;
+      }
+      setFormData(prev => ({
+        ...prev,
+        documents: {
+          ...prev.documents,
+          compliance: [
+            ...prev.documents.compliance,
+            {
+              url: newDocument.url.trim(),
+              type: newDocument.name.trim(),
+              issuedAt: newDocument.issuedAt || '',
+              issuedBy: newDocument.issuedBy || ''
+            }
+          ]
+        }
+      }));
+    }
+    
+    // Reset form
+    setNewDocument({ 
+      name: '', 
+      url: '', 
+      type: '', 
+      notes: '', 
+      version: '', 
+      issuedAt: '', 
+      issuedBy: '',
+      mimeType: ''
+    });
+  };
+
+  const removeDocument = (type, index = null) => {
+    if (type === 'brochure') {
+      setFormData(prev => ({
+        ...prev,
+        documents: {
+          ...prev.documents,
+          brochure: null
+        }
+      }));
+    } else if (type === 'floorPlan') {
+      setFormData(prev => ({
+        ...prev,
+        documents: {
+          ...prev.documents,
+          floorPlan: null
+        }
+      }));
+    } else if (type === 'compliance' && index !== null) {
+      setFormData(prev => ({
+        ...prev,
+        documents: {
+          ...prev.documents,
+          compliance: prev.documents.compliance.filter((_, i) => i !== index)
+        }
+      }));
     }
   };
 
@@ -999,43 +1220,59 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
 
     // Auto-fill document name from filename
     const fileNameWithoutExt = file.name.replace(/\.[^/.]+$/, '');
-    setNewDocument(prev => ({ ...prev, name: fileNameWithoutExt }));
+    const mimeType = file.type || 'application/pdf';
+    
+    setNewDocument(prev => ({ 
+      ...prev, 
+      name: fileNameWithoutExt,
+      mimeType: mimeType
+    }));
 
     setUploadingDocument(true);
     try {
       console.log('🚀 handleDocumentFileUpload called - Using Supabase!');
       
       // Get property ID for folder organization
-      const propertyId = property?.id || property?.displayCode || 'temp';
+      const propertyId = property?.id || property?.displayCode || null;
       
-      console.log('📄 Uploading document to Supabase...', { fileName: file.name, propertyId, fileSize: file.size });
+      // Upload to Supabase Storage (property-documents bucket)
+      console.log('📤 Uploading document to Supabase...', { fileName: file.name, propertyId, fileSize: file.size });
       
-      // IMPORTANT: Using Supabase, NOT the old uploadAPI
-      // Upload to Supabase
       const result = await supabaseUpload.uploadDocument(file, 'properties', propertyId);
       
-      console.log('✅ Document uploaded successfully:', result);
+      console.log('✅ Document uploaded to Supabase successfully:', result);
       
-      // Set the uploaded file URL
+      // Extract URL from Supabase response
+      // Response format: { url: string, path: string, success: boolean }
+      const documentUrl = result?.url;
+      
+      if (!documentUrl) {
+        throw new Error('No URL returned from Supabase upload');
+      }
+      
+      console.log('🔗 Supabase document URL:', documentUrl);
+      
+      // Set the uploaded file URL in the form
       setNewDocument(prev => ({ 
         ...prev, 
-        url: result.url // This is the Supabase public URL
+        url: documentUrl, // This is the Supabase public URL
+        mimeType: mimeType
       }));
       
-      console.log('📄 Document URL set in form:', result.url);
-      console.log('📄 Current newDocument state:', { ...newDocument, url: result.url });
+      console.log('📄 Document URL set in form:', documentUrl);
+      console.log('📄 Current newDocument state:', { ...newDocument, url: documentUrl });
       
       alert('✅ Document uploaded successfully! Please select a document type and click "Add Document" to include it.');
     } catch (error) {
       console.error('❌ Document upload error:', error);
       let errorMessage = 'Failed to upload document. Please try again.';
       
-      if (error.message?.includes('Bucket not found')) {
-        errorMessage += '\n\n💡 Solution: Make sure the bucket "property-documents" exists in your Supabase dashboard.';
-      } else if (error.message?.includes('policy') || error.message?.includes('row-level security')) {
-        errorMessage += '\n\n💡 Solution: Check your Supabase storage policies. You need an INSERT policy that allows uploads.';
-      } else if (error.message?.includes('JWT') || error.message?.includes('auth')) {
-        errorMessage += '\n\n💡 Solution: Check your Supabase API keys in the .env file.';
+      if (error.message?.includes('Storage bucket') || error.message?.includes('property-documents')) {
+        errorMessage += '\n\n💡 Solution: Check your Supabase storage. Make sure the "property-documents" bucket exists and has proper policies.';
+      } else if (error.message?.includes('row-level security') || error.message?.includes('policy')) {
+        errorMessage += '\n\n💡 Solution: Check your Supabase storage policies. You need an INSERT policy for the "anon" role on the "property-documents" bucket.';
+      } else if (error.message?.includes('No URL returned')) {
+        errorMessage += '\n\n💡 Solution: Supabase did not return a document URL. Check Supabase configuration.';
       }
       
       alert(errorMessage);
@@ -1046,13 +1283,6 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
         documentFileInputRef.current.value = '';
       }
     }
-  };
-
-  const removeDocument = (index) => {
-    setFormData(prev => ({
-      ...prev,
-      documents: prev.documents.filter((_, i) => i !== index)
-    }));
   };
 
   // Property Features Management
@@ -2134,71 +2364,73 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
             </div>
           </Card>
 
-          {/* Documents */}
+          {/* Documents - Simplified Single Section */}
           <Card className="p-6">
             <div className="flex items-center justify-between mb-4">
               <h4 className="text-lg font-semibold text-card-foreground">Documents *</h4>
               <span className="text-sm text-muted-foreground">
-                {formData.documents.length} document{formData.documents.length !== 1 ? 's' : ''} added
+                {(() => {
+                  const count = (formData.documents.brochure ? 1 : 0) + 
+                               (formData.documents.floorPlan ? 1 : 0) + 
+                               (Array.isArray(formData.documents.compliance) ? formData.documents.compliance.length : 0);
+                  return `${count} document${count !== 1 ? 's' : ''} added`;
+                })()}
               </span>
             </div>
             <p className="text-sm text-muted-foreground mb-4">
-              Add important property documents like approval letters, floor plans, legal documents, etc.
+              Add property documents. At least one document is required.
             </p>
-            {formData.documents.length === 0 && (
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
-                <p className="text-sm text-yellow-800">
-                  ⚠️ At least one document is required to save the property.
-                </p>
-              </div>
-            )}
-            <div className="space-y-4">
-              {/* File Upload Option */}
-              <div className="mb-4 p-4 bg-accent rounded-lg border border-border">
-                <label className="block text-sm font-medium text-foreground mb-2">
-                  Upload Document File
-                </label>
-                <div className="flex items-center gap-2">
-                  <input
-                    ref={documentFileInputRef}
-                    type="file"
-                    accept=".pdf,.doc,.docx,.txt,.xls,.xlsx,.ppt,.pptx"
-                    onChange={handleDocumentFileUpload}
-                    className="hidden"
-                    id="document-file-upload"
-                    disabled={uploadingDocument}
-                  />
-                  <label
-                    htmlFor="document-file-upload"
-                    className="cursor-pointer inline-flex items-center px-4 py-2 border border-primary bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {uploadingDocument ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                        Uploading to Supabase...
-                      </>
-                    ) : (
-                      <>
-                        <Upload className="w-4 h-4 mr-2" />
-                        Choose File (Supabase)
-                      </>
-                    )}
-                  </label>
-                  <span className="text-sm text-muted-foreground">
-                    Supported: PDF, DOC, DOCX, TXT, XLS, XLSX, PPT, PPTX (Max 10MB) - Stored in Supabase
-                  </span>
-                </div>
-              </div>
 
-              {/* Manual URL Entry */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            {/* File Upload Option */}
+            <div className="mb-4 p-4 bg-accent rounded-lg border border-border">
+              <label className="block text-sm font-medium text-foreground mb-2">
+                Upload Document File
+              </label>
+              <div className="flex items-center gap-2">
                 <input
-                  type="text"
-                  placeholder="Document Name"
-                  value={newDocument.name}
-                  onChange={(e) => setNewDocument(prev => ({ ...prev, name: e.target.value }))}
-                  className="px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
+                  ref={documentFileInputRef}
+                  type="file"
+                  accept=".pdf,.doc,.docx,.txt,.xls,.xlsx,.ppt,.pptx"
+                  onChange={handleDocumentFileUpload}
+                  className="hidden"
+                  id="document-file-upload"
+                  disabled={uploadingDocument}
                 />
+                <label
+                  htmlFor="document-file-upload"
+                  className="cursor-pointer inline-flex items-center px-4 py-2 border border-primary bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {uploadingDocument ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Uploading...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="w-4 h-4 mr-2" />
+                      Choose File
+                    </>
+                  )}
+                </label>
+                <span className="text-sm text-muted-foreground">
+                  Supported: PDF, DOC, DOCX, TXT, XLS, XLSX, PPT, PPTX (Max 10MB)
+                </span>
+              </div>
+            </div>
+
+            {/* Add Document Form */}
+            <div className="mb-4 space-y-3">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <select
+                  value={newDocument.type}
+                  onChange={(e) => setNewDocument(prev => ({ ...prev, type: e.target.value }))}
+                  className="px-3 py-2 border border-input bg-card text-card-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
+                >
+                  <option value="">Select Document Type</option>
+                  <option value="brochure">Brochure</option>
+                  <option value="floorPlan">Floor Plan</option>
+                  <option value="compliance">Compliance Document</option>
+                </select>
                 <input
                   type="url"
                   placeholder="Document URL (or upload file above)"
@@ -2206,41 +2438,144 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                   onChange={(e) => setNewDocument(prev => ({ ...prev, url: e.target.value }))}
                   className="px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
                 />
-                <select
-                  value={newDocument.type}
-                  onChange={(e) => setNewDocument(prev => ({ ...prev, type: e.target.value }))}
-                  className="px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
-                >
-                  <option value="">Select Type</option>
-                  <option value="brochure">Brochure</option>
-                  <option value="floor-plan">Floor Plan</option>
-                  <option value="legal">Legal Document</option>
-                  <option value="other">Other</option>
-                </select>
-                <Button 
-                  type="button" 
-                  onClick={addDocument} 
-                  className="flex items-center justify-center space-x-2"
-                  disabled={uploadingDocument}
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>Add</span>
-                </Button>
+                {newDocument.type === 'brochure' && (
+                  <input
+                    type="text"
+                    placeholder="Brochure Name"
+                    value={newDocument.name}
+                    onChange={(e) => setNewDocument(prev => ({ ...prev, name: e.target.value }))}
+                    className="px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
+                  />
+                )}
+                {newDocument.type === 'floorPlan' && (
+                  <input
+                    type="text"
+                    placeholder="Version (e.g., A, B)"
+                    value={newDocument.version}
+                    onChange={(e) => setNewDocument(prev => ({ ...prev, version: e.target.value }))}
+                    className="px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
+                  />
+                )}
+                {newDocument.type === 'compliance' && (
+                  <input
+                    type="text"
+                    placeholder="Type (e.g., Building Permit)"
+                    value={newDocument.name}
+                    onChange={(e) => setNewDocument(prev => ({ ...prev, name: e.target.value }))}
+                    className="px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
+                  />
+                )}
               </div>
-              {Array.isArray(formData.documents) && formData.documents.map((doc, index) => (
-                <div key={index} className="flex items-center justify-between p-3 bg-accent rounded-lg">
-                  <div className="flex space-x-4">
-                    <span className="font-medium">{doc.name}</span>
-                    <span className="text-muted-foreground">{doc.type}</span>
-                    <a href={doc.url} target="_blank" rel="noopener noreferrer" className="text-primary hover:text-blue-800">
-                      View Document
+              {(newDocument.type === 'brochure' || newDocument.type === 'compliance') && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {newDocument.type === 'brochure' && (
+                    <input
+                      type="text"
+                      placeholder="Notes (optional)"
+                      value={newDocument.notes}
+                      onChange={(e) => setNewDocument(prev => ({ ...prev, notes: e.target.value }))}
+                      className="px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
+                    />
+                  )}
+                  {newDocument.type === 'compliance' && (
+                    <>
+                      <input
+                        type="text"
+                        placeholder="Issued At (optional)"
+                        value={newDocument.issuedAt}
+                        onChange={(e) => setNewDocument(prev => ({ ...prev, issuedAt: e.target.value }))}
+                        className="px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Issued By (optional)"
+                        value={newDocument.issuedBy}
+                        onChange={(e) => setNewDocument(prev => ({ ...prev, issuedBy: e.target.value }))}
+                        className="px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
+                      />
+                    </>
+                  )}
+                </div>
+              )}
+              <Button 
+                type="button" 
+                onClick={addDocument}
+                disabled={!newDocument.url || !newDocument.type || (newDocument.type === 'brochure' && !newDocument.name) || (newDocument.type === 'compliance' && !newDocument.name)}
+                className="w-full md:w-auto"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add Document
+              </Button>
+            </div>
+
+            {/* List of Added Documents */}
+            <div className="space-y-2">
+              {formData.documents.brochure && (
+                <div className="flex items-center justify-between p-3 bg-accent rounded-lg border border-border">
+                  <div className="flex items-center space-x-4">
+                    <FileText className="w-5 h-5 text-primary" />
+                    <div>
+                      <p className="text-sm font-medium text-card-foreground">Brochure: {formData.documents.brochure.name}</p>
+                      {formData.documents.brochure.notes && (
+                        <p className="text-xs text-muted-foreground">{formData.documents.brochure.notes}</p>
+                      )}
+                    </div>
+                    <a href={formData.documents.brochure.url} target="_blank" rel="noopener noreferrer" className="text-primary hover:text-blue-800 text-sm">
+                      View
                     </a>
                   </div>
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
-                    onClick={() => removeDocument(index)}
+                    onClick={() => removeDocument('brochure')}
+                    className="text-red-600 hover:text-red-700"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              )}
+              {formData.documents.floorPlan && (
+                <div className="flex items-center justify-between p-3 bg-accent rounded-lg border border-border">
+                  <div className="flex items-center space-x-4">
+                    <FileText className="w-5 h-5 text-primary" />
+                    <div>
+                      <p className="text-sm font-medium text-card-foreground">Floor Plan (Version {formData.documents.floorPlan.version})</p>
+                    </div>
+                    <a href={formData.documents.floorPlan.url} target="_blank" rel="noopener noreferrer" className="text-primary hover:text-blue-800 text-sm">
+                      View
+                    </a>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => removeDocument('floorPlan')}
+                    className="text-red-600 hover:text-red-700"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              )}
+              {Array.isArray(formData.documents.compliance) && formData.documents.compliance.map((comp, index) => (
+                <div key={index} className="flex items-center justify-between p-3 bg-accent rounded-lg border border-border">
+                  <div className="flex items-center space-x-4">
+                    <FileText className="w-5 h-5 text-primary" />
+                    <div>
+                      <p className="text-sm font-medium text-card-foreground">{comp.type}</p>
+                      {comp.issuedAt && (
+                        <p className="text-xs text-muted-foreground">Issued: {comp.issuedAt} {comp.issuedBy ? `by ${comp.issuedBy}` : ''}</p>
+                      )}
+                    </div>
+                    <a href={comp.url} target="_blank" rel="noopener noreferrer" className="text-primary hover:text-blue-800 text-sm">
+                      View
+                    </a>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => removeDocument('compliance', index)}
                     className="text-red-600 hover:text-red-700"
                   >
                     <Trash2 className="w-4 h-4" />

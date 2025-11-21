@@ -275,7 +275,7 @@ export const getPropertyImages = (property) => {
 export const getPropertyDocuments = (property) => {
   if (!property) {
     console.log('⚠️ getPropertyDocuments - No property provided');
-    return [];
+    return { brochure: null, floorPlan: null, compliance: [] };
   }
   
   // Try multiple possible field names (documents, Documents, document, etc.)
@@ -285,49 +285,70 @@ export const getPropertyDocuments = (property) => {
     hasDocuments: !!documents,
     documentsType: typeof documents,
     documentsValue: documents,
-    isArray: Array.isArray(documents)
+    isArray: Array.isArray(documents),
+    isObject: typeof documents === 'object' && !Array.isArray(documents)
   });
   
-  // If documents is null or undefined, return empty array
+  // If documents is null or undefined, return empty structure
   if (!documents) {
     console.log('⚠️ getPropertyDocuments - No documents field in property');
-    return [];
-  }
-  
-  // If documents is already an array (JSONB from database), use it directly
-  if (Array.isArray(documents)) {
-    const filtered = documents.filter(doc => doc && doc.url);
-    console.log('✅ getPropertyDocuments - Using array directly, filtered:', filtered);
-    return filtered; // Only return documents with URLs
+    return { brochure: null, floorPlan: null, compliance: [] };
   }
   
   // Parse documents if it's a JSON string (from database)
-  // Database stores documents as JSONB which might come as JSON string
   if (typeof documents === 'string') {
-    const trimmed = documents.trim();
-    // Check if it looks like a JSON array
-    if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
-      try {
-        documents = JSON.parse(documents);
-        console.log('✅ getPropertyDocuments - Parsed JSON:', documents);
-      } catch (e) {
-        console.warn('❌ getPropertyDocuments - Failed to parse JSON:', e, 'Raw:', documents);
-        documents = null;
-      }
-    } else {
-      // Not a JSON array string
-      console.log('⚠️ getPropertyDocuments - String but not JSON array format');
-      return [];
+    try {
+      documents = JSON.parse(documents);
+      console.log('✅ getPropertyDocuments - Parsed JSON:', documents);
+    } catch (e) {
+      console.warn('❌ getPropertyDocuments - Failed to parse JSON:', e, 'Raw:', documents);
+      return { brochure: null, floorPlan: null, compliance: [] };
     }
   }
   
-  // Return array of documents
-  if (documents && Array.isArray(documents) && documents.length > 0) {
-    const filtered = documents.filter(doc => doc && doc.url);
-    console.log('✅ getPropertyDocuments - Returning filtered documents:', filtered);
-    return filtered; // Only return documents with URLs
+  // If documents is already the new object structure, use it directly
+  if (typeof documents === 'object' && !Array.isArray(documents)) {
+    return {
+      brochure: documents.brochure || null,
+      floorPlan: documents.floorPlan || null,
+      compliance: Array.isArray(documents.compliance) ? documents.compliance : []
+    };
+  }
+  
+  // Legacy: If documents is an array (old format), convert to new structure
+  if (Array.isArray(documents)) {
+    console.log('⚠️ getPropertyDocuments - Converting legacy array format to new structure');
+    const brochure = documents.find(d => d.type === 'brochure' || d.name?.toLowerCase().includes('brochure'));
+    const floorPlan = documents.find(d => d.type === 'floor_plan' || d.type === 'floor-plan' || d.name?.toLowerCase().includes('floor'));
+    const compliance = documents.filter(d => 
+      d.type === 'compliance' || 
+      d.type === 'legal' || 
+      d.type === 'noc' ||
+      (d.name?.toLowerCase().includes('permit') || d.name?.toLowerCase().includes('clearance'))
+    );
+    
+    return {
+      brochure: brochure ? {
+        url: brochure.url,
+        name: brochure.name || 'Brochure',
+        notes: brochure.notes || '',
+        uploadedAt: brochure.uploadedAt || new Date().toISOString(),
+        uploadedBy: brochure.uploadedBy || 'admin'
+      } : null,
+      floorPlan: floorPlan ? {
+        url: floorPlan.url,
+        version: floorPlan.version || 'A',
+        mimeType: floorPlan.mimeType || 'application/pdf'
+      } : null,
+      compliance: compliance.map(c => ({
+        url: c.url,
+        type: c.type === 'compliance' ? c.name : c.type,
+        issuedAt: c.issuedAt || '',
+        issuedBy: c.issuedBy || ''
+      }))
+    };
   }
   
   console.log('⚠️ getPropertyDocuments - No valid documents found');
-  return [];
+  return { brochure: null, floorPlan: null, compliance: [] };
 };
