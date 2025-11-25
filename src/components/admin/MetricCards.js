@@ -5,24 +5,27 @@ const MetricCard = ({ label, value, change, trend, description, subtext }) => {
   const isPositive = trend === 'up';
 
   return (
-    <div className="bg-card border border-border rounded-lg p-6 space-y-4">
-      <div className="flex items-start justify-between">
-        <div className="flex-1">
-          <p className="text-sm text-muted-foreground">{label}</p>
-          <h3 className="text-3xl font-bold text-card-foreground mt-1">{value}</h3>
-        </div>
+    <div className="bg-card border border-border rounded-lg p-6 space-y-3">
+      {/* Title with trend badge */}
+      <div className="flex items-center justify-between">
+        <p className="text-sm font-medium text-muted-foreground">{label}</p>
         <div
           className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold ${
-            isPositive ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'
+            isPositive ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'
           }`}
         >
           {isPositive ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
           <span>{change}</span>
         </div>
       </div>
-      <div className="space-y-1">
-        <p className="text-sm font-medium text-card-foreground">{description}</p>
-        <p className="text-xs text-muted-foreground">{subtext}</p>
+      
+      {/* Value */}
+      <h3 className="text-3xl font-bold text-blue-700">{value}</h3>
+      
+      {/* Description and subtext */}
+      <div className="space-y-0.5">
+        <p className="text-sm text-muted-foreground">{description}</p>
+        <p className="text-xs text-muted-foreground/70">{subtext}</p>
       </div>
     </div>
   );

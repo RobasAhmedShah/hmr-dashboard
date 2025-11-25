@@ -21,7 +21,8 @@ import {
   TrendingUp,
   DollarSign,
   Building2,
-  X
+  X,
+  FileText
 } from 'lucide-react';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
@@ -29,6 +30,30 @@ import Badge from '../../components/ui/Badge';
 import UserForm from '../../components/admin/UserForm';
 import { adminAPI, usersAPI, investmentsAPI, walletTransactionsAPI } from '../../services/api';
 import { useAdminAuth } from '../../components/admin/AdminAuth';
+
+// Helper function to get full certificate URL from path
+// Expected format in Neon DB: Full URL like:
+// https://klglyxwyrjtjsxfzbzfv.supabase.co/storage/v1/object/public/certificates/transactions/{userId}/{transactionId}.pdf
+// If database has relative path, this function constructs the full URL
+const getCertificateUrl = (certificatePath) => {
+  if (!certificatePath || certificatePath.trim() === '') {
+    return null;
+  }
+  
+  // If it's already a full URL, return as is
+  if (certificatePath.startsWith('http://') || certificatePath.startsWith('https://')) {
+    return certificatePath;
+  }
+  
+  // Otherwise, prepend the Supabase certificates base URL
+  // Base URL format: https://klglyxwyrjtjsxfzbzfv.supabase.co/storage/v1/object/public/certificates/
+  const baseUrl = 'https://klglyxwyrjtjsxfzbzfv.supabase.co/storage/v1/object/public/certificates/';
+  // Remove leading slash if present
+  const cleanPath = certificatePath.startsWith('/') ? certificatePath.slice(1) : certificatePath;
+  // Construct full URL: baseUrl + path
+  // Example: baseUrl + "transactions/userId/file.pdf" = full URL
+  return `${baseUrl}${cleanPath}`;
+};
 
 const UsersManagement = () => {
   const { isAuthenticated } = useAdminAuth();
@@ -1631,14 +1656,29 @@ const UsersManagement = () => {
                         const propertyName = investment.property?.title || investment.propertyName || 'N/A';
                         const displayCode = investment.displayCode || '';
                         const status = investment.status || 'active';
+                        const certificatePath = investment.certificatePath || investment.certificate_path || null;
+                        const certificateUrl = certificatePath ? getCertificateUrl(certificatePath) : null;
                         
                         return (
                           <tr key={index}>
                             <td className="px-4 py-2 text-sm">
+                              <div className="flex items-center gap-2">
                               <div>
                                 <p className="font-medium text-card-foreground">{propertyName}</p>
                                 {displayCode && (
                                   <p className="text-xs text-muted-foreground">{displayCode}</p>
+                                  )}
+                                </div>
+                                {certificateUrl && (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-6 w-6 p-0"
+                                    onClick={() => window.open(certificateUrl, '_blank')}
+                                    title="View Certificate PDF"
+                                  >
+                                    <FileText className="w-3.5 h-3.5" />
+                                  </Button>
                                 )}
                               </div>
                             </td>

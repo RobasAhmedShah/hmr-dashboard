@@ -537,7 +537,7 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
           }
         }
       }
-      
+
       // Auto-calculate Expected ROI when Total Value changes
       if (name === 'pricing_total_value' && value) {
         const totalValue = parseFloat(value);
@@ -558,7 +558,7 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
           newData.tokenization_token_price = pricePerToken;
         }
       }
-      
+
       // Auto-calculate Price Per Token when Total Value changes (if Total Tokens is set)
       if (name === 'totalValueUSDT' && value && prev.totalTokens) {
         const totalValue = parseFloat(value);
@@ -1253,8 +1253,8 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
       console.log('🔗 Supabase document URL:', documentUrl);
       
       // Set the uploaded file URL in the form
-      setNewDocument(prev => ({ 
-        ...prev, 
+        setNewDocument(prev => ({ 
+          ...prev, 
         url: documentUrl, // This is the Supabase public URL
         mimeType: mimeType
       }));
@@ -1909,42 +1909,42 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
               {/* Date fields - only show when construction is below 100% */}
               {formData.construction_progress < 100 && (
                 <>
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-1">
-                      Start Date
-                    </label>
-                    <input
-                      type="date"
-                      name="start_date"
-                      value={formData.start_date}
-                      onChange={handleChange}
-                      className="w-full px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-1">
-                      Expected Completion
-                    </label>
-                    <input
-                      type="date"
-                      name="expected_completion"
-                      value={formData.expected_completion}
-                      onChange={handleChange}
-                      className="w-full px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-1">
-                      Handover Date
-                    </label>
-                    <input
-                      type="date"
-                      name="handover_date"
-                      value={formData.handover_date}
-                      onChange={handleChange}
-                      className="w-full px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
-                    />
-                  </div>
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-1">
+                  Start Date
+                </label>
+                <input
+                  type="date"
+                  name="start_date"
+                  value={formData.start_date}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-1">
+                  Expected Completion
+                </label>
+                <input
+                  type="date"
+                  name="expected_completion"
+                  value={formData.expected_completion}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-1">
+                  Handover Date
+                </label>
+                <input
+                  type="date"
+                  name="handover_date"
+                  value={formData.handover_date}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
+                />
+              </div>
                 </>
               )}
             </div>
@@ -2381,42 +2381,42 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
               Add property documents. At least one document is required.
             </p>
 
-            {/* File Upload Option */}
-            <div className="mb-4 p-4 bg-accent rounded-lg border border-border">
-              <label className="block text-sm font-medium text-foreground mb-2">
-                Upload Document File
-              </label>
-              <div className="flex items-center gap-2">
-                <input
-                  ref={documentFileInputRef}
-                  type="file"
-                  accept=".pdf,.doc,.docx,.txt,.xls,.xlsx,.ppt,.pptx"
-                  onChange={handleDocumentFileUpload}
-                  className="hidden"
-                  id="document-file-upload"
-                  disabled={uploadingDocument}
-                />
-                <label
-                  htmlFor="document-file-upload"
-                  className="cursor-pointer inline-flex items-center px-4 py-2 border border-primary bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {uploadingDocument ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      Uploading...
-                    </>
-                  ) : (
-                    <>
-                      <Upload className="w-4 h-4 mr-2" />
-                      Choose File
-                    </>
-                  )}
+              {/* File Upload Option */}
+              <div className="mb-4 p-4 bg-accent rounded-lg border border-border">
+                <label className="block text-sm font-medium text-foreground mb-2">
+                  Upload Document File
                 </label>
-                <span className="text-sm text-muted-foreground">
+                <div className="flex items-center gap-2">
+                  <input
+                    ref={documentFileInputRef}
+                    type="file"
+                  accept=".pdf,.doc,.docx,.txt,.xls,.xlsx,.ppt,.pptx"
+                    onChange={handleDocumentFileUpload}
+                    className="hidden"
+                    id="document-file-upload"
+                    disabled={uploadingDocument}
+                  />
+                  <label
+                    htmlFor="document-file-upload"
+                    className="cursor-pointer inline-flex items-center px-4 py-2 border border-primary bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {uploadingDocument ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Uploading...
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="w-4 h-4 mr-2" />
+                        Choose File
+                      </>
+                    )}
+                  </label>
+                  <span className="text-sm text-muted-foreground">
                   Supported: PDF, DOC, DOCX, TXT, XLS, XLSX, PPT, PPTX (Max 10MB)
-                </span>
+                  </span>
+                </div>
               </div>
-            </div>
 
             {/* Add Document Form */}
             <div className="mb-4 space-y-3">
@@ -2439,22 +2439,22 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                   className="px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
                 />
                 {newDocument.type === 'brochure' && (
-                  <input
-                    type="text"
+                <input
+                  type="text"
                     placeholder="Brochure Name"
-                    value={newDocument.name}
-                    onChange={(e) => setNewDocument(prev => ({ ...prev, name: e.target.value }))}
-                    className="px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
-                  />
+                  value={newDocument.name}
+                  onChange={(e) => setNewDocument(prev => ({ ...prev, name: e.target.value }))}
+                  className="px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
+                />
                 )}
                 {newDocument.type === 'floorPlan' && (
-                  <input
+                <input
                     type="text"
                     placeholder="Version (e.g., A, B)"
                     value={newDocument.version}
                     onChange={(e) => setNewDocument(prev => ({ ...prev, version: e.target.value }))}
-                    className="px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
-                  />
+                  className="px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
+                />
                 )}
                 {newDocument.type === 'compliance' && (
                   <input
@@ -2462,7 +2462,7 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                     placeholder="Type (e.g., Building Permit)"
                     value={newDocument.name}
                     onChange={(e) => setNewDocument(prev => ({ ...prev, name: e.target.value }))}
-                    className="px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
+                  className="px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
                   />
                 )}
               </div>
@@ -2497,16 +2497,16 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                   )}
                 </div>
               )}
-              <Button 
-                type="button" 
-                onClick={addDocument}
+                <Button 
+                  type="button" 
+                  onClick={addDocument} 
                 disabled={!newDocument.url || !newDocument.type || (newDocument.type === 'brochure' && !newDocument.name) || (newDocument.type === 'compliance' && !newDocument.name)}
                 className="w-full md:w-auto"
-              >
+                >
                 <Plus className="w-4 h-4 mr-2" />
                 Add Document
-              </Button>
-            </div>
+                </Button>
+              </div>
 
             {/* List of Added Documents */}
             <div className="space-y-2">
@@ -2807,16 +2807,16 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
           {/* Form Actions */}
           <div className="flex justify-between pt-6">
             <div className="flex flex-wrap gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={fillRandomValues}
-                disabled={isLoading}
-                className="flex items-center space-x-2"
-              >
-                <Settings className="w-4 h-4" />
-                <span>Fill Random Values</span>
-              </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={fillRandomValues}
+              disabled={isLoading}
+              className="flex items-center space-x-2"
+            >
+              <Settings className="w-4 h-4" />
+              <span>Fill Random Values</span>
+            </Button>
             </div>
             
             <div className="flex space-x-3">
