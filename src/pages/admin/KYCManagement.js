@@ -498,13 +498,16 @@ const KYCManagement = () => {
                           />
                         </td>
                         <td className="px-4 py-3">
-                          <div>
-                            <p className="font-medium text-card-foreground">{kyc.userId}</p>
-                            {group.user?.email && (
-                              <p className="text-sm text-muted-foreground">{group.user.email}</p>
-                            )}
-                          </div>
-                        </td>
+  <div>
+    <p className="font-medium text-card-foreground">
+      {/* Use the displayCode from the user object, falling back to UUID if not found */}
+      {group.user?.displayCode || kyc.userId}
+    </p>
+    {group.user?.email && (
+      <p className="text-sm text-muted-foreground">{group.user.email}</p>
+    )}
+  </div>
+</td>
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-2">
                             <TypeIcon className="h-4 w-4 text-muted-foreground" />

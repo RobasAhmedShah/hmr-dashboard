@@ -9,13 +9,38 @@ import {
   Calendar,
   CheckCircle,
   Clock,
-  XCircle
+  XCircle,
+  FileText
 } from 'lucide-react';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import Badge from '../../components/ui/Badge';
 import { adminAPI } from '../../services/api';
 import { useAdminAuth } from '../../components/admin/AdminAuth';
+
+// Helper function to get full certificate URL from path
+// Expected format in Neon DB: Full URL like:
+// https://klglyxwyrjtjsxfzbzfv.supabase.co/storage/v1/object/public/certificates/transactions/{userId}/{transactionId}.pdf
+// If database has relative path, this function constructs the full URL
+const getCertificateUrl = (certificatePath) => {
+  if (!certificatePath || certificatePath.trim() === '') {
+    return null;
+  }
+  
+  // If it's already a full URL, return as is
+  if (certificatePath.startsWith('http://') || certificatePath.startsWith('https://')) {
+    return certificatePath;
+  }
+  
+  // Otherwise, prepend the Supabase certificates base URL
+  // Base URL format: https://klglyxwyrjtjsxfzbzfv.supabase.co/storage/v1/object/public/certificates/
+  const baseUrl = 'https://klglyxwyrjtjsxfzbzfv.supabase.co/storage/v1/object/public/certificates/';
+  // Remove leading slash if present
+  const cleanPath = certificatePath.startsWith('/') ? certificatePath.slice(1) : certificatePath;
+  // Construct full URL: baseUrl + path
+  // Example: baseUrl + "transactions/userId/file.pdf" = full URL
+  return `${baseUrl}${cleanPath}`;
+};
 
 const InvestmentsManagement = () => {
   const { isAuthenticated } = useAdminAuth();
@@ -553,7 +578,25 @@ const InvestmentsManagement = () => {
                     property_title: investment.property?.title || investment.property_title || 'Unknown Property',
                     user_name: investment.user?.fullName || investment.user_name || 'Unknown User',
                     user_email: investment.user?.email || investment.user_email || '',
+                    certificatePath: investment.certificatePath || investment.certificate_path || null,
                   };
+                  
+                  // Get full certificate URL
+                  const certificateUrl = mappedInvestment.certificatePath 
+                    ? getCertificateUrl(mappedInvestment.certificatePath)
+                    : null;
+                  
+                  // Debug certificatePath for first investment
+                  if (investments.indexOf(investment) === 0) {
+                    console.log('📄 Certificate Path Debug:', {
+                      investmentId: investment.id || investment.displayCode,
+                      certificatePath: investment.certificatePath,
+                      certificate_path: investment.certificate_path,
+                      mappedCertificatePath: mappedInvestment.certificatePath,
+                      fullCertificateUrl: certificateUrl,
+                      willShowButton: !!certificateUrl
+                    });
+                  }
 
                   const statusInfo = getStatusBadge(mappedInvestment.status);
                   const StatusIcon = statusInfo.icon;
@@ -567,9 +610,22 @@ const InvestmentsManagement = () => {
                             <TrendingUp className="w-5 h-5 text-muted-foreground" />
                           </div>
                         </div>
-                        <div className="ml-3 min-w-0">
-                          <div className="text-sm font-medium text-card-foreground">
-                            {investment.displayCode || investment.id?.slice(0, 8) + '...'}
+                        <div className="ml-3 min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <div className="text-sm font-medium text-card-foreground">
+                              {investment.displayCode || investment.id?.slice(0, 8) + '...'}
+                            </div>
+                            {certificateUrl && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-6 w-6 p-0"
+                                onClick={() => window.open(certificateUrl, '_blank')}
+                                title="View Certificate PDF"
+                              >
+                                <FileText className="w-3.5 h-3.5" />
+                              </Button>
+                            )}
                           </div>
                           <div className="text-sm text-muted-foreground">
                             Investment
