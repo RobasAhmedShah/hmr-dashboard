@@ -9,8 +9,7 @@ import {
   Calendar,
   CheckCircle,
   Clock,
-  XCircle,
-  FileText
+  XCircle
 } from 'lucide-react';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
@@ -612,19 +611,18 @@ const InvestmentsManagement = () => {
                         </div>
                         <div className="ml-3 min-w-0 flex-1">
                           <div className="flex items-center gap-2">
-                            <div className="text-sm font-medium text-card-foreground">
-                              {investment.displayCode || investment.id?.slice(0, 8) + '...'}
-                            </div>
-                            {certificateUrl && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="h-6 w-6 p-0"
+                            {certificateUrl ? (
+                              <button
                                 onClick={() => window.open(certificateUrl, '_blank')}
-                                title="View Certificate PDF"
+                                className="text-sm font-medium text-card-foreground hover:text-primary-600 hover:underline cursor-pointer transition-colors"
+                                title="Click to view certificate PDF"
                               >
-                                <FileText className="w-3.5 h-3.5" />
-                              </Button>
+                                {investment.displayCode || investment.id?.slice(0, 8) + '...'}
+                              </button>
+                            ) : (
+                              <div className="text-sm font-medium text-card-foreground">
+                                {investment.displayCode || investment.id?.slice(0, 8) + '...'}
+                              </div>
                             )}
                           </div>
                           <div className="text-sm text-muted-foreground">
