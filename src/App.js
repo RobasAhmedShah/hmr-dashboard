@@ -17,6 +17,8 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminLogin from './pages/admin/AdminLogin';
 import AdminPropertyDetail from './pages/admin/PropertyDetail';
 import PropertyDetail from './pages/PropertyDetail';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import DeleteAccount from './pages/DeleteAccount';
 import { AdminAuthProvider } from './components/admin/AdminAuth';
 
 // Organization Pages
@@ -54,6 +56,8 @@ function App() {
                 <Route path="/portfolio" element={<Portfolio />} />
                 <Route path="/wallet" element={<Wallet />} />
                 <Route path="/profile" element={<Profile />} />
+                <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+                <Route path="/delete-account" element={<DeleteAccount />} />
                 
                 {/* Admin Routes */}
                 <Route path="/admin/login" element={
