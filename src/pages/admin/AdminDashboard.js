@@ -80,9 +80,117 @@ const AdminDashboard = () => {
     }
   );
 
+  // Fetch all investments to calculate total investment value
+  const { data: investmentsData } = useQuery(
+    ['admin-all-investments'],
+    () => adminAPI.getInvestments({ limit: 10000 }),
+    {
+      enabled: isAuthenticated && activeTab === 'overview',
+      retry: 1,
+      onError: (error) => {
+        console.log('Investments fetch error:', error.message);
+      }
+    }
+  );
+
+  // Fetch all properties to get accurate count
+  const { data: propertiesData } = useQuery(
+    ['admin-all-properties'],
+    () => adminAPI.getProperties({ limit: 10000 }),
+    {
+      enabled: isAuthenticated && activeTab === 'overview',
+      retry: 1,
+      onError: (error) => {
+        console.log('Properties fetch error:', error.message);
+      }
+    }
+  );
+
+  // Fetch all users to get accurate count (active users)
+  const { data: usersData } = useQuery(
+    ['admin-all-users'],
+    () => adminAPI.getUsers({ limit: 10000, include_inactive: false }),
+    {
+      enabled: isAuthenticated && activeTab === 'overview',
+      retry: 1,
+      onError: (error) => {
+        console.log('Users fetch error:', error.message);
+      }
+    }
+  );
+
+  // Fetch all transactions to get accurate count
+  const { data: transactionsData } = useQuery(
+    ['admin-all-transactions'],
+    () => adminAPI.getTransactions({ limit: 10000 }),
+    {
+      enabled: isAuthenticated && activeTab === 'overview',
+      retry: 1,
+      onError: (error) => {
+        console.log('Transactions fetch error:', error.message);
+      }
+    }
+  );
+
+  // Fetch all organizations to get accurate count
+  const { data: organizationsData } = useQuery(
+    ['admin-all-organizations'],
+    () => adminAPI.getOrganizations({ limit: 10000 }),
+    {
+      enabled: isAuthenticated && activeTab === 'overview',
+      retry: 1,
+      onError: (error) => {
+        console.log('Organizations fetch error:', error.message);
+      }
+    }
+  );
+
+  // Fetch all KYC data to calculate approved/unapproved counts
+  const { data: kycData } = useQuery(
+    ['admin-all-kyc'],
+    () => adminAPI.getAllKYC({ limit: 10000 }),
+    {
+      enabled: isAuthenticated && activeTab === 'overview',
+      retry: 1,
+      onError: (error) => {
+        console.log('KYC fetch error:', error.message);
+      }
+    }
+  );
+
   // Parse analytics data
   const analytics = analyticsData?.data?.data || analyticsData?.data || {};
   const stats = dashboardData?.data?.data || dashboardData?.data || {};
+  
+  // Extract arrays from API responses
+  const investments = investmentsData?.data?.data?.investments || 
+                     investmentsData?.data?.investments || 
+                     investmentsData?.data || 
+                     (Array.isArray(investmentsData) ? investmentsData : []);
+  
+  const properties = propertiesData?.data?.data?.properties || 
+                    propertiesData?.data?.properties || 
+                    propertiesData?.data || 
+                    (Array.isArray(propertiesData) ? propertiesData : []);
+  
+  const users = usersData?.data?.data?.users || 
+               usersData?.data?.users || 
+               usersData?.data || 
+               (Array.isArray(usersData) ? usersData : []);
+  
+  const transactions = transactionsData?.data?.data?.transactions || 
+                      transactionsData?.data?.transactions || 
+                      transactionsData?.data || 
+                      (Array.isArray(transactionsData) ? transactionsData : []);
+  
+  const organizations = organizationsData?.data?.data?.organizations || 
+                       organizationsData?.data?.organizations || 
+                       organizationsData?.data || 
+                       (Array.isArray(organizationsData) ? organizationsData : []);
+  
+  const kycList = kycData?.data?.data || 
+                  kycData?.data || 
+                  (Array.isArray(kycData) ? kycData : []);
 
   console.log('📊 Analytics Data:', {
     raw: analyticsData,
@@ -268,227 +376,371 @@ const AdminDashboard = () => {
     const comparison = analytics?.comparison || {};
     const changePercentage = comparison?.changePercentage || {};
 
+    // Calculate total investment value from investments table
+    let totalInvestmentValue = 0;
+    if (investments.length > 0) {
+      totalInvestmentValue = investments.reduce((sum, inv) => {
+        const amount = parseFloat(
+          inv.amountUSDT || 
+          inv.amount_usdt || 
+          inv.amount || 
+          inv.invested_amount || 
+          inv.investmentAmount || 
+          0
+        );
+        return sum + amount;
+      }, 0);
+    } else {
+      // Fallback to aggregated data if investments array is empty
+      totalInvestmentValue = parseFloat(aggregated?.investments?.totalValue || stats?.totalInvestmentVolume || 0);
+    }
+    // Use actual counts from fetched data, fallback to stats if not available
+    const totalProperties = properties.length > 0 ? properties.length : parseInt(stats?.totalProperties || 0);
+    const totalUsers = users.length > 0 ? users.length : parseInt(stats?.totalUsers || aggregated?.users?.total || 0);
+    const totalTransactions = transactions.length > 0 ? transactions.length : parseInt(aggregated?.transactions?.total || 0);
+    const totalOrganizations = organizations.length > 0 ? organizations.length : parseInt(stats?.totalOrganizations || 0);
+    const totalInvestments = parseInt(aggregated?.investments?.count || 0);
+    
+    // Prepare chart data - use real investment trends
+    const investmentTrendData = timeSeries?.investments || [];
+    
+    // Calculate property type breakdown from properties data
+    const propertyTypeCounts = {
+      residential: 0,
+      commercial: 0,
+      'mixed-use': 0,
+      other: 0
+    };
+    
+    properties.forEach(property => {
+      const propertyType = (property.type || property.property_type || property.propertyType || '').toLowerCase();
+      if (propertyType === 'residential') {
+        propertyTypeCounts.residential++;
+      } else if (propertyType === 'commercial') {
+        propertyTypeCounts.commercial++;
+      } else if (propertyType === 'mixed-use' || propertyType === 'mixed_use' || propertyType === 'mixeduse') {
+        propertyTypeCounts['mixed-use']++;
+      } else if (propertyType) {
+        propertyTypeCounts.other++;
+      }
+    });
+    
+    const residentialCount = propertyTypeCounts.residential;
+    const commercialCount = propertyTypeCounts.commercial;
+    const mixedUseCount = propertyTypeCounts['mixed-use'];
+    const totalPropertyTypes = residentialCount + commercialCount + mixedUseCount;
+    
+    // Calculate total available tokens from all properties
+    const totalAvailableTokens = properties.reduce((sum, property) => {
+      const availableTokens = parseFloat(
+        property.availableTokens || 
+        property.available_tokens || 
+        property.tokenization_available_tokens || 
+        0
+      );
+      return sum + availableTokens;
+    }, 0);
+    
+    // Calculate available tokens per property for bar chart (show top properties or distribute)
+    const tokensPerProperty = properties
+      .map(property => {
+        return parseFloat(
+          property.availableTokens || 
+          property.available_tokens || 
+          property.tokenization_available_tokens || 
+          0
+        );
+      })
+      .filter(tokens => tokens > 0)
+      .sort((a, b) => b - a)
+      .slice(0, 7); // Take top 7 for the 7 months display
+    
+    // If we have less than 7 properties, fill with zeros or distribute total
+    const tokensChartData = tokensPerProperty.length > 0 
+      ? tokensPerProperty.length < 7
+        ? [...tokensPerProperty, ...Array(7 - tokensPerProperty.length).fill(0)]
+        : tokensPerProperty
+      : [0, 0, 0, 0, 0, 0, 0];
+    
+    // Calculate KYC approved and unapproved counts
+    const kycApproved = kycList.filter(kyc => 
+      (kyc.status || '').toLowerCase() === 'verified' || 
+      (kyc.status || '').toLowerCase() === 'approved'
+    ).length;
+    
+    const kycUnapproved = kycList.filter(kyc => {
+      const status = (kyc.status || '').toLowerCase();
+      return status === 'pending' || 
+             status === 'rejected' || 
+             status === 'unapproved' ||
+             (!status || status === '');
+    }).length;
+    
+    // Format date for header
+    const currentDate = new Date().toLocaleDateString('en-US', { 
+      weekday: 'long', 
+      month: 'long', 
+      day: 'numeric', 
+      year: 'numeric' 
+    });
+
     return (
-      <div className="space-y-8">
-        {/* Page Header */}
-        <div className="space-y-2">
-          <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
-          <p className="text-muted-foreground">Overview of your real estate investment platform</p>
-        </div>
-
-        {/* Metric Cards */}
-        <MetricCards 
-          stats={{
-            totalInvestmentVolume: aggregated?.investments?.totalValue || stats?.totalInvestmentVolume,
-            totalUsers: aggregated?.users?.total || stats?.totalUsers,
-            totalProperties: stats?.totalProperties,
-            averageROI: stats?.averageROI,
-            userGrowth: changePercentage?.users ? `${changePercentage.users >= 0 ? '+' : ''}${changePercentage.users.toFixed(1)}%` : '+8%',
-          }}
-        />
-
-        {/* Investment Chart */}
-        <InvestmentChart 
-          data={timeSeries?.investments} 
-          stats={stats}
-        />
-
-        {/* Peak Performance Cards */}
-        {aggregated?.users?.peak || aggregated?.investments?.peak || aggregated?.transactions?.peak ? (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {aggregated?.users?.peak && (
-              <Card className="p-6 bg-gradient-to-br from-blue-500/10 to-blue-600/10 border-blue-500/20">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-sm font-semibold text-card-foreground">Peak User Growth</h3>
-                  <TrendingUp className="w-5 h-5 text-blue-500" />
-                </div>
-                <p className="text-2xl font-bold text-card-foreground">{aggregated.users.peak.count} users</p>
-                <p className="text-xs text-muted-foreground mt-1">{formatDate(aggregated.users.peak.date)}</p>
-              </Card>
-            )}
-            
-            {aggregated?.investments?.peak && (
-              <Card className="p-6 bg-gradient-to-br from-green-500/10 to-green-600/10 border-green-500/20">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-sm font-semibold text-card-foreground">Peak Investment Day</h3>
-                  <DollarSign className="w-5 h-5 text-green-500" />
-                </div>
-                <p className="text-2xl font-bold text-card-foreground">{formatCurrency(aggregated.investments.peak.volume)}</p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {aggregated.investments.peak.count} investments on {formatDate(aggregated.investments.peak.date)}
-                </p>
-              </Card>
-            )}
-            
-            {aggregated?.transactions?.peak && (
-              <Card className="p-6 bg-gradient-to-br from-purple-500/10 to-purple-600/10 border-purple-500/20">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-sm font-semibold text-card-foreground">Peak Transaction Volume</h3>
-                  <Activity className="w-5 h-5 text-purple-500" />
-                </div>
-                <p className="text-2xl font-bold text-card-foreground">{formatCurrency(aggregated.transactions.peak.volume)}</p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {aggregated.transactions.peak.count} transactions on {formatDate(aggregated.transactions.peak.date)}
-                </p>
-              </Card>
-            )}
+      <div className="h-[calc(100vh-140px)] flex flex-col overflow-hidden bg-gradient-to-br from-gray-50 via-blue-50/30 to-purple-50/20 dark:from-gray-950 dark:via-blue-950/30 dark:to-purple-950/20">
+        {/* Header */}
+        <div className="flex justify-between items-center mb-3 flex-shrink-0">
+          <div>
+            <h1 className="text-2xl font-bold text-card-foreground">Admin Dashboard</h1>
+            <p className="text-xs text-muted-foreground mt-1">{currentDate}</p>
           </div>
-        ) : null}
-
-        {/* Time Series Charts */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card className="p-6">
-            <TimeSeriesChart
-              data={timeSeries?.users}
-              title="User Growth Trend"
-              color="blue"
-              valueKey="count"
-            />
-          </Card>
-
-          <Card className="p-6">
-            <TimeSeriesChart
-              data={timeSeries?.investments}
-              title="Investment Activity"
-              color="green"
-              valueKey="count"
-              showVolume={true}
-            />
-          </Card>
-
-          <Card className="p-6">
-            <TimeSeriesChart
-              data={timeSeries?.rewards}
-              title="ROI Distribution"
-              color="purple"
-              valueKey="count"
-              showVolume={true}
-            />
-          </Card>
-
-          <Card className="p-6">
-            <TimeSeriesChart
-              data={timeSeries?.transactions}
-              title="Transaction Volume"
-              color="yellow"
-              valueKey="count"
-              showVolume={true}
-            />
-          </Card>
         </div>
 
-        {/* Comparison with Previous Period */}
-        {comparison?.previousPeriod && (
-          <Card className="p-6">
-            <h3 className="text-lg font-semibold text-card-foreground mb-6">Period Comparison</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Users</span>
-                  <Badge variant={changePercentage?.users >= 0 ? 'success' : 'destructive'}>
-                    {changePercentage?.users >= 0 ? '+' : ''}{changePercentage?.users?.toFixed(1)}%
-                  </Badge>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Previous:</span>
-                  <span className="font-semibold text-card-foreground">{comparison.previousPeriod.users?.total || 0}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Current:</span>
-                  <span className="font-semibold text-blue-500">{aggregated?.users?.total || 0}</span>
-                </div>
+        {/* Top Row: Large Blue Card + 4 Small Cards */}
+        <div className="grid grid-cols-12 gap-3 mb-3 flex-shrink-0" style={{ minHeight: '140px', maxHeight: '180px' }}>
+          {/* Total Investment - Large Blue Card */}
+          <div 
+            onClick={() => setActiveTab('investments')}
+            className="col-span-4 bg-gradient-to-br from-blue-600/80 to-blue-700/80 dark:from-blue-700/80 dark:to-blue-900/80 backdrop-blur-xl border border-white/20 dark:border-white/10 p-4 rounded-3xl shadow-lg text-white flex flex-col min-h-0 overflow-hidden cursor-pointer hover:scale-[1.02] transition-transform duration-200"
+          >
+            <div className="flex items-start gap-2 mb-2">
+              <div className="p-2 bg-white/20 rounded-xl">
+                <DollarSign className="w-5 h-5" />
               </div>
-
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Investments</span>
-                  <Badge variant={changePercentage?.investments >= 0 ? 'success' : 'destructive'}>
-                    {changePercentage?.investments >= 0 ? '+' : ''}{changePercentage?.investments?.toFixed(1)}%
-                  </Badge>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Previous:</span>
-                  <span className="font-semibold text-card-foreground">{comparison.previousPeriod.investments?.total || 0}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Current:</span>
-                  <span className="font-semibold text-green-500">{aggregated?.investments?.total || 0}</span>
-                </div>
+              <div className="px-2 py-0.5 bg-green-500 rounded-full text-[10px] font-bold">
+                +{changePercentage?.investments?.toFixed(1) || '100.0'}%
               </div>
+            </div>
+            <div className="text-xs opacity-90">Total Investment</div>
+            <div className="text-3xl font-extrabold mt-1">
+              ${totalInvestmentValue.toFixed(6)}
+            </div>
+            <div className="text-[10px] opacity-75 mt-1">Investments vs last month</div>
+          </div>
 
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Rewards</span>
-                  <Badge variant={changePercentage?.rewards >= 0 ? 'success' : 'destructive'}>
-                    {changePercentage?.rewards >= 0 ? '+' : ''}{changePercentage?.rewards?.toFixed(1)}%
-                  </Badge>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Previous:</span>
-                  <span className="font-semibold text-card-foreground">{comparison.previousPeriod.rewards?.total || 0}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Current:</span>
-                  <span className="font-semibold text-purple-500">{aggregated?.rewards?.total || 0}</span>
-                </div>
+          {/* Total Properties */}
+          <div 
+            onClick={() => setActiveTab('properties')}
+            className="col-span-2 bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl border border-white/30 dark:border-white/10 p-3 rounded-3xl shadow-lg flex flex-col justify-between min-h-0 overflow-hidden cursor-pointer hover:scale-[1.02] transition-transform duration-200"
+          >
+            <div className="flex items-start justify-between">
+              <div className="p-1.5 bg-primary/10 rounded-lg">
+                <Building2 className="w-4 h-4 text-primary" />
               </div>
+              <div className="px-1.5 py-0.5 bg-green-500/10 text-green-600 dark:text-green-400 rounded-md text-[10px] font-bold">
+                +0.5%
+              </div>
+            </div>
+            <div>
+              <div className="text-[10px] text-muted-foreground">Total Properties</div>
+              <div className="text-xl font-extrabold text-card-foreground mt-0.5">
+                {totalProperties}
+              </div>
+              <div className="text-[9px] text-muted-foreground">Properties vs last month</div>
+            </div>
+          </div>
 
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Transactions</span>
-                  <Badge variant={changePercentage?.transactions >= 0 ? 'success' : 'destructive'}>
-                    {changePercentage?.transactions >= 0 ? '+' : ''}{changePercentage?.transactions?.toFixed(1)}%
-                  </Badge>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Previous:</span>
-                  <span className="font-semibold text-card-foreground">{comparison.previousPeriod.transactions?.total || 0}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Current:</span>
-                  <span className="font-semibold text-yellow-500">{aggregated?.transactions?.total || 0}</span>
+          {/* Total Users */}
+          <div 
+            onClick={() => setActiveTab('users')}
+            className="col-span-2 bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl border border-white/30 dark:border-white/10 p-3 rounded-3xl shadow-lg flex flex-col justify-between min-h-0 overflow-hidden cursor-pointer hover:scale-[1.02] transition-transform duration-200"
+          >
+            <div className="flex items-start justify-between">
+              <div className="p-1.5 bg-green-500/10 rounded-lg">
+                <Users className="w-4 h-4 text-green-600" />
+              </div>
+              <div className="px-1.5 py-0.5 bg-green-500/10 text-green-600 dark:text-green-400 rounded-md text-[10px] font-bold">
+                +0.5%
+              </div>
+            </div>
+            <div>
+              <div className="text-[10px] text-muted-foreground">Total Users</div>
+              <div className="text-xl font-extrabold text-card-foreground mt-0.5">
+                {totalUsers}
+              </div>
+              <div className="text-[9px] text-muted-foreground">Active users vs last month</div>
+            </div>
+          </div>
+
+          {/* Total Organizations */}
+          <div 
+            onClick={() => setActiveTab('organizations')}
+            className="col-span-2 bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl border border-white/30 dark:border-white/10 p-3 rounded-3xl shadow-lg flex flex-col justify-between min-h-0 overflow-hidden cursor-pointer hover:scale-[1.02] transition-transform duration-200"
+          >
+            <div className="flex items-start justify-between">
+              <div className="p-1.5 bg-red-500/10 rounded-lg">
+                <Building2 className="w-4 h-4 text-red-600" />
+              </div>
+              <div className="px-1.5 py-0.5 bg-red-500/10 text-red-600 dark:text-red-400 rounded-md text-[10px] font-bold">
+                -2.03%
+              </div>
+            </div>
+            <div>
+              <div className="text-[10px] text-muted-foreground">Total Organizations</div>
+              <div className="text-xl font-extrabold text-card-foreground mt-0.5">
+                {totalOrganizations}
+              </div>
+              <div className="text-[9px] text-muted-foreground">Organizations vs last month</div>
+            </div>
+          </div>
+
+          {/* Total Transactions */}
+          <div 
+            onClick={() => setActiveTab('transactions')}
+            className="col-span-2 bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl border border-white/30 dark:border-white/10 p-3 rounded-3xl shadow-lg flex flex-col justify-between min-h-0 overflow-hidden cursor-pointer hover:scale-[1.02] transition-transform duration-200"
+          >
+            <div className="flex items-start justify-between">
+              <div className="p-1.5 bg-green-500/10 rounded-lg">
+                <Activity className="w-4 h-4 text-green-600" />
+              </div>
+              <div className="px-1.5 py-0.5 bg-green-500/10 text-green-600 dark:text-green-400 rounded-md text-[10px] font-bold">
+                +0.5%
+              </div>
+            </div>
+            <div>
+              <div className="text-[10px] text-muted-foreground">Total Transactions</div>
+              <div className="text-xl font-extrabold text-card-foreground mt-0.5">
+                {totalTransactions}
+              </div>
+              <div className="text-[9px] text-muted-foreground">Transactions vs last month</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom Row - 3 Cards */}
+        <div className="grid grid-cols-3 gap-3 flex-1 min-h-0 overflow-hidden">
+          {/* Customer Habits - Bar Chart (Total Available Tokens) */}
+          <div 
+            onClick={() => setActiveTab('tokens')}
+            className="bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl border border-white/30 dark:border-white/10 p-4 rounded-3xl shadow-lg flex flex-col min-h-0 overflow-hidden cursor-pointer hover:scale-[1.02] transition-transform duration-200"
+          >
+            <div className="flex justify-between items-center mb-3">
+              <h3 className="text-sm font-bold text-card-foreground">Total Available Tokens</h3>
+              <div className="text-[10px] text-muted-foreground">This year</div>
+            </div>
+            
+            <div className="flex gap-1.5 items-end flex-1 min-h-0">
+              {tokensChartData.map((tokens, i) => {
+                const maxValue = Math.max(...tokensChartData, 1);
+                const height = maxValue > 0 ? Math.max(5, Math.min(100, (tokens / maxValue) * 100)) : 0;
+                
+                return (
+                  <div key={i} className="flex-1 flex flex-col items-center h-full">
+                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-t-lg flex items-end relative group h-full">
+                      <div 
+                        className="w-full bg-gradient-to-t from-blue-600 to-blue-500 dark:from-blue-700 dark:to-blue-600 rounded-t-lg transition-all duration-500"
+                        style={{ height: `${height}%` }}
+                      ></div>
+                      <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 bg-gray-900 dark:bg-gray-700 text-white text-[9px] px-1.5 py-0.5 rounded pointer-events-none transition-opacity whitespace-nowrap">
+                        {tokens > 0 ? tokens.toLocaleString() : '0'}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="flex justify-between mt-2 text-[9px] text-muted-foreground">
+              <span>Jan</span><span>Feb</span><span>Mar</span><span>Apr</span><span>May</span><span>Jun</span><span>Jul</span>
+            </div>
+          </div>
+
+          {/* Investment Statistic - Donut Chart */}
+          <div 
+            onClick={() => setActiveTab('investments')}
+            className="bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl border border-white/30 dark:border-white/10 p-4 rounded-3xl shadow-lg flex flex-col min-h-0 overflow-hidden cursor-pointer hover:scale-[1.02] transition-transform duration-200"
+          >
+            <div className="flex justify-between items-center mb-3">
+              <h3 className="text-sm font-bold text-card-foreground">Investment Statistic</h3>
+              <div className="text-[10px] text-muted-foreground">Today</div>
+            </div>
+            
+            <div className="flex items-center gap-3 flex-1">
+              {/* Donut Chart */}
+              <div className="relative w-24 h-24 flex-shrink-0">
+                <svg viewBox="0 0 36 36" className="w-full h-full -rotate-90">
+                  <defs>
+                    <linearGradient id="blueGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="#3b82f6" />
+                      <stop offset="100%" stopColor="#60a5fa" />
+                    </linearGradient>
+                    <linearGradient id="greenGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="#10b981" />
+                      <stop offset="100%" stopColor="#34d399" />
+                    </linearGradient>
+                  </defs>
+                  {/* Background */}
+                  <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#e5e7eb" className="dark:stroke-gray-700" strokeWidth="3.8" />
+                  {/* Blue segment - Residential */}
+                  <circle cx="18" cy="18" r="15.9155" fill="none" stroke="url(#blueGrad)" strokeWidth="3.8" 
+                    strokeDasharray={`${totalPropertyTypes > 0 ? (residentialCount / totalPropertyTypes * 100) : 0} ${totalPropertyTypes > 0 ? (100 - residentialCount / totalPropertyTypes * 100) : 100}`} 
+                    strokeLinecap="round" />
+                  {/* Green segment - Commercial */}
+                  <circle cx="18" cy="18" r="15.9155" fill="none" stroke="url(#greenGrad)" strokeWidth="3.8" 
+                    strokeDasharray={`${totalPropertyTypes > 0 ? (commercialCount / totalPropertyTypes * 100) : 0} ${totalPropertyTypes > 0 ? (100 - commercialCount / totalPropertyTypes * 100) : 100}`} 
+                    strokeDashoffset={`-${totalPropertyTypes > 0 ? (residentialCount / totalPropertyTypes * 100) : 0}`}
+                    strokeLinecap="round" />
+                  {/* Gray segment - Mixed-Use */}
+                  <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#9ca3af" className="dark:stroke-gray-500" strokeWidth="3.8" 
+                    strokeDasharray={`${totalPropertyTypes > 0 ? (mixedUseCount / totalPropertyTypes * 100) : 0} ${totalPropertyTypes > 0 ? (100 - mixedUseCount / totalPropertyTypes * 100) : 100}`} 
+                    strokeDashoffset={`-${totalPropertyTypes > 0 ? ((residentialCount + commercialCount) / totalPropertyTypes * 100) : 0}`}
+                    strokeLinecap="round" />
+                </svg>
+              </div>
+              
+              <div className="flex-1">
+                <div className="space-y-1 mt-2">
+                  <div className="flex justify-between text-[10px]">
+                    <span className="text-muted-foreground flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                      Residential
+                    </span>
+                    <span className="font-bold text-card-foreground">{residentialCount}</span>
+                  </div>
+                  <div className="flex justify-between text-[10px]">
+                    <span className="text-muted-foreground flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span>
+                      Commercial
+                    </span>
+                    <span className="font-bold text-card-foreground">{commercialCount}</span>
+                  </div>
+                  {mixedUseCount > 0 && (
+                    <div className="flex justify-between text-[10px]">
+                      <span className="text-muted-foreground flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-gray-300 dark:bg-gray-600"></span>
+                        Mixed-Use
+                      </span>
+                      <span className="font-bold text-card-foreground">{mixedUseCount}</span>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
-          </Card>
-        )}
+          </div>
 
-        {/* KYC Verifications Trend */}
-        {timeSeries?.kycVerifications && (
-          <Card className="p-6">
-            <TimeSeriesChart
-              data={timeSeries.kycVerifications}
-              title="KYC Verification Trend"
-              color="blue"
-              valueKey="count"
-            />
-          </Card>
-        )}
-
-        {/* Loading/Error States */}
-        {analyticsLoading && (
-          <Card className="p-12">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-              <p className="text-muted-foreground">Loading analytics...</p>
+          {/* Customer Growth - KYC Status */}
+          <div 
+            onClick={() => setActiveTab('kyc')}
+            className="bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl border border-white/30 dark:border-white/10 p-4 rounded-3xl shadow-lg flex flex-col min-h-0 overflow-hidden cursor-pointer hover:scale-[1.02] transition-transform duration-200"
+          >
+            <div className="flex justify-between items-center mb-3">
+              <h3 className="text-sm font-bold text-card-foreground">KYC Status</h3>
+              <div className="text-[10px] text-muted-foreground">Today</div>
             </div>
-          </Card>
-        )}
-
-        {analyticsError && !analytics?.aggregated && (
-          <Card className="p-12 bg-yellow-500/10 border-yellow-500/20">
-            <div className="text-center">
-              <Activity className="w-12 h-12 text-yellow-500 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-card-foreground mb-2">Analytics Data Unavailable</h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                The analytics endpoint is not yet available. Using fallback data.
-              </p>
-              <p className="text-xs text-muted-foreground">
-                Error: {analyticsError?.response?.data?.message || analyticsError?.message}
-              </p>
+            
+            <div className="space-y-3 flex-1 flex flex-col justify-center">
+              <div className="flex items-center gap-3">
+                <div className="w-14 h-14 rounded-full bg-green-500/10 dark:bg-green-500/20 flex items-center justify-center flex-shrink-0">
+                  <span className="font-bold text-card-foreground text-sm">{kycApproved}</span>
+                </div>
+                <div className="text-xs text-muted-foreground">Approved</div>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-14 h-14 rounded-full bg-red-500/10 dark:bg-red-500/20 flex items-center justify-center flex-shrink-0">
+                  <span className="font-bold text-card-foreground text-sm">{kycUnapproved}</span>
+                </div>
+                <div className="text-xs text-muted-foreground">Unapproved</div>
+              </div>
             </div>
-          </Card>
-        )}
+          </div>
+        </div>
       </div>
     );
   };
