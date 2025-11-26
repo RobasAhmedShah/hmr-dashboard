@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { 
   Search, 
@@ -12,6 +12,7 @@ import {
   CreditCard,
   X,
   Mail,
+  Zap,
 } from 'lucide-react';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
@@ -38,6 +39,12 @@ const KYCManagement = () => {
   const [showBulkActionModal, setShowBulkActionModal] = useState(false);
   const [bulkAction, setBulkAction] = useState(null);
   const [rejectionReason, setRejectionReason] = useState('');
+  
+  // Auto-approve state - load from localStorage
+  const [autoApproveEnabled, setAutoApproveEnabled] = useState(() => {
+    const saved = localStorage.getItem('kycAutoApprove');
+    return saved === 'true';
+  });
 
   // Fetch all KYC verifications
   const { data: kycData, isLoading: kycLoading } = useQuery(
@@ -198,6 +205,98 @@ const KYCManagement = () => {
     }
   );
 
+  // Auto-approve all pending KYCs mutation
+  const autoApproveAllMutation = useMutation(
+    () => {
+      // Get all pending KYC IDs
+      const pendingKYCIds = kycList
+        .filter(kyc => kyc.status === 'pending')
+        .map(kyc => kyc.id);
+      
+      if (pendingKYCIds.length === 0) {
+        return Promise.resolve({ message: 'No pending KYCs to approve' });
+      }
+
+      console.log(`🚀 Auto-approving ${pendingKYCIds.length} pending KYCs...`);
+      
+      const promises = pendingKYCIds.map(kycId => 
+        adminAPI.updateKYCStatus(kycId, { 
+          status: 'verified', 
+          rejectionReason: null,
+          reviewer: 'admin@hmr.com (Auto-Approved)'
+        })
+      );
+      return Promise.all(promises);
+    },
+    {
+      onSuccess: (result) => {
+        queryClient.invalidateQueries(['all-kyc']);
+        if (result?.message) {
+          alert(result.message);
+        } else {
+          alert('✅ All pending KYCs have been auto-approved successfully!');
+        }
+      },
+      onError: (error) => {
+        console.error('❌ Auto-approve failed:', error);
+        alert(`❌ Failed to auto-approve KYCs: ${error.message}`);
+      }
+    }
+  );
+
+  // Save auto-approve setting to localStorage
+  useEffect(() => {
+    localStorage.setItem('kycAutoApprove', autoApproveEnabled.toString());
+  }, [autoApproveEnabled]);
+
+  // Auto-approve effect - runs when auto-approve is enabled and new pending KYCs appear
+  useEffect(() => {
+    if (autoApproveEnabled && kycList.length > 0 && !autoApproveAllMutation.isLoading) {
+      const pendingKYCs = kycList.filter(kyc => kyc.status === 'pending');
+      if (pendingKYCs.length > 0) {
+        console.log(`🔄 Auto-approve is ON. Found ${pendingKYCs.length} pending KYCs. Auto-approving in 2 seconds...`);
+        // Delay auto-approve by 2 seconds to avoid immediate trigger
+        const timer = setTimeout(() => {
+          autoApproveAllMutation.mutate();
+        }, 2000);
+        return () => clearTimeout(timer);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoApproveEnabled, kycList.length]); // Only trigger when list length changes or toggle changes
+
+  const handleToggleAutoApprove = () => {
+    const newValue = !autoApproveEnabled;
+    setAutoApproveEnabled(newValue);
+    
+    if (newValue) {
+      const pendingCount = kycList.filter(kyc => kyc.status === 'pending').length;
+      if (pendingCount > 0) {
+        if (window.confirm(`Auto-Approve Mode is now ON.\n\n${pendingCount} pending KYC(s) will be automatically approved.\n\nContinue?`)) {
+          // Auto-approve will trigger via useEffect
+        } else {
+          setAutoApproveEnabled(false);
+        }
+      } else {
+        alert('✅ Auto-Approve Mode is now ON.\n\nAll new KYC submissions will be automatically approved.');
+      }
+    } else {
+      alert('⏸️ Auto-Approve Mode is now OFF.\n\nKYC submissions will require manual review.');
+    }
+  };
+
+  const handleManualAutoApprove = () => {
+    const pendingCount = kycList.filter(kyc => kyc.status === 'pending').length;
+    if (pendingCount === 0) {
+      alert('ℹ️ No pending KYCs to approve.');
+      return;
+    }
+    
+    if (window.confirm(`Manually approve all ${pendingCount} pending KYC(s)?`)) {
+      autoApproveAllMutation.mutate();
+    }
+  };
+
   const getStatusBadge = (status) => {
     const statusMap = {
       'verified': { icon: CheckCircle, color: 'text-green-600 bg-green-100', label: 'Verified' },
@@ -341,19 +440,76 @@ const KYCManagement = () => {
           <h1 className="text-3xl font-bold text-card-foreground">KYC Management</h1>
           <p className="text-muted-foreground mt-2">Review and manage user KYC verifications</p>
         </div>
-        {selectedKYCs.length > 0 && (
-          <div className="flex gap-2">
-            <Button onClick={handleBulkApprove} variant="outline" className="bg-green-50 text-green-700 hover:bg-green-100">
-              <CheckCircle className="h-4 w-4 mr-2" />
-              Approve Selected ({selectedKYCs.length})
-            </Button>
-            <Button onClick={handleBulkReject} variant="outline" className="bg-red-50 text-red-700 hover:bg-red-100">
-              <XCircle className="h-4 w-4 mr-2" />
-              Reject Selected ({selectedKYCs.length})
-            </Button>
-          </div>
-        )}
+        <div className="flex items-center gap-3">
+          {selectedKYCs.length > 0 && (
+            <div className="flex gap-2">
+              <Button onClick={handleBulkApprove} variant="outline" className="bg-green-50 text-green-700 hover:bg-green-100">
+                <CheckCircle className="h-4 w-4 mr-2" />
+                Approve Selected ({selectedKYCs.length})
+              </Button>
+              <Button onClick={handleBulkReject} variant="outline" className="bg-red-50 text-red-700 hover:bg-red-100">
+                <XCircle className="h-4 w-4 mr-2" />
+                Reject Selected ({selectedKYCs.length})
+              </Button>
+            </div>
+          )}
+        </div>
       </div>
+
+      {/* Auto-Approve Control Bar */}
+      <Card className={`p-4 ${autoApproveEnabled ? 'bg-green-50 dark:bg-green-950/20 border-green-300 dark:border-green-700' : 'bg-blue-50 dark:bg-blue-950/20 border-blue-300 dark:border-blue-700'}`}>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className={`p-2 rounded-lg ${autoApproveEnabled ? 'bg-green-100 dark:bg-green-900/40' : 'bg-blue-100 dark:bg-blue-900/40'}`}>
+              <Zap className={`h-5 w-5 ${autoApproveEnabled ? 'text-green-600 dark:text-green-400' : 'text-blue-600 dark:text-blue-400'}`} />
+            </div>
+            <div>
+              <h3 className={`font-semibold ${autoApproveEnabled ? 'text-green-900 dark:text-green-100' : 'text-blue-900 dark:text-blue-100'}`}>
+                Auto-Approve Mode {autoApproveEnabled ? 'ON' : 'OFF'}
+              </h3>
+              <p className={`text-sm ${autoApproveEnabled ? 'text-green-700 dark:text-green-300' : 'text-blue-700 dark:text-blue-300'}`}>
+                {autoApproveEnabled 
+                  ? '✅ All new KYC submissions will be automatically approved' 
+                  : '⏸️ KYC submissions require manual review'}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            {/* Manual Auto-Approve Button */}
+            <Button
+              onClick={handleManualAutoApprove}
+              variant="outline"
+              disabled={autoApproveAllMutation.isLoading || kycList.filter(k => k.status === 'pending').length === 0}
+              className="bg-purple-50 text-purple-700 hover:bg-purple-100 dark:bg-purple-950/40 dark:text-purple-300 dark:hover:bg-purple-900/60"
+            >
+              <Zap className="h-4 w-4 mr-2" />
+              {autoApproveAllMutation.isLoading ? 'Approving...' : 'Approve All Pending Now'}
+            </Button>
+            
+            {/* Toggle Switch */}
+            <button
+              onClick={handleToggleAutoApprove}
+              disabled={autoApproveAllMutation.isLoading}
+              className={`relative inline-flex h-10 w-20 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+                autoApproveEnabled 
+                  ? 'bg-green-600 focus:ring-green-500' 
+                  : 'bg-gray-300 dark:bg-gray-600 focus:ring-gray-400'
+              } ${autoApproveAllMutation.isLoading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+              role="switch"
+              aria-checked={autoApproveEnabled}
+            >
+              <span
+                className={`inline-block h-8 w-8 transform rounded-full bg-white transition-transform ${
+                  autoApproveEnabled ? 'translate-x-11' : 'translate-x-1'
+                }`}
+              />
+            </button>
+            <span className={`text-sm font-medium ${autoApproveEnabled ? 'text-green-700 dark:text-green-300' : 'text-gray-700 dark:text-gray-300'}`}>
+              {autoApproveEnabled ? 'ON' : 'OFF'}
+            </span>
+          </div>
+        </div>
+      </Card>
 
       {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">

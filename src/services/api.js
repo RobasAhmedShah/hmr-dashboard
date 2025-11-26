@@ -276,7 +276,7 @@ export const rewardsAPI = {
   getAll: (params) => api.get('/rewards', { params }), // Get all rewards
   getByUserId: (userId) => api.get('/rewards', { params: { userId } }), // Get user rewards
   getById: (id) => api.get(`/rewards/${id}`), // Get reward by ID or displayCode
-  distributeRoi: (roiData) => api.post('/rewards/distribute', roiData), // Distribute ROI rewards
+  distributeRoi: (roiData) => blocksApi.post('/rewards/distribute', roiData), // Distribute ROI rewards via Blocks Backend - expects { propertyId, totalRoiUSDT }
 };
 
 // Upload API (File uploads)

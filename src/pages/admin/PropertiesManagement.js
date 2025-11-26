@@ -526,10 +526,13 @@ const PropertiesManagement = () => {
     }
 
     const propertyId = propertyForReward.displayCode || propertyForReward.id;
-    distributeRewardMutation.mutate({
+    const payload = {
       propertyId: propertyId,
       totalRoiUSDT: parseFloat(rewardAmount)
-    });
+    };
+    
+    console.log('🚀 Distributing reward with payload:', payload);
+    distributeRewardMutation.mutate(payload);
   };
 
   // Parse response - handle different backend formats
