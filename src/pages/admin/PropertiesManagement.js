@@ -1216,9 +1216,6 @@ const PropertiesManagement = () => {
                         <span className={`text-xs ${isDisabled ? 'text-green-600 font-medium' : 'text-muted-foreground'}`}>
                           {fundingPercentage < 0.01 ? fundingPercentage.toFixed(2) : Math.round(fundingPercentage)}%
                         </span>
-                        {isDisabled && (
-                          <span className="ml-1 text-xs text-red-500">🔒</span>
-                        )}
                       </div>
                     </td>
                     <td className="px-3 py-2 whitespace-nowrap text-xs text-card-foreground">
