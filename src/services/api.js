@@ -282,6 +282,7 @@ export const orgAdminAPI = {
 };
 
 // Admin API (Updated to match actual backend)
+// Admin API
 export const adminAPI = {
   // Dashboard
   getDashboard: () => api.get('/admin/dashboard'),
@@ -319,6 +320,9 @@ export const adminAPI = {
   // Transactions - Use public endpoints
   getTransactions: (params) => api.get('/transactions', { params }),
   getTransaction: (id) => api.get(`/transactions/${id}`), // Not yet implemented
+  
+  // Notifications
+  sendNotification: (data) => api.post('/admin/notifications/send', data), // POST /admin/notifications/send
 };
 
 // Portfolio API (Complete - User End)
