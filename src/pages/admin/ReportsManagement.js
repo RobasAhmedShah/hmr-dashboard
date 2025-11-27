@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery } from 'react-query';
+import { API_BASE_URL } from '../../config/api';
 import { 
   Download, 
   FileText, 
@@ -141,7 +142,7 @@ const ReportsManagement = () => {
       // Fetch user's wallet, investments, and transactions
       const [walletResponse, portfolioResponse, transactionsResponse] = await Promise.allSettled([
         usersAPI.getWalletById(userId).catch(() => ({ data: null })),
-        fetch(`https://hmr-backend.vercel.app/portfolio/user/${userId}/detailed`)
+        fetch(`${API_BASE_URL}/portfolio/user/${userId}/detailed`)
           .then(r => r.json())
           .catch(() => null),
         walletTransactionsAPI.getByUserId(userId).catch(() => ({ data: [] }))

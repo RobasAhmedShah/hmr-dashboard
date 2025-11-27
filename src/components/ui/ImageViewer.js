@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
+import { API_BASE_URL } from '../../config/api';
 
 const ImageViewer = ({ images = [], className = '', onDelete }) => {
   const [selectedImage, setSelectedImage] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-
-  const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://hmr-backend.vercel.app';
 
   const getFullImageUrl = (url) => {
     if (!url) return '';

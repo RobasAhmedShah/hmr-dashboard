@@ -1,18 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useQuery, useQueryClient } from 'react-query';
-import { TrendingUp, DollarSign, Coins, PieChart, ArrowUpRight, Building2 } from 'lucide-react';
+import { TrendingUp, DollarSign, Coins, PieChart, ArrowUpRight, Building2, Trophy, Calendar, Wallet, Clock, Bell } from 'lucide-react';
 import { useUser } from '../../contexts/UserContext';
 import { portfolioAPI, usersAPI, walletAPI } from '../../services/api';
 import Layout from '../../components/Layout/Layout';
 import Button from '../../components/ui/Button';
 import Card from '../../components/ui/Card';
 import { formatCurrency, formatPercentage } from '../../utils/formatLocation';
+import { useNavigate } from 'react-router-dom';
 
 const Portfolio = () => {
   const { currentUser } = useUser();
   const userId = currentUser?.id;
-  const [activeTab, setActiveTab] = useState('overview');
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   // Invalidate queries when user changes
   useEffect(() => {
@@ -22,89 +23,96 @@ const Portfolio = () => {
     queryClient.invalidateQueries(['token-holdings', userId]);
   }, [userId, queryClient]);
 
-  // Fetch portfolio data with error handling
-  const { data: portfolioData, isLoading: portfolioLoading } = useQuery(
-    ['portfolio', userId],
+  // Fetch detailed portfolio data (includes all investments, rewards, summary)
+  const { data: portfolioData, isLoading: portfolioLoading, refetch: refetchPortfolio } = useQuery(
+    ['portfolio-detailed', userId],
     () => portfolioAPI.getPortfolio(userId),
     {
       enabled: !!userId,
       retry: false,
+      refetchOnWindowFocus: true,
       onError: (error) => {
         console.warn('Portfolio API not available:', error.response?.status);
       }
     }
   );
 
-  // Fetch portfolio summary with error handling
-  const { data: summaryData, isLoading: summaryLoading } = useQuery(
-    ['portfolio-summary', userId],
-    () => portfolioAPI.getSummary(userId),
-    {
-      enabled: !!userId,
-      retry: false,
-      onError: (error) => {
-        console.warn('Portfolio summary API not available:', error.response?.status);
-      }
-    }
-  );
+  // Extract portfolio data from API response
+  const portfolioResponse = portfolioData?.data?.data || portfolioData?.data || {};
+  const portfolio = portfolioResponse.portfolio || {};
+  const summary = portfolioResponse.summary || {};
+  const investments = portfolioResponse.investments || [];
+  const rewards = portfolioResponse.rewards || [];
 
-  // Fetch user stats with error handling
-  const { data: statsData, isLoading: statsLoading, refetch: refetchStats } = useQuery(
-    ['portfolio-stats', userId],
-    () => portfolioAPI.getStats(userId),
-    { 
-      enabled: !!userId,
-      retry: false,
-      staleTime: 0,
-      cacheTime: 0,
-      refetchOnWindowFocus: true,
-      onError: (error) => {
-        console.warn('Portfolio stats API not available:', error.response?.status);
-      }
-    }
-  );
+  // Calculate portfolio values from API data (matching mobile app)
+  const totalValue = useMemo(() => {
+    // Use totalCurrentValueUSDT from summary, or calculate from investments
+    const summaryValue = Number(summary.totalCurrentValueUSDT || 0);
+    if (summaryValue > 0) return summaryValue;
+    
+    // Fallback: calculate from investments
+    return investments.reduce((sum, inv) => {
+      return sum + Number(inv.currentValueUSDT || inv.currentValue || 0);
+    }, 0);
+  }, [summary, investments]);
 
-  // Fetch user profile with error handling
-  const { data: profileData } = useQuery(
-    ['user-profile', userId],
-    () => usersAPI.getProfileById(userId),
-    {
-      enabled: !!userId,
-      retry: false,
-      onError: (error) => {
-        console.warn('Profile API not available:', error.response?.status);
-      }
-    }
-  );
+  const totalInvested = useMemo(() => {
+    // Use totalInvestedUSDT from summary or portfolio
+    const summaryInvested = Number(summary.totalInvestedUSDT || portfolio.totalInvestedUSDT || 0);
+    if (summaryInvested > 0) return summaryInvested;
+    
+    // Fallback: calculate from investments
+    return investments.reduce((sum, inv) => {
+      return sum + Number(inv.amountInvestedUSDT || inv.investedAmount || 0);
+    }, 0);
+  }, [summary, portfolio, investments]);
 
-  // Fetch token holdings with error handling
-  const { data: tokenHoldingsData, isLoading: tokenHoldingsLoading } = useQuery(
-    ['token-holdings', userId],
-    () => walletAPI.getHoldings(userId),
-    {
-      enabled: !!userId,
-      retry: false,
-      onError: (error) => {
-        console.warn('Token holdings API not available:', error.response?.status);
-      }
-    }
-  );
+  const totalEarnings = useMemo(() => {
+    return totalValue - totalInvested;
+  }, [totalValue, totalInvested]);
 
-  const portfolio = portfolioData?.data?.data || {};
-  const summary = summaryData?.data?.data || {};
-  const profile = profileData?.data?.data || {};
-  const userStats = statsData?.data?.data || statsData?.data || {};
-  const tokenHoldings = tokenHoldingsData?.data?.data || {};
+  const totalROI = useMemo(() => {
+    if (totalInvested === 0) return 0;
+    return ((totalEarnings / totalInvested) * 100);
+  }, [totalEarnings, totalInvested]);
+
+  // Calculate monthly rental income from rewards (average monthly)
+  const monthlyRentalIncome = useMemo(() => {
+    // Sum all rewards and divide by 12 to get monthly average
+    const totalRewards = Number(summary.totalRewardsUSDT || portfolio.totalRewardsUSDT || 0);
+    // If we have rewards, estimate monthly income (rough estimate: total rewards / 12)
+    if (totalRewards > 0 && investments.length > 0) {
+      return totalRewards / 12; // Rough monthly estimate
+    }
+    // Fallback: calculate from investments' expected ROI
+    return investments.reduce((sum, inv) => {
+      const invested = Number(inv.amountInvestedUSDT || 0);
+      const roi = Number(inv.expectedROI || 0);
+      return sum + (invested * roi / 100 / 12); // Monthly income from ROI
+    }, 0);
+  }, [summary, portfolio, investments]);
+
+  const thisMonthEarnings = monthlyRentalIncome * 1.12; // 12% growth (matching mobile app)
+  const nextPayoutDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days from now
+
+  // Find best performing property
+  const bestProperty = useMemo(() => {
+    if (investments.length === 0) return null;
+    return investments.reduce((best, current) => {
+      const currentROI = Number(current.expectedROI || 0);
+      const bestROI = Number(best?.expectedROI || 0);
+      return currentROI > bestROI ? current : best;
+    }, investments[0]);
+  }, [investments]);
 
   // Debug logging
   console.log('Portfolio - Portfolio data:', portfolio);
   console.log('Portfolio - Summary data:', summary);
-  console.log('Portfolio - Profile data:', profile);
+  console.log('Portfolio - Investments:', investments);
 
 
   // Only show loading if we have no data at all
-  const isLoading = (portfolioLoading || summaryLoading || statsLoading || tokenHoldingsLoading) && 
-                     !portfolioData && !summaryData && !statsData;
+  const isLoading = portfolioLoading && !portfolioData;
   
   if (isLoading) { 
     return (
@@ -148,295 +156,205 @@ const Portfolio = () => {
     <Layout>
       <div className="min-h-screen bg-gray-50 py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Header */}
-          <div className="mb-8 flex justify-between items-center">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">My Portfolio</h1>
-              <p className="text-gray-600">
-                Track your real estate investments and returns
-              </p>
-            </div>
-            <div className="flex items-center gap-3">
-              <Button as="a" href="/wallet?buyTokens=1" className="bg-green-600 hover:bg-green-700">View All Properties</Button>
-              <Button 
-                onClick={() => refetchStats()} 
-                variant="outline"
-                className="ml-0"
+          {/* Header - Matching Mobile App */}
+          <div className="mb-6 pb-4 border-b border-gray-200">
+            <div className="flex justify-between items-center mb-4">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-gray-600">Total Portfolio Value</span>
+              </div>
+              <button
+                onClick={() => navigate('/notifications?context=portfolio')}
+                className="p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 relative"
               >
-                Refresh Stats
-              </Button>
+                <Bell className="w-5 h-5" />
+              </button>
             </div>
+            
+            <div className="flex justify-between items-center mb-2">
+              <h1 className="text-4xl font-bold text-gray-900">
+                ${totalValue.toLocaleString('en-US', {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}
+              </h1>
+              <div className="px-3 py-1.5 rounded-full bg-green-100 flex items-center">
+                <ArrowUpRight className="w-4 h-4 text-green-600 mr-1" />
+                <span className="text-sm font-semibold text-green-600">
+                  +{totalROI.toFixed(1)}%
+                </span>
+              </div>
+            </div>
+            <p className="text-xs text-gray-500 text-right">
+              ${monthlyRentalIncome.toFixed(2)} Monthly Rental Income
+            </p>
           </div>
 
-          {/* Summary Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <Card className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Total Investment</p>
-                  <p className="text-2xl font-bold text-gray-900">
-                    {formatCurrency(userStats.totalInvestment || tokenHoldings.summary?.total_invested_pkr || summary.totalInvestment || 0)}
-                  </p>
+          {/* Overview Cards - Matching Mobile App */}
+          <div className="mb-6">
+            <h2 className="text-lg font-bold text-gray-900 mb-3">Overview</h2>
+            <div className="grid grid-cols-2 gap-3">
+              {/* Total Earnings Card */}
+              <Card className="p-4 bg-green-50 border-green-200">
+                <div className="flex items-center justify-between mb-2">
+                  <Trophy className="w-5 h-5 text-green-600" />
+                  <span className="px-2 py-1 text-xs font-semibold bg-green-200 text-green-700 rounded">
+                    All Time
+                  </span>
                 </div>
-                <div className="p-3 bg-blue-100 rounded-full">
-                  <DollarSign className="w-6 h-6 text-blue-600" />
-                </div>
-              </div>
-            </Card>
-
-            <Card className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Current Value</p>
-                  <p className="text-2xl font-bold text-gray-900">
-                    {formatCurrency(userStats.currentValue || tokenHoldings.summary?.total_current_value_pkr || summary.currentValue || 0)}
-                  </p>
-                </div>
-                <div className="p-3 bg-green-100 rounded-full">
-                  <TrendingUp className="w-6 h-6 text-green-600" />
-                </div>
-              </div>
-            </Card>
-
-            <Card className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Total ROI</p>
-                  <p className="text-2xl font-bold text-green-600">
-                    {formatPercentage(userStats.totalROI || summary.totalROI || 0)}
-                  </p>
-                </div>
-                <div className="p-3 bg-purple-100 rounded-full">
-                  <PieChart className="w-6 h-6 text-purple-600" />
-                </div>
-              </div>
-            </Card>
-          </div>
-
-          {/* Tabs */}
-          <div className="flex border-b border-gray-200 mb-6">
-            <button
-              className={`px-4 py-2 font-medium text-sm ${
-                activeTab === 'overview'
-                  ? 'border-b-2 border-primary-600 text-primary-600'
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
-              onClick={() => setActiveTab('overview')}
-            >
-              Overview
-            </button>
-            <button
-              className={`px-4 py-2 font-medium text-sm ${
-                activeTab === 'tokens'
-                  ? 'border-b-2 border-primary-600 text-primary-600'
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
-              onClick={() => setActiveTab('tokens')}
-            >
-              My Investments
-            </button>
-          </div>
-
-          {/* Content */}
-          {activeTab === 'overview' && (
-            <div className="space-y-6">
-              {/* Performance Chart Placeholder */}
-              <Card className="p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Performance Overview</h3>
-                <div className="h-64 bg-gray-100 rounded-lg flex items-center justify-center">
-                  <p className="text-gray-500">Performance chart will be displayed here</p>
-                </div>
+                <p className="text-xs text-gray-600 mb-1">Total Earnings</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  ${totalEarnings.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </p>
               </Card>
 
-              {/* Quick Stats */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <Card className="p-4 text-center">
-                  <Coins className="w-8 h-8 text-blue-600 mx-auto mb-2" />
-                  <p className="text-2xl font-bold text-gray-900">
-                    {parseFloat(tokenHoldings.summary?.total_tokens || 0).toFixed(2)}
-                  </p>
-                  <p className="text-sm text-gray-600">Total Tokens</p>
-                </Card>
-                <Card className="p-4 text-center">
-                  <Building2 className="w-8 h-8 text-green-600 mx-auto mb-2" />
-                  <p className="text-2xl font-bold text-gray-900">
-                    {userStats.activeInvestments || tokenHoldings.summary?.total_holdings || portfolio.investments?.length || 0}
-                  </p>
-                  <p className="text-sm text-gray-600">Properties</p>
-                </Card>
-                <Card className="p-4 text-center">
-                  <ArrowUpRight className="w-8 h-8 text-purple-600 mx-auto mb-2" />
-                  <p className="text-2xl font-bold text-gray-900">
-                    {formatPercentage(userStats.totalROI || summary.totalROI || 0)}
-                  </p>
-                  <p className="text-sm text-gray-600">Average ROI</p>
-                </Card>
-                <Card className="p-4 text-center">
-                  <DollarSign className="w-8 h-8 text-orange-600 mx-auto mb-2" />
-                  <p className="text-2xl font-bold text-gray-900">
-                    {formatCurrency(
-                      (userStats.currentValue || summary.currentValue || 0) - 
-                      (userStats.totalInvestment || summary.totalInvestment || 0)
-                    )}
-                  </p>
-                  <p className="text-sm text-gray-600">Total Gains</p>
-                </Card>
+              {/* This Month Card */}
+              <Card className="p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <Calendar className="w-5 h-5 text-green-600" />
+                  <span className="px-2 py-1 text-xs font-semibold bg-green-100 text-green-700 rounded">
+                    +12%
+                  </span>
+                </div>
+                <p className="text-xs text-gray-600 mb-1">This Month</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  ${thisMonthEarnings.toFixed(2)}
+                </p>
+              </Card>
+
+              {/* Total Invested Card */}
+              <Card className="p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <Wallet className="w-5 h-5 text-blue-600" />
+                </div>
+                <p className="text-xs text-gray-600 mb-1">Total Invested</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  ${totalInvested.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </p>
+              </Card>
+
+              {/* Next Payout Card */}
+              <Card className="p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <Clock className="w-5 h-5 text-yellow-600" />
+                </div>
+                <p className="text-xs text-gray-600 mb-1">Next Payout</p>
+                <p className="text-lg font-bold text-gray-900">
+                  {nextPayoutDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  ~${monthlyRentalIncome.toFixed(2)}
+                </p>
+              </Card>
+            </div>
+          </div>
+
+          {/* Performance Summary - Matching Mobile App */}
+          <div className="mb-6">
+            <h2 className="text-lg font-bold text-gray-900 mb-3">Performance Summary</h2>
+            <Card className="p-4 bg-purple-50 border-purple-200">
+              <div className="flex items-center mb-3">
+                <TrendingUp className="w-5 h-5 text-purple-600 mr-2" />
+                <span className="text-sm font-semibold text-gray-900">Monthly Highlights</span>
               </div>
-
-              {/* My Investments preview on Overview */}
-              {tokenHoldings.holdings && tokenHoldings.holdings.length > 0 && (
-                <Card className="p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold text-gray-900">My Investments</h3>
-                    <Button variant="outline" onClick={() => setActiveTab('tokens')}>View All</Button>
-                  </div>
-                  <div className="space-y-4">
-                    {tokenHoldings.holdings.slice(0, 3).map((holding) => {
-                      const gainLoss = parseFloat(holding.current_value_pkr || 0) - parseFloat(holding.total_invested_pkr || 0);
-                      const gainLossPercentage = parseFloat(holding.total_invested_pkr || 0) > 0 
-                        ? (gainLoss / parseFloat(holding.total_invested_pkr || 0)) * 100 
-                        : 0;
-                      return (
-                        <div key={holding.id} className="border rounded-lg p-4">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <h4 className="font-semibold text-gray-900">{holding.title}</h4>
-                              <p className="text-sm text-gray-600">{holding.location_city}, {holding.location_state}</p>
-                            </div>
-                            <div className="text-right">
-                              <p className="text-sm text-gray-500">Current Value</p>
-                              <p className="font-semibold">{formatCurrency(holding.current_value_pkr || 0)}</p>
-                              <Button as="a" href={`/wallet?buyTokens=1&propertyId=${holding.property_id}`} className="mt-2 bg-green-600 hover:bg-green-700 py-1 px-3 text-sm">Invest</Button>
-                            </div>
-                          </div>
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-3">
-                            <div>
-                              <p className="text-xs text-gray-500">Tokens</p>
-                              <p className="font-medium">{parseFloat(holding.tokens_owned || 0).toFixed(2)}</p>
-                            </div>
-                            <div>
-                              <p className="text-xs text-gray-500">Invested</p>
-                              <p className="font-medium">{formatCurrency(holding.total_invested_pkr || 0)}</p>
-                            </div>
-                            <div>
-                              <p className="text-xs text-gray-500">Gain/Loss</p>
-                              <p className={`font-medium ${gainLoss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                {formatCurrency(gainLoss)} ({gainLossPercentage.toFixed(2)}%)
-                              </p>
-                            </div>
-                            <div className="hidden md:block" />
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </Card>
-              )}
-            </div>
-          )}
-
-          {activeTab === 'tokens' && (
-            <div className="space-y-6">
-              {/* Token Holdings Summary */}
-              {tokenHoldings.summary && (
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                  <Card className="p-4 text-center">
-                    <Coins className="w-8 h-8 text-blue-600 mx-auto mb-2" />
-                    <p className="text-2xl font-bold text-gray-900">
-                      {tokenHoldings.summary.total_holdings || 0}
-                    </p>
-                    <p className="text-sm text-gray-600">Properties</p>
-                  </Card>
-                  <Card className="p-4 text-center">
-                    <Building2 className="w-8 h-8 text-green-600 mx-auto mb-2" />
-                    <p className="text-2xl font-bold text-gray-900">
-                      {parseFloat(tokenHoldings.summary.total_tokens || 0).toFixed(2)}
-                    </p>
-                    <p className="text-sm text-gray-600">Total Tokens</p>
-                  </Card>
-                  <Card className="p-4 text-center">
-                    <DollarSign className="w-8 h-8 text-purple-600 mx-auto mb-2" />
-                    <p className="text-2xl font-bold text-gray-900">
-                      {formatCurrency(tokenHoldings.summary.total_invested_pkr || 0)}
-                    </p>
-                    <p className="text-sm text-gray-600">Total Invested</p>
-                  </Card>
-                  <Card className="p-4 text-center">
-                    <TrendingUp className="w-8 h-8 text-orange-600 mx-auto mb-2" />
-                    <p className="text-2xl font-bold text-gray-900">
-                      {formatCurrency(tokenHoldings.summary.total_current_value_pkr || 0)}
-                    </p>
-                    <p className="text-sm text-gray-600">Current Value</p>
-                  </Card>
+              
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">Average Monthly Return</span>
+                  <span className="text-sm font-semibold text-gray-900">
+                    ${monthlyRentalIncome.toFixed(2)}
+                  </span>
                 </div>
-              )}
 
-              {/* Token Holdings List */}
-              {tokenHoldings.holdings && tokenHoldings.holdings.length > 0 ? (
-                <div className="space-y-4">
-                  {tokenHoldings.holdings.map((holding) => {
-                    const gainLoss = parseFloat(holding.current_value_pkr || 0) - parseFloat(holding.total_invested_pkr || 0);
-                    const gainLossPercentage = parseFloat(holding.total_invested_pkr || 0) > 0 
-                      ? (gainLoss / parseFloat(holding.total_invested_pkr || 0)) * 100 
-                      : 0;
-
-                    return (
-                      <Card key={holding.id} className="p-6">
-                        <div className="flex justify-between items-start">
-                          <div className="flex-1">
-                            <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                              {holding.title}
-                            </h3>
-                            <p className="text-sm text-gray-600 mb-4">
-                              {holding.location_city}, {holding.location_state}
-                            </p>
-                            
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                              <div>
-                                <p className="text-sm text-gray-500">Tokens Owned</p>
-                                <p className="text-lg font-semibold text-gray-900">
-                                  {parseFloat(holding.tokens_owned || 0).toFixed(2)}
-                                </p>
-                              </div>
-                              <div>
-                                <p className="text-sm text-gray-500">Total Invested</p>
-                                <p className="text-lg font-semibold text-gray-900">
-                                  {formatCurrency(holding.total_invested_pkr || 0)}
-                                </p>
-                              </div>
-                              <div>
-                                <p className="text-sm text-gray-500">Current Value</p>
-                                <p className="text-lg font-semibold text-gray-900">
-                                  {formatCurrency(holding.current_value_pkr || 0)}
-                                </p>
-                              </div>
-                              <div>
-                                <p className="text-sm text-gray-500">Gain/Loss</p>
-                                <p className={`text-lg font-semibold ${gainLoss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                  {formatCurrency(gainLoss)} ({gainLossPercentage.toFixed(2)}%)
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </Card>
-                    );
-                  })}
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">Best Performer</span>
+                  <span className="text-sm font-semibold text-green-600 truncate max-w-[200px]">
+                    {bestProperty?.property?.title || 'N/A'}
+                  </span>
                 </div>
-              ) : (
-                <Card className="p-12 text-center">
-                  <Coins className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">No Token Holdings Yet</h3>
-                  <p className="text-gray-600 mb-6">
-                    Start building your token portfolio by purchasing property tokens.
-                  </p>
-                  <Button as="a" href="/wallet">
-                    Buy Tokens
-                  </Button>
-                </Card>
-              )}
-            </div>
-          )}
+
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">Active Properties</span>
+                  <span className="text-sm font-semibold text-gray-900">
+                    {investments.length}
+                  </span>
+                </div>
+              </div>
+            </Card>
+          </div>
+
+          {/* Your Properties Section - Matching Mobile App */}
+          <div className="mb-6">
+            <h2 className="text-xl font-bold text-gray-900 mb-4">Your Properties</h2>
+            {investments.length > 0 ? (
+              <div className="space-y-4">
+                {investments.map((investment) => {
+                  const currentValue = Number(investment.currentValueUSDT || 0);
+                  const investedAmount = Number(investment.amountInvestedUSDT || 0);
+                  const tokens = Number(investment.tokensPurchased || 0);
+                  const gainLoss = currentValue - investedAmount;
+                  const gainLossPercentage = investedAmount > 0 ? (gainLoss / investedAmount) * 100 : 0;
+                  
+                  return (
+                    <Card key={investment.investmentId || investment.id} className="p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <div>
+                          <h3 className="font-semibold text-gray-900">{investment.property?.title || 'Property'}</h3>
+                          <p className="text-sm text-gray-600">
+                            {investment.property?.city || ''}, {investment.property?.country || ''}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm text-gray-500">Current Value</p>
+                          <p className="font-semibold text-gray-900">
+                            ${currentValue.toFixed(2)}
+                          </p>
+                          <Button 
+                            as="a" 
+                            href={`/wallet?buyTokens=1&propertyId=${investment.property?.id}`} 
+                            className="mt-2 bg-green-600 hover:bg-green-700 py-1 px-3 text-sm"
+                          >
+                            Invest
+                          </Button>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div>
+                          <p className="text-xs text-gray-500">Tokens</p>
+                          <p className="font-medium">{tokens.toFixed(2)}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500">Invested</p>
+                          <p className="font-medium">${investedAmount.toFixed(2)}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500">Gain/Loss</p>
+                          <p className={`font-medium ${gainLoss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                            ${gainLoss.toFixed(2)} ({gainLossPercentage.toFixed(2)}%)
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500">ROI</p>
+                          <p className="font-medium">{Number(investment.expectedROI || 0).toFixed(2)}%</p>
+                        </div>
+                      </div>
+                    </Card>
+                  );
+                })}
+              </div>
+            ) : (
+              <Card className="p-12 text-center">
+                <Building2 className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">No Properties Yet</h3>
+                <p className="text-gray-600 mb-6">
+                  Start building your portfolio by investing in property tokens.
+                </p>
+                <Button as="a" href="/wallet?buyTokens=1">
+                  View Properties
+                </Button>
+              </Card>
+            )}
+          </div>
+
         </div>
       </div>
     </Layout>

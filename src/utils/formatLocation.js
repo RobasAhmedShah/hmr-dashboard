@@ -1,3 +1,5 @@
+import { API_BASE_URL } from '../config/api';
+
 /**
  * Format location data for display
  * Handles both string and object formats
@@ -131,8 +133,6 @@ export const formatPercentage = (percentage) => {
 export const getPropertyImage = (property) => {
   if (!property) return null;
   
-  const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://hmr-backend.vercel.app';
-  
   // Helper to ensure full URL
   const ensureFullUrl = (url) => {
     if (!url) return null;
@@ -214,8 +214,6 @@ export const getPropertyImage = (property) => {
  */
 export const getPropertyImages = (property) => {
   if (!property) return [];
-  
-  const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://hmr-backend.vercel.app';
   
   // Helper to ensure full URL
   const ensureFullUrl = (url) => {

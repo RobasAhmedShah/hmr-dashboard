@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { API_BASE_URL } from '../../config/api';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { 
   Plus, 
@@ -654,7 +655,7 @@ const PropertiesManagement = () => {
     });
   } else {
     console.warn('⚠️ No properties found in response');
-    console.log('Check if backend has properties:', 'https://hmr-backend.vercel.app/properties');
+    console.log('Check if backend has properties:', `${API_BASE_URL}/properties`);
   }
 
   const handleFilterChange = (key, value) => {

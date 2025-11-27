@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Menu, X, User, Wallet, Home, Building2, PieChart, BarChart3 } from 'lucide-react';
+import { Menu, X, User, Wallet, Home, Building2, PieChart, Bell } from 'lucide-react';
 import ProfileSwitcher from '../ProfileSwitcher';
 import ThemeToggle from '../ThemeToggle';
+import NotificationIcon from '../NotificationIcon';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -10,7 +11,6 @@ const Header = () => {
   const navigation = [
     { name: 'Home', href: '/', icon: Home },
     { name: 'Properties', href: '/properties', icon: Building2 },
-    { name: 'Dashboard', href: '/dashboard', icon: BarChart3 },
     { name: 'Portfolio', href: '/portfolio', icon: PieChart },
     { name: 'Wallet', href: '/wallet', icon: Wallet },
     { name: 'Profile', href: '/profile', icon: User },
@@ -48,12 +48,14 @@ const Header = () => {
           {/* Desktop Actions */}
           <div className="hidden md:flex items-center space-x-2">
             <ThemeToggle />
+            <NotificationIcon />
             <ProfileSwitcher />
           </div>
 
           {/* Mobile menu button */}
           <div className="md:hidden flex items-center space-x-2">
             <ThemeToggle />
+            <NotificationIcon />
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               className="inline-flex items-center justify-center p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent focus:outline-none focus:ring-2 focus:ring-inset focus:ring-ring"

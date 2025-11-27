@@ -30,6 +30,7 @@ import Badge from '../../components/ui/Badge';
 import UserForm from '../../components/admin/UserForm';
 import { adminAPI, usersAPI, investmentsAPI, walletTransactionsAPI } from '../../services/api';
 import { useAdminAuth } from '../../components/admin/AdminAuth';
+import { API_BASE_URL } from '../../config/api';
 
 // Helper function to get full certificate URL from path
 // Expected format in Neon DB: Full URL like:
@@ -294,7 +295,7 @@ const UsersManagement = () => {
           errorMessage += '⚠️ CORS Error: The backend does not allow PATCH requests.\n\n';
           errorMessage += 'Backend team needs to:\n';
           errorMessage += '1. Enable CORS for PATCH method\n';
-          errorMessage += '2. Add http://localhost:3000 to allowed origins\n';
+          errorMessage += `2. Add ${API_BASE_URL} to allowed origins\n`;
           errorMessage += '3. Add "PATCH" to Access-Control-Allow-Methods in CORS config';
         } else if (error.response?.status === 404) {
           errorMessage += '⚠️ KYC Endpoint Not Found (404)\n\n';
@@ -827,7 +828,7 @@ const UsersManagement = () => {
                                   // Fetch wallet, portfolio (includes investments), and transactions in parallel
                                   const [walletResponse, portfolioResponse, transactionsResponse] = await Promise.allSettled([
                                     usersAPI.getWalletById(userId).catch(() => ({ data: null })),
-                                    fetch(`https://hmr-backend.vercel.app/portfolio/user/${userId}/detailed`).then(r => r.json()).catch(() => null),
+                                    fetch(`${API_BASE_URL}/portfolio/user/${userId}/detailed`).then(r => r.json()).catch(() => null),
                                     walletTransactionsAPI.getByUserId(userId).catch(() => ({ data: [] }))
                                   ]);
                                   
