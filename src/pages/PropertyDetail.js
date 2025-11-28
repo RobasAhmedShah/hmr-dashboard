@@ -496,7 +496,7 @@ const PropertyDetail = () => {
             >
               <img
                 src={imageUrl}
-                alt={`Property image ${index + 1}`}
+                alt={`Property ${index + 1}`}
                 className="w-full h-full object-cover"
                 onError={(e) => {
                   e.target.style.display = 'none';

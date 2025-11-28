@@ -3,16 +3,17 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { QueryClient, QueryClientProvider } from 'react-query';
 import { UserProvider } from './contexts/UserContext';
 import { ThemeProvider } from './contexts/ThemeContext';
+import { ServiceWorkerListener } from './components/ServiceWorkerListener';
 
 // Pages
 import Home from './pages/user/Home';
 import Properties from './pages/user/Properties';
 import Login from './pages/user/Login';
 import Register from './pages/user/Register';
-import Dashboard from './pages/user/Dashboard';
 import Portfolio from './pages/user/Portfolio';
 import Profile from './pages/user/Profile';
 import Wallet from './pages/user/Wallet';
+import Notifications from './pages/user/Notifications';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminLogin from './pages/admin/AdminLogin';
 import AdminPropertyDetail from './pages/admin/PropertyDetail';
@@ -44,6 +45,7 @@ function App() {
       <ThemeProvider>
         <UserProvider>
           <Router>
+            <ServiceWorkerListener />
             <div className="App">
               <Routes>
                 {/* Public Routes */}
@@ -52,10 +54,10 @@ function App() {
                 <Route path="/properties/:id" element={<PropertyDetail />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
-                <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/portfolio" element={<Portfolio />} />
                 <Route path="/wallet" element={<Wallet />} />
                 <Route path="/profile" element={<Profile />} />
+                <Route path="/notifications" element={<Notifications />} />
                 <Route path="/privacy-policy" element={<PrivacyPolicy />} />
                 <Route path="/delete-account" element={<DeleteAccount />} />
                 

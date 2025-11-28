@@ -98,25 +98,36 @@ const Profile = () => {
                     profile.kyc?.status ||
                     null;
 
-  // Extract wallet fields with fallbacks and convert to numbers
-  const availableBalance = Number(wallet.availableBalance || 
-                          wallet.available_balance || 
-                          wallet.balance ||
-                          wallet.availableBalancePKR ||
-                          0) || 0;
+  // Extract wallet fields - Backend returns USDT values (matching mobile app)
+  // Backend wallet returns: balanceUSDT, totalDepositedUSDT, totalWithdrawnUSDT
+  const availableBalance = Number(
+    wallet.balanceUSDT || 
+    wallet.balanceUSDT?.toString() ||
+    wallet.usdc || // Mobile app format
+    wallet.availableBalance || 
+    wallet.available_balance || 
+    wallet.balance ||
+    0
+  ) || 0;
   
-  const totalInvested = Number(wallet.totalInvested || 
-                       wallet.total_invested || 
-                       wallet.totalInvestment ||
-                       wallet.investedAmount ||
-                       wallet.total_investment ||
-                       0) || 0;
+  const totalInvested = Number(
+    wallet.totalInvested || // Mobile app format
+    wallet.totalInvestment || 
+    wallet.total_invested || 
+    wallet.investedAmount ||
+    wallet.total_investment ||
+    0
+  ) || 0;
   
-  const totalReturns = Number(wallet.totalReturns || 
-                      wallet.total_returns || 
-                      wallet.totalReturnsPKR ||
-                      wallet.returns ||
-                      0) || 0;
+  const totalReturns = Number(
+    wallet.totalEarnings || // Mobile app format
+    wallet.totalRewardsUSDT ||
+    wallet.totalRewardsUSDT?.toString() ||
+    wallet.totalReturns || 
+    wallet.total_returns || 
+    wallet.returns ||
+    0
+  ) || 0;
 
   const onSubmit = (data) => {
     updateProfileMutation.mutate(data);
@@ -328,22 +339,25 @@ const Profile = () => {
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-gray-600">Available Balance</span>
                     <span className="text-lg font-semibold text-gray-900">
-                      {availableBalance > 0 ? `PKR ${availableBalance.toLocaleString()}` : 'PKR 0'}
+                      {availableBalance > 0 ? `$${availableBalance.toFixed(2)}` : '$0.00'}
                     </span>
+                    <span className="text-xs text-gray-500">USDT</span>
                   </div>
                   
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-gray-600">Total Invested</span>
                     <span className="text-lg font-semibold text-gray-900">
-                      {totalInvested > 0 ? `PKR ${totalInvested.toLocaleString()}` : 'PKR 0'}
+                      {totalInvested > 0 ? `$${totalInvested.toFixed(2)}` : '$0.00'}
                     </span>
+                    <span className="text-xs text-gray-500">USDT</span>
                   </div>
                   
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-gray-600">Total Returns</span>
                     <span className="text-lg font-semibold text-green-600">
-                      {totalReturns > 0 ? `PKR ${totalReturns.toLocaleString()}` : 'PKR 0'}
+                      {totalReturns > 0 ? `$${totalReturns.toFixed(2)}` : '$0.00'}
                     </span>
+                    <span className="text-xs text-gray-500">USDT</span>
                   </div>
                 </div>
               </Card>

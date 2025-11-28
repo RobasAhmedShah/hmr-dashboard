@@ -11,6 +11,7 @@ import {
   Building2,
   Coins,
   Shield,
+  Bell,
 } from 'lucide-react';
 
 const AdminSidebar = ({ activeTab, setActiveTab }) => {
@@ -22,6 +23,7 @@ const AdminSidebar = ({ activeTab, setActiveTab }) => {
     { id: 'transactions', icon: Archive, label: 'Transactions' },
     { id: 'tokens', icon: Coins, label: 'Tokens' },
     { id: 'kyc', icon: Shield, label: 'KYC Management' },
+    { id: 'notifications', icon: Bell, label: 'Send Notifications' },
   ];
 
   const documentItems = [

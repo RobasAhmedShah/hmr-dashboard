@@ -18,6 +18,7 @@ import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import Badge from '../../components/ui/Badge';
 import Input from '../../components/ui/Input';
+import { API_BASE_URL } from '../../config/api';
 import { adminAPI } from '../../services/api';
 import { useAdminAuth } from '../../components/admin/AdminAuth';
 
@@ -394,8 +395,6 @@ const KYCManagement = () => {
   };
 
   const getDocumentUrl = (kyc) => {
-    const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://hmr-backend.vercel.app';
-    
     // Use documentFrontUrl, documentBackUrl, or selfieUrl based on type
     let url = kyc.documentFrontUrl || kyc.documentBackUrl || kyc.selfieUrl;
     

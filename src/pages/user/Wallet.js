@@ -170,41 +170,64 @@ const Wallet = () => {
                  currentBalanceData ||
                  {};
   
-  // Extract wallet fields with fallbacks
-  // Handle both user_wallets table format and current balance endpoint format
-  const availableBalance = Number(wallet.availableBalance || 
-                          wallet.available_balance || 
-                          wallet.balance ||
-                          wallet.available_balance ||
-                          currentBalanceData?.data?.available_balance ||
-                          currentBalanceData?.data?.availableBalance ||
-                          0) || 0;
+  // Extract wallet fields - Backend returns USDT values (matching mobile app)
+  // Mobile app uses: usdc, totalValue, totalInvested, totalEarnings
+  // Backend wallet returns: balanceUSDT, totalDepositedUSDT, totalWithdrawnUSDT, lockedUSDT
   
-  const totalBalance = Number(wallet.totalBalance || 
-                     wallet.total_balance ||
-                     wallet.totalBalancePKR ||
-                     0) || 0;
+  const availableBalance = Number(
+    wallet.balanceUSDT || 
+    wallet.balanceUSDT?.toString() ||
+    wallet.usdc || // Mobile app format
+    wallet.availableBalance || 
+    wallet.available_balance || 
+    wallet.balance ||
+    currentBalanceData?.data?.balanceUSDT ||
+    currentBalanceData?.data?.usdc ||
+    currentBalanceData?.data?.available_balance ||
+    currentBalanceData?.data?.availableBalance ||
+    0
+  ) || 0;
   
-  const lockedBalance = Number(wallet.lockedBalance || 
-                       wallet.locked_balance ||
-                       0) || 0;
+  const totalBalance = Number(
+    wallet.totalValue || // Mobile app format
+    wallet.balanceUSDT || 
+    wallet.balanceUSDT?.toString() ||
+    wallet.totalBalance || 
+    wallet.total_balance ||
+    0
+  ) || 0;
   
-  const totalTokens = Number(wallet.totalTokens || 
-                    wallet.total_tokens ||
-                    wallet.totalTokens ||
-                    0) || 0;
+  const lockedBalance = Number(
+    wallet.lockedUSDT || 
+    wallet.lockedUSDT?.toString() ||
+    wallet.lockedBalance || 
+    wallet.locked_balance ||
+    0
+  ) || 0;
   
-  const totalInvestment = Number(wallet.totalInvestment || 
-                        wallet.total_invested || 
-                        wallet.totalInvestment ||
-                        wallet.investedAmount ||
-                        0) || 0;
+  const totalTokens = Number(
+    wallet.totalTokens || 
+    wallet.total_tokens ||
+    0
+  ) || 0;
   
-  const totalReturns = Number(wallet.totalReturns || 
-                     wallet.total_returns || 
-                     wallet.totalReturnsPKR ||
-                     wallet.returns ||
-                     0) || 0;
+  const totalInvestment = Number(
+    wallet.totalInvested || // Mobile app format
+    wallet.totalInvestment || 
+    wallet.total_invested || 
+    wallet.investedAmount ||
+    0
+  ) || 0;
+  
+  const totalReturns = Number(
+    wallet.totalEarnings || // Mobile app format (calculated earnings)
+    wallet.totalRewardsUSDT ||
+    wallet.totalRewardsUSDT?.toString() ||
+    wallet.totalReturns || 
+    wallet.total_returns || 
+    wallet.returns ||
+    0
+  ) || 0;
 
   // Extract transactions from wallet_transactions table FIRST (needed for calculations)
   // Fields: id, user_id, payment_method_id, transaction_type, amount, currency, exchange_rate, amount_in_pkr, status, description, reference_id, metadata, created_at
@@ -214,33 +237,41 @@ const Wallet = () => {
                       [];
   
   // Calculate totalDeposited and totalWithdrawn from transactions if not in wallet data
+  // Transactions use amountUSDT field (matching mobile app)
   const calculateFromTransactions = () => {
     if (!Array.isArray(transactions) || transactions.length === 0) return { deposited: 0, withdrawn: 0 };
     
     const deposited = transactions
-      .filter(t => t.transaction_type === 'deposit' && t.status === 'completed')
-      .reduce((sum, t) => sum + (Number(t.amount_in_pkr || t.amount || 0)), 0);
+      .filter(t => (t.type === 'deposit' || t.transaction_type === 'deposit') && t.status === 'completed')
+      .reduce((sum, t) => sum + (Number(t.amountUSDT || t.amountUSDT?.toString() || t.amount || 0)), 0);
     
     const withdrawn = transactions
-      .filter(t => t.transaction_type === 'withdrawal' && t.status === 'completed')
-      .reduce((sum, t) => sum + (Number(t.amount_in_pkr || t.amount || 0)), 0);
+      .filter(t => (t.type === 'withdrawal' || t.transaction_type === 'withdrawal') && t.status === 'completed')
+      .reduce((sum, t) => sum + (Number(t.amountUSDT || t.amountUSDT?.toString() || t.amount || 0)), 0);
     
     return { deposited, withdrawn };
   };
   
   const transactionTotals = calculateFromTransactions();
   
-  const totalDeposited = Number(wallet.totalDeposited || 
-                        wallet.total_deposited ||
-                        wallet.totalDepositedPKR ||
-                        transactionTotals.deposited ||
-                        0) || 0;
+  // Backend returns totalDepositedUSDT and totalWithdrawnUSDT (in USDT, not PKR)
+  const totalDeposited = Number(
+    wallet.totalDepositedUSDT || 
+    wallet.totalDepositedUSDT?.toString() ||
+    wallet.totalDeposited || 
+    wallet.total_deposited ||
+    transactionTotals.deposited ||
+    0
+  ) || 0;
   
-  const totalWithdrawn = Number(wallet.totalWithdrawn || 
-                        wallet.total_withdrawn ||
-                        wallet.totalWithdrawnPKR ||
-                        transactionTotals.withdrawn ||
-                        0) || 0;
+  const totalWithdrawn = Number(
+    wallet.totalWithdrawnUSDT || 
+    wallet.totalWithdrawnUSDT?.toString() ||
+    wallet.totalWithdrawn || 
+    wallet.total_withdrawn ||
+    transactionTotals.withdrawn ||
+    0
+  ) || 0;
   
   // Extract payment methods from payment_methods table
   // Fields: id, user_id, card_type, card_number_masked, card_holder_name, expiry_month, expiry_year, currency, is_default, is_verified, status
@@ -258,19 +289,21 @@ const Wallet = () => {
   console.log('Wallet - Transactions:', transactions);
   console.log('Wallet - Payment methods:', paymentMethods);
 
-  // Filter transactions by type (deposit, withdrawal, investment, return, fee)
+  // Filter transactions by type (deposit, withdrawal, investment, return/reward, fee)
+  // Backend uses 'type' field, but also check 'transaction_type' for compatibility
   const filteredTransactions = Array.isArray(transactions) ? transactions.filter(transaction => {
+    const txType = transaction.type || transaction.transaction_type;
     if (filter === 'all') return true;
-    if (filter === 'deposits') return transaction.transaction_type === 'deposit';
-    if (filter === 'withdrawals') return transaction.transaction_type === 'withdrawal';
-    if (filter === 'investments') return transaction.transaction_type === 'investment';
-    if (filter === 'returns') return transaction.transaction_type === 'return' || transaction.transaction_type === 'dividend';
+    if (filter === 'deposits') return txType === 'deposit';
+    if (filter === 'withdrawals') return txType === 'withdrawal';
+    if (filter === 'investments') return txType === 'investment';
+    if (filter === 'returns') return txType === 'return' || txType === 'reward' || txType === 'dividend';
     return true;
   }) : [];
 
   const getTransactionIcon = (transactionType, status) => {
     if (status === 'completed') {
-      if (transactionType === 'deposit' || transactionType === 'return') return ArrowDownRight;
+      if (transactionType === 'deposit' || transactionType === 'return' || transactionType === 'reward') return ArrowDownRight;
       if (transactionType === 'investment' || transactionType === 'withdrawal') return ArrowUpRight;
     }
     return Clock;
@@ -278,7 +311,7 @@ const Wallet = () => {
 
   const getTransactionColor = (transactionType, status) => {
     if (status === 'completed') {
-      if (transactionType === 'deposit' || transactionType === 'return') return 'text-green-600';
+      if (transactionType === 'deposit' || transactionType === 'return' || transactionType === 'reward') return 'text-green-600';
       if (transactionType === 'investment' || transactionType === 'withdrawal') return 'text-red-600';
     }
     if (status === 'pending') return 'text-yellow-600';
@@ -412,8 +445,9 @@ const Wallet = () => {
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-500">Available Balance</p>
                   <p className="text-2xl font-bold text-gray-900">
-                    {availableBalance > 0 ? `PKR ${availableBalance.toLocaleString()}` : 'PKR 0'}
+                    {availableBalance > 0 ? `$${availableBalance.toFixed(2)}` : '$0.00'}
                   </p>
+                  <p className="text-xs text-gray-500 mt-1">USDT</p>
                   {walletBalanceError && (
                     <p className="text-xs text-red-500 mt-1">Unable to load balance</p>
                   )}
@@ -427,8 +461,9 @@ const Wallet = () => {
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-500">Total Deposited</p>
                   <p className="text-2xl font-bold text-gray-900">
-                    {totalDeposited > 0 ? `PKR ${totalDeposited.toLocaleString()}` : 'PKR 0'}
+                    {totalDeposited > 0 ? `$${totalDeposited.toFixed(2)}` : '$0.00'}
                   </p>
+                  <p className="text-xs text-gray-500 mt-1">USDT</p>
                   {transactionTotals.deposited > 0 && totalDeposited === transactionTotals.deposited && (
                     <p className="text-xs text-gray-500 mt-1">Calculated from transactions</p>
                   )}
@@ -442,8 +477,9 @@ const Wallet = () => {
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-500">Total Withdrawn</p>
                   <p className="text-2xl font-bold text-gray-900">
-                    {totalWithdrawn > 0 ? `PKR ${totalWithdrawn.toLocaleString()}` : 'PKR 0'}
+                    {totalWithdrawn > 0 ? `$${totalWithdrawn.toFixed(2)}` : '$0.00'}
                   </p>
+                  <p className="text-xs text-gray-500 mt-1">USDT</p>
                   {transactionTotals.withdrawn > 0 && totalWithdrawn === transactionTotals.withdrawn && (
                     <p className="text-xs text-gray-500 mt-1">Calculated from transactions</p>
                   )}
@@ -506,14 +542,19 @@ const Wallet = () => {
             {filteredTransactions.length > 0 ? (
               <div className="space-y-4">
                 {filteredTransactions.map((transaction) => {
-                  const IconComponent = getTransactionIcon(transaction.transaction_type, transaction.status);
-                  // Extract transaction data from wallet_transactions table
-                  // Fields: amount, currency, exchange_rate, amount_in_pkr, description, reference_id, metadata
-                  const amount = transaction.amount || transaction.amount_in_pkr || 0;
-                  const currency = transaction.currency || 'PKR';
-                  const amountInPKR = transaction.amount_in_pkr || amount;
-                  const exchangeRate = transaction.exchange_rate || 1;
-                  const referenceId = transaction.reference_id || '';
+                  const txType = transaction.type || transaction.transaction_type;
+                  const IconComponent = getTransactionIcon(txType, transaction.status);
+                  
+                  // Extract transaction data - Backend uses amountUSDT (matching mobile app)
+                  // Fields: amountUSDT, type, status, description, referenceId, metadata
+                  const amount = Number(
+                    transaction.amountUSDT || 
+                    transaction.amountUSDT?.toString() ||
+                    transaction.amount || 
+                    0
+                  );
+                  const currency = transaction.currency || 'USDT';
+                  const referenceId = transaction.referenceId || transaction.reference_id || '';
                   
                   // Parse metadata (can be string or object)
                   let metadata = {};
@@ -539,7 +580,9 @@ const Wallet = () => {
                         return 'Deposit';
                       case 'withdrawal': return 'Withdrawal';
                       case 'investment': return 'Token Purchase';
-                      case 'return': return 'Dividend';
+                      case 'return': 
+                      case 'reward':
+                        return 'ROI Reward';
                       case 'fee': return 'Fee';
                       default: return 'Transaction';
                     }
@@ -548,11 +591,11 @@ const Wallet = () => {
                   return (
                     <div key={transaction.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                       <div className="flex items-center flex-1">
-                        <IconComponent className={`h-5 w-5 mr-3 ${getTransactionColor(transaction.transaction_type, transaction.status)}`} />
+                        <IconComponent className={`h-5 w-5 mr-3 ${getTransactionColor(txType, transaction.status)}`} />
                         <div className="flex-1">
                           <div className="flex items-center gap-2">
                             <p className="text-sm font-medium text-gray-900">
-                              {getTransactionLabel(transaction.transaction_type)}
+                              {getTransactionLabel(txType)}
                             </p>
                             {isOnChain && (
                               <span className="px-2 py-0.5 text-xs bg-purple-100 text-purple-700 rounded">
@@ -565,7 +608,7 @@ const Wallet = () => {
                           </p>
                           <div className="flex items-center gap-4 mt-1">
                             <p className="text-xs text-gray-400">
-                              {new Date(transaction.created_at || transaction.createdAt).toLocaleString()}
+                              {new Date(transaction.createdAt || transaction.created_at).toLocaleString()}
                             </p>
                             {referenceId && (
                               <p className="text-xs text-gray-400">
@@ -577,20 +620,9 @@ const Wallet = () => {
                       </div>
                       <div className="flex items-center gap-3 text-right">
                         <div>
-                          <p className={`text-sm font-medium ${getTransactionColor(transaction.transaction_type, transaction.status)}`}>
-                            {transaction.transaction_type === 'deposit' || transaction.transaction_type === 'return' ? '+' : '-'}
-                            {currency !== 'PKR' ? (
-                              <>
-                                {currency} {amount.toLocaleString()}
-                                {exchangeRate !== 1 && (
-                                  <span className="block text-xs text-gray-500">
-                                    (PKR {amountInPKR.toLocaleString()})
-                                  </span>
-                                )}
-                              </>
-                            ) : (
-                              `PKR ${amountInPKR.toLocaleString()}`
-                            )}
+                          <p className={`text-sm font-medium ${getTransactionColor(txType, transaction.status)}`}>
+                            {txType === 'deposit' || txType === 'return' || txType === 'reward' ? '+' : '-'}
+                            ${amount.toFixed(2)} {currency}
                           </p>
                         </div>
                         {getStatusBadge(transaction.status)}
@@ -614,12 +646,12 @@ const Wallet = () => {
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Deposit Funds</h3>
                 <form onSubmit={handleSubmit(onDepositSubmit)} className="space-y-4">
                   <Input
-                    label="Amount (PKR)"
+                    label="Amount (USDT)"
                     type="number"
                     step="0.01"
                     {...register('amount', { 
                       required: 'Amount is required',
-                      min: { value: 1000, message: 'Minimum deposit is PKR 1,000' }
+                      min: { value: 1, message: 'Minimum deposit is 1 USDT' }
                     })}
                     error={errors.amount?.message}
                   />
@@ -667,14 +699,14 @@ const Wallet = () => {
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Withdraw Funds</h3>
                 <form onSubmit={handleSubmit(onWithdrawSubmit)} className="space-y-4">
                   <Input
-                    label="Amount (PKR)"
+                    label="Amount (USDT)"
                     type="number"
                     step="0.01"
                     {...register('amount', { 
                       required: 'Amount is required',
-                      min: { value: 1000, message: 'Minimum withdrawal is PKR 1,000' },
+                      min: { value: 1, message: 'Minimum withdrawal is 1 USDT' },
                       max: { 
-                        value: wallet.availableBalance || 0, 
+                        value: availableBalance || 0, 
                         message: 'Insufficient balance' 
                       }
                     })}

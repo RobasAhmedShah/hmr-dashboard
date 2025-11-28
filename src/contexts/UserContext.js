@@ -1,6 +1,7 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useQuery } from 'react-query';
 import { usersAPI } from '../services/api';
+import { initializeWebPush } from '../services/webPush';
 
 const UserContext = createContext();
 
@@ -71,6 +72,32 @@ export const UserProvider = ({ children }) => {
       retryDelay: 1000
     }
   );
+
+  // Initialize web push notifications when user is set
+  useEffect(() => {
+    if (currentUser?.id) {
+      // Small delay to ensure service worker is ready
+      const timer = setTimeout(() => {
+        initializeWebPush(async (subscriptionData) => {
+          try {
+            // Pass userId to register web push (no JWT needed)
+            const response = await usersAPI.registerWebPush(subscriptionData, currentUser.id);
+            console.log('✅ Web push subscription registered with backend:', response);
+          } catch (error) {
+            console.error('❌ Failed to register web push subscription:', error);
+            if (error.response) {
+              console.error('Response status:', error.response.status);
+              console.error('Response data:', error.response.data);
+            }
+          }
+        }).catch((error) => {
+          console.warn('⚠️ Web push initialization failed:', error);
+        });
+      }, 1000); // Wait 1 second for service worker to be ready
+
+      return () => clearTimeout(timer);
+    }
+  }, [currentUser?.id]);
 
   const switchUser = (userId) => {
     const user = users.find(u => u.id === userId);
