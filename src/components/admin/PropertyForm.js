@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Save, Building2, MapPin, DollarSign, TrendingUp, Hash, Plus, Trash2, Settings, Edit, Upload, FileText } from 'lucide-react';
+import { X, Save, Building2, MapPin, DollarSign, TrendingUp, Hash, Plus, Trash2, Settings, Edit, Upload, FileText, ChevronRight, ChevronLeft, Check } from 'lucide-react';
 import Card from '../ui/Card';
 import Button from '../ui/Button';
 import SimpleMap from './SimpleMap';
@@ -10,6 +10,10 @@ import { supabaseUpload } from '../../services/supabaseUpload';
 console.log('✅ PropertyForm: Using Supabase for document and image uploads');
 
 const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
+  // Multi-step form state
+  const [currentStep, setCurrentStep] = useState(1);
+  const totalSteps = 3;
+  
   const [formData, setFormData] = useState({
     // Required fields for backend validation
     organizationId: '', // Required: organization ID
@@ -1419,26 +1423,171 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
     });
   };
 
+  // Step navigation functions
+  const validateStep = (step) => {
+    if (step === 1) {
+      // Validate Step 1: Basic & Location
+      if (!formData.organizationId) {
+        alert('⚠️ Please select an organization');
+        return false;
+      }
+      if (!formData.type) {
+        alert('⚠️ Please select property type');
+        return false;
+      }
+      if (!formData.totalValueUSDT || formData.totalValueUSDT <= 0) {
+        alert('⚠️ Please enter total value (USDT)');
+        return false;
+      }
+      if (!formData.totalTokens || formData.totalTokens <= 0) {
+        alert('⚠️ Please enter total tokens');
+        return false;
+      }
+    } else if (step === 2) {
+      // Validate Step 2: Financial & Project Details (optional validations)
+      // Can add specific validation if needed
+    } else if (step === 3) {
+      // Validate Step 3: Documents required
+      const hasDocuments = formData.documents?.brochure || 
+                          formData.documents?.floorPlan || 
+                          (formData.documents?.compliance && formData.documents.compliance.length > 0);
+      if (!hasDocuments) {
+        alert('⚠️ Please add at least one document (brochure, floor plan, or compliance document)');
+        return false;
+      }
+    }
+    return true;
+  };
+
+  const handleNextStep = () => {
+    if (validateStep(currentStep)) {
+      setCurrentStep(prev => Math.min(prev + 1, totalSteps));
+      // Scroll to top of form
+      setTimeout(() => {
+        const formContent = document.querySelector('.form-scrollable-content');
+        if (formContent) {
+          formContent.scrollTop = 0;
+        }
+      }, 100);
+    }
+  };
+
+  const handlePreviousStep = () => {
+    setCurrentStep(prev => Math.max(prev - 1, 1));
+    // Scroll to top of form
+    setTimeout(() => {
+      const formContent = document.querySelector('.form-scrollable-content');
+      if (formContent) {
+        formContent.scrollTop = 0;
+      }
+    }, 100);
+  };
+
+  const goToStep = (step) => {
+    // If clicking on current step, do nothing
+    if (step === currentStep) {
+      return;
+    }
+    
+    // Allow jumping to previous steps without validation
+    if (step < currentStep) {
+      setCurrentStep(step);
+    } else if (step > currentStep) {
+      // Validate current step before moving forward
+      if (validateStep(currentStep)) {
+        setCurrentStep(step);
+      }
+    }
+    setTimeout(() => {
+      const formContent = document.querySelector('.form-scrollable-content');
+      if (formContent) {
+        formContent.scrollTop = 0;
+      }
+    }, 100);
+  };
+
   return (
     <div className="fixed inset-0 bg-gray-600 bg-opacity-50 h-full w-full z-50 flex items-start justify-center p-4 overflow-y-auto">
       <div className="relative my-4 mx-auto border w-11/12 max-w-7xl shadow-lg rounded-md bg-card max-h-[95vh] flex flex-col">
         {/* Sticky Header with Close Button */}
-        <div className="sticky top-0 z-10 bg-card border-b border-border px-5 py-4 flex justify-between items-center rounded-t-md shadow-sm">
-          <h3 className="text-2xl font-bold text-card-foreground">
-            {property ? 'Edit Property' : 'Add New Property'}
-          </h3>
-          <button
-            onClick={onCancel}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
-          >
-            <X className="w-6 h-6" />
-          </button>
+        <div className="sticky top-0 z-10 bg-card border-b border-border px-5 py-4 rounded-t-md shadow-sm">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-2xl font-bold text-card-foreground">
+              {property ? 'Edit Property' : 'Add New Property'}
+            </h3>
+            <button
+              onClick={onCancel}
+              className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+            >
+              <X className="w-6 h-6" />
+            </button>
+          </div>
+
+          {/* Step Indicator */}
+          <div className="flex items-center justify-center space-x-2">
+            {[1, 2, 3].map((step) => (
+              <React.Fragment key={step}>
+                <button
+                  type="button"
+                  onClick={() => goToStep(step)}
+                  className={`flex items-center justify-center transition-all ${
+                    step < currentStep
+                      ? 'cursor-pointer'
+                      : step === currentStep
+                      ? ''
+                      : 'cursor-not-allowed opacity-50'
+                  }`}
+                  disabled={step > currentStep}
+                >
+                  <div className={`flex items-center ${
+                    step === currentStep
+                      ? 'scale-110'
+                      : ''
+                  }`}>
+                    <div className={`flex items-center justify-center w-10 h-10 rounded-full font-semibold transition-all ${
+                      step < currentStep
+                        ? 'bg-green-500 text-white'
+                        : step === currentStep
+                        ? 'bg-primary text-white ring-4 ring-primary/20'
+                        : 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
+                    }`}>
+                      {step < currentStep ? (
+                        <Check className="w-5 h-5" />
+                      ) : (
+                        step
+                      )}
+                    </div>
+                    <div className="ml-2 text-left hidden md:block">
+                      <div className={`text-sm font-semibold ${
+                        step === currentStep
+                          ? 'text-card-foreground'
+                          : 'text-muted-foreground'
+                      }`}>
+                        {step === 1 && 'Basic & Location'}
+                        {step === 2 && 'Financial & Project'}
+                        {step === 3 && 'Media & Settings'}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        Step {step} of {totalSteps}
+                      </div>
+                    </div>
+                  </div>
+                </button>
+                {step < totalSteps && (
+                  <ChevronRight className="w-5 h-5 text-muted-foreground flex-shrink-0" />
+                )}
+              </React.Fragment>
+            ))}
+          </div>
         </div>
         
         {/* Scrollable Content */}
-        <div className="overflow-y-auto flex-1 px-5 py-5">
+        <div className="overflow-y-auto flex-1 px-5 py-5 form-scrollable-content">
 
         <form onSubmit={handleSubmit} className="space-y-6">
+          {/* STEP 1: Basic & Location Details */}
+          {currentStep === 1 && (
+            <>
           {/* Basic Information */}
           <Card className="p-6">
             <h4 className="text-lg font-semibold text-card-foreground mb-4 flex items-center">
@@ -1811,7 +1960,12 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
               />
             </div>
           </Card>
+            </>
+          )}
 
+          {/* STEP 2: Financial & Project Details */}
+          {currentStep === 2 && (
+            <>
           {/* Property Details */}
           <Card className="p-6">
             <h4 className="text-lg font-semibold text-card-foreground mb-4 flex items-center">
@@ -2289,7 +2443,12 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
               ))}
             </div>
           </Card>
+            </>
+          )}
 
+          {/* STEP 3: Features, Media & Settings */}
+          {currentStep === 3 && (
+            <>
           {/* Features */}
           <Card className="p-6">
             <h4 className="text-lg font-semibold text-card-foreground mb-4">Features (optional)</h4>
@@ -2803,39 +2962,79 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
               </div>
             </div>
           </Card>
+            </>
+          )}
 
-          {/* Form Actions */}
-          <div className="flex justify-between pt-6">
-            <div className="flex flex-wrap gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={fillRandomValues}
-              disabled={isLoading}
-              className="flex items-center space-x-2"
-            >
-              <Settings className="w-4 h-4" />
-              <span>Fill Random Values</span>
-            </Button>
-            </div>
-            
-            <div className="flex space-x-3">
+          {/* Form Navigation Actions */}
+          <div className="flex justify-between items-center pt-6 border-t border-border mt-6">
+            <div className="flex items-center gap-3">
+              {/* Previous Button */}
+              {currentStep > 1 && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handlePreviousStep}
+                  disabled={isLoading}
+                  className="flex items-center space-x-2"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                  <span>Previous</span>
+                </Button>
+              )}
+              
+              {/* Cancel Button */}
               <Button
                 type="button"
                 variant="outline"
                 onClick={onCancel}
                 disabled={isLoading}
+                className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20"
               >
                 Cancel
               </Button>
-              <Button
-                type="submit"
-                disabled={isLoading}
-                className="flex items-center space-x-2"
-              >
-                <Save className="w-4 h-4" />
-                <span>{isLoading ? 'Saving...' : (property ? 'Update Property' : 'Create Property')}</span>
-              </Button>
+
+              {/* Fill Random Values (Only on Step 1) */}
+              {currentStep === 1 && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={fillRandomValues}
+                  disabled={isLoading}
+                  className="flex items-center space-x-2"
+                >
+                  <Settings className="w-4 h-4" />
+                  <span>Fill Random</span>
+                </Button>
+              )}
+            </div>
+            
+            <div className="flex items-center space-x-3">
+              {/* Step Progress Indicator */}
+              <div className="text-sm text-muted-foreground font-medium hidden sm:block">
+                Step {currentStep} of {totalSteps}
+              </div>
+
+              {/* Next Button or Submit Button */}
+              {currentStep < totalSteps ? (
+                <Button
+                  type="button"
+                  onClick={handleNextStep}
+                  disabled={isLoading}
+                  className="flex items-center space-x-2 bg-primary hover:bg-primary/90"
+                >
+                  <span>Next Step</span>
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+              ) : (
+                <Button
+                  type="submit"
+                  disabled={isLoading}
+                  className="flex items-center space-x-2 bg-green-600 hover:bg-green-700"
+                >
+                  <Save className="w-4 h-4" />
+                  <span>{isLoading ? 'Saving...' : (property ? 'Update Property' : 'Create Property')}</span>
+                </Button>
+              )}
             </div>
           </div>
         </form>
