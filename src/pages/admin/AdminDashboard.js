@@ -21,6 +21,7 @@ import Button from '../../components/ui/Button';
 import Badge from '../../components/ui/Badge';
 import ThemeToggle from '../../components/ThemeToggle';
 import AdminSidebar from '../../components/admin/AdminSidebar';
+import SafeAdminNotificationIcon from '../../components/admin/SafeAdminNotificationIcon';
 import MetricCards from '../../components/admin/MetricCards';
 import InvestmentChart from '../../components/admin/InvestmentChart';
 import { adminAPI } from '../../services/api';
@@ -817,6 +818,7 @@ const AdminDashboard = () => {
                   Welcome, <span className="font-medium text-primary">{adminUser?.name || 'Admin'}</span>
                 </div>
                 <ThemeToggle />
+                <SafeAdminNotificationIcon />
                 <Button 
                   variant="outline" 
                   onClick={logout}

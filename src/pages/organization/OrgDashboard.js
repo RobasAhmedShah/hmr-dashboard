@@ -18,6 +18,7 @@ import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import Badge from '../../components/ui/Badge';
 import ThemeToggle from '../../components/ThemeToggle';
+import SafeOrgAdminNotificationIcon from '../../components/organization/SafeOrgAdminNotificationIcon';
 import { organizationsAPI, adminAPI } from '../../services/api';
 import { useOrganizationAuth } from '../../components/organization/OrganizationAuth';
 import OrgPropertiesManagement from './OrgPropertiesManagement';
@@ -792,6 +793,7 @@ const OrgDashboard = () => {
                 <span>{organizationUser?.email}</span>
               </div>
               <ThemeToggle />
+              <SafeOrgAdminNotificationIcon />
               <Button variant="outline" onClick={handleLogout} className="flex items-center space-x-2">
                 <LogOut className="w-4 h-4" />
                 <span className="hidden sm:inline">Logout</span>

@@ -87,3 +87,4 @@ VAPID_EMAIL=mailto:your-email@example.com
 - Check browser console for errors
 - Check `public/sw.js` file exists
 
+

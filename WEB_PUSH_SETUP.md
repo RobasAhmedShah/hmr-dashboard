@@ -118,3 +118,4 @@ You can manually test by:
 
 ⚠️ **Action Required**: Add `REACT_APP_VAPID_PUBLIC_KEY` to your `.env` file
 
+

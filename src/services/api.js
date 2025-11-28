@@ -279,6 +279,8 @@ export const orgAdminAPI = {
   // Org admin auth endpoints
   orgAdminLogin: (credentials) => api.post('/org/auth/login', credentials),
   changeOrgAdminPassword: (adminId, data) => api.patch(`/org/auth/change-password/${adminId}`, data),
+  registerWebPush: (adminId, subscription) => api.post(`/org/auth/register-web-push/${adminId}`, { subscription }), // Register web push for org admin
+  getNotifications: (adminId) => api.get(`/org/auth/notifications/${adminId}`), // Get org admin notifications
 };
 
 // Admin API (Updated to match actual backend)
@@ -323,6 +325,9 @@ export const adminAPI = {
   
   // Notifications
   sendNotification: (data) => api.post('/admin/notifications/send', data), // POST /admin/notifications/send
+  registerWebPush: (userId, subscription) => api.post(`/api/notifications/register-web-push/${userId}`, { subscription }), // Register web push for Blocks admin
+  getNotifications: (userId) => api.get(`/api/notifications/user/${userId}`), // Get user notifications by user ID
+  getBlocksAdminNotifications: () => api.get('/admin/notifications'), // Get Blocks admin notifications
 };
 
 // Portfolio API (Complete - User End)

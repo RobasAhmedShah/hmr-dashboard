@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { organizationsAPI, orgAdminAPI, authAPI } from '../../services/api';
+import { initializeWebPush } from '../../services/webPush';
 
 const OrganizationAuthContext = createContext(null);
 
@@ -159,6 +160,20 @@ export const OrganizationAuthProvider = ({ children }) => {
       setIsAuthenticated(true);
       localStorage.setItem('orgSession', 'true');
       localStorage.setItem('orgUser', JSON.stringify(userData));
+
+      // Initialize web push notifications for organization admin
+      try {
+        if (userData?.adminId) {
+          console.log('OrganizationAuth: Registering web push for org admin:', userData.adminId);
+          await initializeWebPush(async (subscriptionData) => {
+            // Register web push for organization admin
+            await orgAdminAPI.registerWebPush(userData.adminId, subscriptionData);
+          });
+        }
+      } catch (error) {
+        console.error('OrganizationAuth: Failed to register web push for org admin:', error);
+        // Don't block login if web push registration fails
+      }
 
       return userData;
     } catch (error) {

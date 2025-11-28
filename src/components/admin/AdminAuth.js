@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { initializeWebPush } from '../../services/webPush';
+import { adminAPI } from '../../services/api';
 
 const AdminAuthContext = createContext();
 
@@ -100,7 +102,7 @@ export const AdminAuthProvider = ({ children }) => {
     }
   }, [adminUser]);
 
-  const login = (userData) => {
+  const login = async (userData) => {
     console.log('AdminAuth: login called with:', userData);
     setAdminUser(userData);
     
@@ -112,6 +114,30 @@ export const AdminAuthProvider = ({ children }) => {
     
     console.log('AdminAuth: login completed, user set to:', userData);
     console.log('AdminAuth: Session expires at:', new Date(expiryTime).toLocaleString());
+
+    // Initialize web push notifications for Blocks admin
+    // Skip if using demo user ID (not a valid UUID)
+    try {
+      const adminUserId = userData?.id || userData?.userId || userData?._id;
+      
+      // Check if it's a valid UUID (not a demo ID)
+      const isValidUUID = adminUserId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(adminUserId);
+      
+      if (adminUserId && isValidUUID) {
+        console.log('AdminAuth: Registering web push for Blocks admin:', adminUserId);
+        await initializeWebPush(async (subscriptionData) => {
+          // Register web push for Blocks admin user
+          await adminAPI.registerWebPush(adminUserId, subscriptionData);
+        });
+      } else {
+        console.warn('AdminAuth: Skipping web push registration - invalid or demo user ID:', adminUserId);
+        // For demo users, we'll fetch the real Blocks admin ID and register web push separately
+        // This will be handled by AdminNotificationIcon when it loads
+      }
+    } catch (error) {
+      console.error('AdminAuth: Failed to register web push for Blocks admin:', error);
+      // Don't block login if web push registration fails
+    }
   };
 
   const logout = () => {

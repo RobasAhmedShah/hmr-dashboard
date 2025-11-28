@@ -17,6 +17,7 @@ import Notifications from './pages/user/Notifications';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminLogin from './pages/admin/AdminLogin';
 import AdminPropertyDetail from './pages/admin/PropertyDetail';
+import AdminNotifications from './pages/admin/AdminNotifications';
 import PropertyDetail from './pages/PropertyDetail';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import DeleteAccount from './pages/DeleteAccount';
@@ -26,6 +27,7 @@ import { AdminAuthProvider } from './components/admin/AdminAuth';
 import OrgDashboard from './pages/organization/OrgDashboard';
 import OrgLogin from './pages/organization/OrgLogin';
 import OrgPropertyDetail from './pages/organization/OrgPropertyDetail';
+import OrgNotifications from './pages/organization/OrgNotifications';
 import { OrganizationAuthProvider } from './components/organization/OrganizationAuth';
 
 // Create a client
@@ -77,6 +79,11 @@ function App() {
                     <AdminPropertyDetail />
                   </AdminAuthProvider>
                 } />
+                <Route path="/admin/notifications" element={
+                  <AdminAuthProvider>
+                    <AdminNotifications />
+                  </AdminAuthProvider>
+                } />
                 
                 {/* Organization Routes */}
                 <Route path="/org/login" element={
@@ -92,6 +99,11 @@ function App() {
                 <Route path="/orgdashboard/property/:propertyId" element={
                   <OrganizationAuthProvider>
                     <OrgPropertyDetail />
+                  </OrganizationAuthProvider>
+                } />
+                <Route path="/org/notifications" element={
+                  <OrganizationAuthProvider>
+                    <OrgNotifications />
                   </OrganizationAuthProvider>
                 } />
                 
