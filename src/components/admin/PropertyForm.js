@@ -9,10 +9,10 @@ import { supabaseUpload } from '../../services/supabaseUpload';
 // Using Supabase for both document and image uploads
 console.log('✅ PropertyForm: Using Supabase for document and image uploads');
 
-const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
+const PropertyForm = ({ property, onSave, onCancel, isLoading, inline = false }) => {
   // Multi-step form state
   const [currentStep, setCurrentStep] = useState(1);
-  const totalSteps = 3;
+  const totalSteps = 2; // Only 2 steps (step 2 is commented out)
   
   const [formData, setFormData] = useState({
     // Required fields for backend validation
@@ -103,24 +103,43 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
   const [organizations, setOrganizations] = useState([]);
   const [loadingOrgs, setLoadingOrgs] = useState(false);
   const [fullPropertyData, setFullPropertyData] = useState(null);
+  const [loadingPropertyData, setLoadingPropertyData] = useState(false);
+  const formDataLoadedForPropertyRef = useRef(null); // Track which property ID has had its form data loaded
+  const fetchedPropertyIdRef = useRef(null); // Track which property ID we've fetched from API
 
   // Fetch full property data from backend when editing
   useEffect(() => {
     const fetchFullProperty = async () => {
       if (property && (property.id || property.displayCode)) {
         const propertyId = property.id || property.displayCode;
+        
+        // Only fetch if this is a different property than what we've already fetched
+        if (fetchedPropertyIdRef.current === propertyId) {
+          console.log('⏭️ PropertyForm: Skipping fetch - same property already fetched');
+          return;
+        }
+        
+        setLoadingPropertyData(true);
         try {
           console.log('📥 PropertyForm: Fetching full property data from backend:', propertyId);
           const response = await propertiesAPI.getById(propertyId);
           const fullData = response?.data?.data || response?.data || response;
           console.log('✅ PropertyForm: Received full property data:', fullData);
           setFullPropertyData(fullData);
+          fetchedPropertyIdRef.current = propertyId; // Mark this property as fetched
         } catch (error) {
           console.error('❌ PropertyForm: Failed to fetch property data:', error);
           setFullPropertyData(property); // Use provided property as fallback
+          fetchedPropertyIdRef.current = propertyId; // Mark as fetched even with fallback
+        } finally {
+          setLoadingPropertyData(false);
         }
       } else {
+        // Reset when no property (creating new)
         setFullPropertyData(null);
+        fetchedPropertyIdRef.current = null;
+        formDataLoadedForPropertyRef.current = null;
+        setLoadingPropertyData(false);
       }
     };
     
@@ -137,8 +156,9 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
         setOrganizations(orgs);
         console.log('📋 Loaded organizations:', orgs);
         
-        // Auto-select first organization if available and no org is selected
-        if (orgs.length > 0 && !formData.organizationId) {
+        // Auto-select first organization ONLY for new properties (not when editing)
+        // Check if we're creating a new property (no property prop passed)
+        if (orgs.length > 0 && !property && !formData.organizationId) {
           setFormData(prev => ({
             ...prev,
             organizationId: orgs[0].displayCode || orgs[0].id
@@ -154,14 +174,91 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
     
     fetchOrganizations();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [property]);
+
+  // Update organizationId when organizations finish loading (for editing mode)
+  useEffect(() => {
+    // Only update if we're editing a property and organizations are loaded
+    if (property && organizations.length > 0 && formDataLoadedForPropertyRef.current) {
+      const propertyToLoad = fullPropertyData || property;
+      const rawOrgId = propertyToLoad?.organizationId || 
+                      propertyToLoad?.organization_id || 
+                      propertyToLoad?.organization?.displayCode ||
+                      propertyToLoad?.organization?.id ||
+                      '';
+      
+      if (rawOrgId) {
+        // Try to find matching organization
+        const matchedOrg = organizations.find(org => 
+          org.displayCode === rawOrgId || 
+          org.id === rawOrgId ||
+          org.displayCode === rawOrgId?.toString() ||
+          org.id === rawOrgId?.toString()
+        );
+        
+        if (matchedOrg) {
+          const correctOrgId = matchedOrg.displayCode || matchedOrg.id;
+          // Only update if it's different from current value
+          if (formData.organizationId !== correctOrgId) {
+            console.log('🔄 Updating organizationId after organizations loaded:', correctOrgId);
+            setFormData(prev => ({
+              ...prev,
+              organizationId: correctOrgId
+            }));
+          }
+        } else if (rawOrgId && !formData.organizationId) {
+          // If no match but we have rawOrgId and form doesn't have it, use rawOrgId
+          console.log('📝 Setting organizationId from raw value:', rawOrgId);
+          setFormData(prev => ({
+            ...prev,
+            organizationId: rawOrgId
+          }));
+        }
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [organizations, property, fullPropertyData]);
 
   useEffect(() => {
+    // Get the property ID from either fullPropertyData or property prop
+    const propertyIdFromProp = property?.id || property?.displayCode;
+    const propertyIdFromFull = fullPropertyData?.id || fullPropertyData?.displayCode;
+    const currentPropertyId = propertyIdFromFull || propertyIdFromProp;
+    
+    // CRITICAL: Skip if we've already loaded form data for this exact property ID
+    // This prevents ANY resetting of user edits, even on re-renders
+    if (currentPropertyId && formDataLoadedForPropertyRef.current === currentPropertyId) {
+      console.log('⏭️ SKIPPING - Form data already loaded for property:', currentPropertyId);
+      return; // EXIT EARLY - don't touch form data at all
+    }
+    
     // Use fullPropertyData if available (from backend), otherwise use property prop
     const propertyToLoad = fullPropertyData || property;
     
-    if (propertyToLoad) {
-      console.log('📥 Loading property data for editing:', propertyToLoad);
+    // If we're creating a new property (no propertyToLoad), don't reset unless switching from edit mode
+    if (!propertyToLoad || !currentPropertyId) {
+      // Only reset ref if we were previously editing a property
+      if (formDataLoadedForPropertyRef.current !== null) {
+        console.log('🔄 Switching from edit to create mode');
+        formDataLoadedForPropertyRef.current = null;
+      }
+      return; // Don't proceed with loading
+    }
+    
+    // At this point, we know:
+    // 1. We have a property to load
+    // 2. We have a property ID
+    // 3. We haven't loaded form data for this property yet
+    // So we can safely load the data
+    
+    // Load property data into form (we know propertyToLoad exists at this point)
+    console.log('📥 ====== LOADING PROPERTY DATA FOR EDITING ======');
+    console.log('📥 Property ID:', currentPropertyId);
+    console.log('📥 Full property data received:', JSON.stringify(propertyToLoad, null, 2));
+    console.log('📋 Available organizations for matching:', organizations);
+      
+      // Log all keys in the property object to see what fields exist
+      console.log('🔑 All property keys:', Object.keys(propertyToLoad));
       
       // Handle images - can be JSON string or array
       let imagesArray = [];
@@ -206,37 +303,169 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
         unit_types = propertyToLoad.unit_types;
       }
       
-      // Map location fields (database might have city/state/country or location_city/location_state/location_country)
+      // Map location fields (database might have various field name structures)
       // Check multiple possible field names from backend
+      const locationObj = propertyToLoad.location || {};
       const location_city = propertyToLoad.location_city || 
                            propertyToLoad.city || 
-                           propertyToLoad.location?.city ||
-                           (propertyToLoad.location && typeof propertyToLoad.location === 'string' ? propertyToLoad.location.split(',')[0] : null) ||
-                           'Karachi';
+                           locationObj.city ||
+                           (typeof locationObj === 'string' ? locationObj.split(',')[0]?.trim() : null) ||
+                           '';
       const location_state = propertyToLoad.location_state || 
                             propertyToLoad.state || 
-                            propertyToLoad.location?.state ||
-                            (propertyToLoad.location && typeof propertyToLoad.location === 'string' ? propertyToLoad.location.split(',')[1]?.trim() : null) ||
-                            'Sindh';
+                            locationObj.state ||
+                            (typeof locationObj === 'string' ? locationObj.split(',')[1]?.trim() : null) ||
+                            '';
       const location_country = propertyToLoad.location_country || 
                               propertyToLoad.country || 
-                              propertyToLoad.location?.country ||
-                              'Pakistan';
+                              locationObj.country ||
+                              '';
       const location_address = propertyToLoad.location_address || 
                               propertyToLoad.address || 
-                              propertyToLoad.location?.address ||
+                              locationObj.address ||
                               '';
       const location_latitude = propertyToLoad.location_latitude || 
                                propertyToLoad.latitude || 
-                               propertyToLoad.location?.latitude ||
+                               locationObj.latitude ||
+                               locationObj.lat ||
                                '';
       const location_longitude = propertyToLoad.location_longitude || 
                                 propertyToLoad.longitude || 
-                                propertyToLoad.location?.longitude ||
+                                locationObj.longitude ||
+                                locationObj.lng ||
                                 '';
       
-      // Map organizationId (could be organizationId or organization_id)
-      const organizationId = propertyToLoad.organizationId || propertyToLoad.organization_id || '';
+      // Map pricing fields (might be nested in pricing object)
+      const pricingObj = propertyToLoad.pricing || {};
+      const pricing_market_value = propertyToLoad.pricing_market_value || 
+                                   propertyToLoad.marketValue ||
+                                   propertyToLoad.market_value ||
+                                   pricingObj.marketValue ||
+                                   pricingObj.market_value ||
+                                   pricingObj.total_value ||
+                                   '';
+      const pricing_appreciation = propertyToLoad.pricing_appreciation || 
+                                   propertyToLoad.appreciation ||
+                                   pricingObj.appreciation ||
+                                   '';
+      const pricing_min_investment = propertyToLoad.pricing_min_investment || 
+                                     propertyToLoad.minInvestment ||
+                                     propertyToLoad.min_investment ||
+                                     pricingObj.minInvestment ||
+                                     pricingObj.min_investment ||
+                                     '';
+      const pricing_expected_roi = propertyToLoad.pricing_expected_roi || 
+                                   propertyToLoad.expected_roi ||
+                                   propertyToLoad.expectedROI ||
+                                   pricingObj.expected_roi ||
+                                   pricingObj.expectedROI ||
+                                   '';
+      
+      // Map tokenization fields (might be nested in tokenization object)
+      const tokenObj = propertyToLoad.tokenization || {};
+      const tokenization_available_tokens = propertyToLoad.tokenization_available_tokens || 
+                                            propertyToLoad.availableTokens ||
+                                            propertyToLoad.available_tokens ||
+                                            tokenObj.availableTokens ||
+                                            tokenObj.available_tokens ||
+                                            propertyToLoad.totalTokens ||
+                                            1000;
+      const tokenization_price_per_token = propertyToLoad.tokenization_price_per_token || 
+                                           propertyToLoad.pricePerToken ||
+                                           propertyToLoad.price_per_token ||
+                                           tokenObj.pricePerToken ||
+                                           tokenObj.price_per_token ||
+                                           '';
+      const tokenization_token_price = propertyToLoad.tokenization_token_price || 
+                                       propertyToLoad.tokenPrice ||
+                                       propertyToLoad.token_price ||
+                                       tokenObj.tokenPrice ||
+                                       tokenObj.token_price ||
+                                       '';
+      
+      console.log('📍 Location fields mapped:', { location_city, location_state, location_country, location_address, location_latitude, location_longitude });
+      console.log('💰 Pricing fields mapped:', { pricing_market_value, pricing_appreciation, pricing_min_investment, pricing_expected_roi });
+      console.log('🪙 Tokenization fields mapped:', { tokenization_available_tokens, tokenization_price_per_token, tokenization_token_price });
+      
+      // Map organizationId (could be organizationId, organization_id, or organization.displayCode)
+      // The backend might store UUID but form dropdown uses displayCode
+      let rawOrgId = propertyToLoad.organizationId || 
+                     propertyToLoad.organization_id || 
+                     propertyToLoad.organization?.displayCode ||
+                     propertyToLoad.organization?.id ||
+                     '';
+      
+      // Try to find matching organization and use its displayCode for the dropdown
+      let organizationId = rawOrgId;
+      if (organizations.length > 0 && rawOrgId) {
+        // First try to find by displayCode, then by id
+        let matchedOrg = organizations.find(org => 
+          org.displayCode === rawOrgId || 
+          org.id === rawOrgId ||
+          org.displayCode === rawOrgId?.toString() ||
+          org.id === rawOrgId?.toString()
+        );
+        if (matchedOrg) {
+          organizationId = matchedOrg.displayCode || matchedOrg.id;
+          console.log('✅ Matched organization:', matchedOrg.displayCode || matchedOrg.id, 'from raw:', rawOrgId);
+        } else {
+          console.warn('⚠️ Could not find organization matching:', rawOrgId);
+          // If no match found, still use rawOrgId (might be a valid ID that's not in the list)
+          organizationId = rawOrgId;
+        }
+      } else if (rawOrgId && organizations.length === 0) {
+        // Organizations not loaded yet, but we have a rawOrgId - use it for now
+        console.log('⏳ Organizations not loaded yet, using rawOrgId:', rawOrgId);
+        organizationId = rawOrgId;
+      }
+      console.log('🏢 Organization ID for form:', organizationId, '(raw:', rawOrgId, ')');
+      
+      // Map construction progress
+      const construction_progress = propertyToLoad.construction_progress || 
+                                    propertyToLoad.constructionProgress ||
+                                    propertyToLoad.progress ||
+                                    0;
+      
+      // Map expected ROI
+      const expectedROI = propertyToLoad.expectedROI || 
+                          propertyToLoad.expected_roi || 
+                          propertyToLoad.roi ||
+                          0;
+      
+      // Map total value
+      const totalValueUSDT = propertyToLoad.totalValueUSDT || 
+                             propertyToLoad.total_value_usdt ||
+                             propertyToLoad.totalValue ||
+                             propertyToLoad.total_value ||
+                             pricingObj.totalValue ||
+                             0;
+      
+      // Map total tokens
+      const totalTokens = propertyToLoad.totalTokens || 
+                          propertyToLoad.total_tokens ||
+                          tokenObj.totalTokens ||
+                          tokenObj.total_tokens ||
+                          1000;
+      
+      // Map property details
+      const floors = propertyToLoad.floors || propertyToLoad.totalFloors || propertyToLoad.total_floors || '';
+      const total_units = propertyToLoad.total_units || propertyToLoad.totalUnits || propertyToLoad.units || '';
+      const project_type = propertyToLoad.project_type || propertyToLoad.projectType || '';
+      
+      // Map dates
+      const start_date = propertyToLoad.start_date || propertyToLoad.startDate || '';
+      const expected_completion = propertyToLoad.expected_completion || propertyToLoad.expectedCompletion || propertyToLoad.completion_date || '';
+      const handover_date = propertyToLoad.handover_date || propertyToLoad.handoverDate || '';
+      
+      // Map specifications
+      const bedrooms = propertyToLoad.bedrooms || propertyToLoad.beds || 2;
+      const bathrooms = propertyToLoad.bathrooms || propertyToLoad.baths || 2;
+      const area_sqm = propertyToLoad.area_sqm || propertyToLoad.area || propertyToLoad.size || 100;
+      const appreciation_percentage = propertyToLoad.appreciation_percentage || propertyToLoad.appreciation || pricing_appreciation || 20;
+      
+      console.log('🏗️ Property details mapped:', { construction_progress, floors, total_units, project_type });
+      console.log('📅 Dates mapped:', { start_date, expected_completion, handover_date });
+      console.log('🏠 Specifications mapped:', { bedrooms, bathrooms, area_sqm, appreciation_percentage });
       
       // Load all form data from property
       setFormData({
@@ -244,18 +473,16 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
         organizationId: organizationId,
         type: propertyToLoad.type || 'residential',
         status: propertyToLoad.status || 'active',
-        totalValueUSDT: propertyToLoad.totalValueUSDT || propertyToLoad.total_value_usdt || 0,
-        totalTokens: propertyToLoad.totalTokens || propertyToLoad.total_tokens || 1000,
-        expectedROI: propertyToLoad.expectedROI || propertyToLoad.expected_roi || 0,
+        totalValueUSDT: totalValueUSDT,
+        totalTokens: totalTokens,
+        expectedROI: expectedROI,
         // Calculate full ROI: if construction is 100%, full ROI = expected ROI
         // Otherwise, full ROI = expected ROI / (construction progress / 100)
         fullROI: (() => {
-          const constructionProgress = propertyToLoad.construction_progress || 0;
-          const expectedROI = propertyToLoad.expectedROI || propertyToLoad.expected_roi || 0;
-          if (constructionProgress === 100) {
+          if (construction_progress === 100) {
             return expectedROI;
-          } else if (constructionProgress > 0 && expectedROI > 0) {
-            return (expectedROI / (constructionProgress / 100));
+          } else if (construction_progress > 0 && expectedROI > 0) {
+            return (expectedROI / (construction_progress / 100));
           }
           return expectedROI || 0; // Default to expected ROI if construction is 0
         })(),
@@ -264,7 +491,7 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
         title: propertyToLoad.title || propertyToLoad.name || '',
         slug: propertyToLoad.slug || '',
         description: propertyToLoad.description || '',
-        short_description: propertyToLoad.short_description || propertyToLoad.shortDescription || '',
+        short_description: propertyToLoad.short_description || propertyToLoad.shortDescription || propertyToLoad.summary || '',
         
         // Location - map from database format to form format
         location_address: location_address,
@@ -275,34 +502,34 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
         location_longitude: location_longitude ? String(location_longitude) : '',
         
         // Property details
-        property_type: propertyToLoad.property_type || propertyToLoad.type || 'residential',
-        project_type: propertyToLoad.project_type || '',
-        floors: propertyToLoad.floors ? String(propertyToLoad.floors) : '',
-        total_units: propertyToLoad.total_units ? String(propertyToLoad.total_units) : '',
-        construction_progress: propertyToLoad.construction_progress || 0,
-        start_date: propertyToLoad.start_date || '',
-        expected_completion: propertyToLoad.expected_completion || '',
-        handover_date: propertyToLoad.handover_date || '',
+        property_type: propertyToLoad.property_type || propertyToLoad.propertyType || propertyToLoad.type || 'residential',
+        project_type: project_type,
+        floors: floors ? String(floors) : '',
+        total_units: total_units ? String(total_units) : '',
+        construction_progress: construction_progress,
+        start_date: start_date,
+        expected_completion: expected_completion,
+        handover_date: handover_date,
         
-        // Pricing
-        pricing_total_value: propertyToLoad.pricing_total_value ? String(propertyToLoad.pricing_total_value) : '',
-        pricing_market_value: propertyToLoad.pricing_market_value ? String(propertyToLoad.pricing_market_value) : '',
-        pricing_appreciation: propertyToLoad.pricing_appreciation ? String(propertyToLoad.pricing_appreciation) : '',
-        pricing_expected_roi: propertyToLoad.pricing_expected_roi ? String(propertyToLoad.pricing_expected_roi) : '',
-        pricing_min_investment: propertyToLoad.pricing_min_investment ? String(propertyToLoad.pricing_min_investment) : '',
+        // Pricing - use mapped variables
+        pricing_total_value: totalValueUSDT ? String(totalValueUSDT) : '',
+        pricing_market_value: pricing_market_value ? String(pricing_market_value) : '',
+        pricing_appreciation: pricing_appreciation ? String(pricing_appreciation) : '',
+        pricing_expected_roi: pricing_expected_roi ? String(pricing_expected_roi) : '',
+        pricing_min_investment: pricing_min_investment ? String(pricing_min_investment) : '',
         
-        // Tokenization
-        tokenization_total_tokens: propertyToLoad.tokenization_total_tokens || propertyToLoad.totalTokens || 1000,
-        tokenization_available_tokens: propertyToLoad.tokenization_available_tokens || propertyToLoad.availableTokens || 1000,
-        tokenization_price_per_token: propertyToLoad.tokenization_price_per_token ? String(propertyToLoad.tokenization_price_per_token) : '',
-        tokenization_token_price: propertyToLoad.tokenization_token_price ? String(propertyToLoad.tokenization_token_price) : '',
+        // Tokenization - use mapped variables
+        tokenization_total_tokens: totalTokens,
+        tokenization_available_tokens: tokenization_available_tokens,
+        tokenization_price_per_token: tokenization_price_per_token ? String(tokenization_price_per_token) : '',
+        tokenization_token_price: tokenization_token_price ? String(tokenization_token_price) : '',
         
-        // Specifications
-        bedrooms: propertyToLoad.bedrooms || 2,
-        bathrooms: propertyToLoad.bathrooms || 2,
-        area_sqm: propertyToLoad.area_sqm || propertyToLoad.area || 100.00,
-        is_rented: propertyToLoad.is_rented || false,
-        appreciation_percentage: propertyToLoad.appreciation_percentage || 20.00,
+        // Specifications - use mapped variables
+        bedrooms: bedrooms,
+        bathrooms: bathrooms,
+        area_sqm: area_sqm,
+        is_rented: propertyToLoad.is_rented || propertyToLoad.isRented || false,
+        appreciation_percentage: appreciation_percentage,
         
         // Features and amenities (extracted from nested structure)
         features: Array.isArray(propertyToLoad.features) ? propertyToLoad.features : [],
@@ -378,84 +605,28 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
         listing_price_formatted: propertyToLoad.listing_price_formatted || '$0'
       });
       
+      console.log('✅ ====== FORM DATA LOADED ======');
+      
       // Load SEO data
-      if (propertyToLoad.seo) {
+      const seoObj = propertyToLoad.seo || {};
+      if (propertyToLoad.seo || propertyToLoad.seoTitle || propertyToLoad.seo_title) {
         setSeoData({
-          title: propertyToLoad.seo.title || '',
-          description: propertyToLoad.seo.description || '',
-          keywords: propertyToLoad.seo.keywords || ''
+          title: seoObj.title || propertyToLoad.seoTitle || propertyToLoad.seo_title || '',
+          description: seoObj.description || propertyToLoad.seoDescription || propertyToLoad.seo_description || '',
+          keywords: seoObj.keywords || propertyToLoad.seoKeywords || propertyToLoad.seo_keywords || ''
         });
       } else {
         setSeoData({ title: '', description: '', keywords: '' });
       }
       
-      console.log('✅ Property data loaded into form');
-    } else {
-      // Reset form when no property (creating new)
-      setFormData({
-        organizationId: '',
-        type: 'residential',
-        status: 'active',
-        totalValueUSDT: 0,
-        totalTokens: 1000,
-        expectedROI: 0,
-        fullROI: 0,
-        title: '',
-        slug: '',
-        description: '',
-        short_description: '',
-        location_address: '',
-        location_city: 'Karachi',
-        location_state: 'Sindh',
-        location_country: 'Pakistan',
-        location_latitude: '',
-        location_longitude: '',
-        property_type: 'residential',
-        project_type: '',
-        floors: '',
-        total_units: '',
-        construction_progress: 0,
-        start_date: '',
-        expected_completion: '',
-        handover_date: '',
-        pricing_total_value: '',
-        pricing_market_value: '',
-        pricing_appreciation: '',
-        pricing_expected_roi: '',
-        pricing_min_investment: '',
-        tokenization_total_tokens: 1000,
-        tokenization_available_tokens: 1000,
-        tokenization_price_per_token: '',
-        tokenization_token_price: '',
-        unit_types: [],
-        features: [],
-        images: [],
-        amenities: [],
-        documents: {
-          brochure: null,
-          floorPlan: null,
-          compliance: []
-        },
-        property_features: [],
-        is_active: true,
-        is_featured: false,
-        sort_order: 0,
-        bedrooms: 2,
-        bathrooms: 2,
-        area_sqm: 100.00,
-        is_rented: false,
-        appreciation_percentage: 20.00,
-        investment_stats: {
-          totalInvestors: 0,
-          totalInvestment: 0,
-          averageInvestment: 0
-        },
-        listing_price_formatted: '$0'
-      });
-      setSeoData({ title: '', description: '', keywords: '' });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [property, fullPropertyData]);
+    console.log('✅ Property data loaded into form');
+    
+    // CRITICAL: Mark this property's form data as loaded IMMEDIATELY
+    // This prevents ANY future resets for this property
+    formDataLoadedForPropertyRef.current = currentPropertyId;
+    console.log('📌 Form data marked as loaded for property:', currentPropertyId);
+    console.log('🔒 Form is now LOCKED - no more resets will happen for this property');
+  }, [property?.id, property?.displayCode, fullPropertyData?.id, fullPropertyData?.displayCode]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -627,17 +798,74 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
     
-    // Validate required fields
-    // Check if any documents exist (brochure, floorPlan, or compliance)
+    console.log('📝 ====== FORM SUBMISSION STARTED ======');
+    console.log('📊 Full form data:', formData);
+    
+    // Comprehensive validation with detailed error messages
+    const validationErrors = [];
+    
+    // Required backend fields
+    if (!formData.organizationId || formData.organizationId.trim() === '') {
+      validationErrors.push('Organization ID is required');
+    }
+    if (!formData.type || formData.type.trim() === '') {
+      validationErrors.push('Property Type is required');
+    }
+    if (!formData.totalValueUSDT || parseFloat(formData.totalValueUSDT) <= 0) {
+      validationErrors.push('Total Value (USDT) must be greater than 0');
+    }
+    if (!formData.totalTokens || parseInt(formData.totalTokens) <= 0) {
+      validationErrors.push('Total Tokens must be greater than 0');
+    }
+    if (formData.expectedROI === undefined || formData.expectedROI === null || formData.expectedROI === '') {
+      validationErrors.push('Expected ROI is required');
+    }
+    if (!formData.status || formData.status.trim() === '') {
+      validationErrors.push('Status is required');
+    }
+    
+    // Required display fields
+    if (!formData.title || formData.title.trim() === '') {
+      validationErrors.push('Property Title is required');
+    }
+    if (!formData.description || formData.description.trim() === '') {
+      validationErrors.push('Description is required');
+    }
+    
+    // Location validation - Only city and country are in DB
+    if (!formData.location_city || formData.location_city.trim() === '') {
+      validationErrors.push('City is required');
+    }
+    if (!formData.location_country || formData.location_country.trim() === '') {
+      validationErrors.push('Country is required');
+    }
+    // COMMENTED OUT: Address and State validation - Not in DB
+    // if (!formData.location_address || formData.location_address.trim() === '') {
+    //   validationErrors.push('Address is required');
+    // }
+    // if (!formData.location_state || formData.location_state.trim() === '') {
+    //   validationErrors.push('State is required');
+    // }
+    
+    // Check if any documents exist
     const hasDocuments = formData.documents?.brochure || 
                          formData.documents?.floorPlan || 
                          (Array.isArray(formData.documents?.compliance) && formData.documents.compliance.length > 0);
     if (!hasDocuments) {
-      alert('Please add at least one document before saving the property.');
+      validationErrors.push('At least one document (brochure, floor plan, or compliance) is required');
+    }
+    
+    // Show validation errors if any
+    if (validationErrors.length > 0) {
+      const errorMessage = '⚠️ Please fix the following errors:\n\n' + validationErrors.map((err, i) => `${i + 1}. ${err}`).join('\n');
+      alert(errorMessage);
+      console.error('❌ Validation errors:', validationErrors);
       return;
     }
     
-    // Format data to match backend structure
+    console.log('✅ All validations passed');
+    
+    // Format data to match backend structure - ONLY FIELDS IN DATABASE
     const finalData = {
       // Required backend fields (ensure they are numbers, not strings)
       organizationId: formData.organizationId,
@@ -647,52 +875,14 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
       totalTokens: parseInt(formData.totalTokens) || 1000,
       expectedROI: parseFloat(formData.expectedROI) || 0,
       
-      // Basic information
-      title: formData.title || '',
-      slug: formData.slug || '',
-      description: formData.description || '',
-      short_description: formData.short_description || '',
+      // Basic information - ensure required fields are not empty
+      title: (formData.title && formData.title.trim()) || '',
+      slug: (formData.slug && formData.slug.trim()) || '',
+      description: (formData.description && formData.description.trim()) || '',
       
-      // Location - convert location_* to backend expected format
-      address: formData.location_address || '',
-      city: formData.location_city || 'Karachi',
-      state: formData.location_state || 'Sindh',
-      country: formData.location_country || 'Pakistan',
-      latitude: formData.location_latitude ? parseFloat(formData.location_latitude) : null,
-      longitude: formData.location_longitude ? parseFloat(formData.location_longitude) : null,
-      
-      // Property details
-      property_type: formData.property_type || 'residential',
-      project_type: formData.project_type || '',
-      floors: formData.floors || '',
-      total_units: formData.total_units || '',
-      construction_progress: parseInt(formData.construction_progress) || 0,
-      start_date: formData.start_date || '',
-      expected_completion: formData.expected_completion || '',
-      handover_date: formData.handover_date || '',
-      
-      // Pricing
-      pricing_total_value: formData.pricing_total_value || '',
-      pricing_market_value: formData.pricing_market_value || '',
-      pricing_appreciation: formData.pricing_appreciation || '',
-      pricing_expected_roi: formData.pricing_expected_roi || '',
-      pricing_min_investment: formData.pricing_min_investment || '',
-      
-      // Tokenization
-      tokenization_total_tokens: parseInt(formData.tokenization_total_tokens) || 1000,
-      tokenization_available_tokens: Math.min(
-        parseInt(formData.tokenization_available_tokens) || 1000,
-        parseInt(formData.totalTokens) || 1000
-      ),
-      tokenization_price_per_token: formData.tokenization_price_per_token || '',
-      tokenization_token_price: formData.tokenization_token_price || '',
-      
-      // Specifications
-      bedrooms: parseInt(formData.bedrooms) || 0,
-      bathrooms: parseInt(formData.bathrooms) || 0,
-      area_sqm: parseFloat(formData.area_sqm) || 0,
-      is_rented: formData.is_rented || false,
-      appreciation_percentage: parseFloat(formData.appreciation_percentage) || 0,
+      // Location - Only city and country are in DB
+      city: (formData.location_city && formData.location_city.trim()) || 'Karachi',
+      country: (formData.location_country && formData.location_country.trim()) || 'Pakistan',
       
       // Features - backend expects object with amenities array
       features: {
@@ -700,8 +890,21 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
         unit_types: formData.unit_types || []
       },
       
-      // Images - backend expects array, not JSON string
-      images: Array.isArray(formData.images) ? formData.images : [],
+      // Images - backend expects object (JSONB), not array
+      // Backend validation requires object format
+      images: (() => {
+        // If already an object (from edit mode), keep it
+        if (formData.images && typeof formData.images === 'object' && !Array.isArray(formData.images)) {
+          return formData.images;
+        }
+        // Convert array to object format
+        const imageArray = Array.isArray(formData.images) ? formData.images : [];
+        if (imageArray.length === 0) {
+          return {}; // Empty object if no images (backend requires object, not array)
+        }
+        // Convert array to object - backend expects object with array inside
+        return { urls: imageArray };
+      })(),
       
       // Documents - new object structure: only include fields that have data
       documents: (() => {
@@ -749,96 +952,246 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
         
         // Return empty object if no documents, or only include fields with data
         return result;
-      })(),
+      })()
       
-      // Property features
-      property_features: formData.property_features || [],
-      
-      // SEO
-      seo: seoData || {},
-      
-      // Status
-      is_active: formData.is_active !== undefined ? formData.is_active : true,
-      is_featured: formData.is_featured || false,
-      sort_order: parseInt(formData.sort_order) || 0
+      // COMMENTED OUT: Fields not in database schema (commented out in form, so not sent)
+      // short_description: (formData.short_description && formData.short_description.trim()) || '',
+      // address: (formData.location_address && formData.location_address.trim()) || '',
+      // state: (formData.location_state && formData.location_state.trim()) || 'Sindh',
+      // latitude: formData.location_latitude ? parseFloat(formData.location_latitude) : null,
+      // longitude: formData.location_longitude ? parseFloat(formData.location_longitude) : null,
+      // property_type: formData.property_type || 'residential',
+      // project_type: (formData.project_type && formData.project_type.trim()) || null,
+      // floors: formData.floors ? String(formData.floors).trim() : null,
+      // total_units: formData.total_units ? String(formData.total_units).trim() : null,
+      // construction_progress: parseInt(formData.construction_progress) || 0,
+      // start_date: (formData.start_date && formData.start_date.trim()) || null,
+      // expected_completion: (formData.expected_completion && formData.expected_completion.trim()) || null,
+      // handover_date: (formData.handover_date && formData.handover_date.trim()) || null,
+      // pricing_total_value: formData.pricing_total_value ? String(formData.pricing_total_value).trim() : null,
+      // pricing_market_value: formData.pricing_market_value ? String(formData.pricing_market_value).trim() : null,
+      // pricing_appreciation: formData.pricing_appreciation ? String(formData.pricing_appreciation).trim() : null,
+      // pricing_expected_roi: formData.pricing_expected_roi ? String(formData.pricing_expected_roi).trim() : null,
+      // pricing_min_investment: formData.pricing_min_investment ? String(formData.pricing_min_investment).trim() : null,
+      // tokenization_total_tokens: parseInt(formData.tokenization_total_tokens) || parseInt(formData.totalTokens) || 1000,
+      // tokenization_available_tokens: Math.min(
+      //   parseInt(formData.tokenization_available_tokens) || parseInt(formData.totalTokens) || 1000,
+      //   parseInt(formData.totalTokens) || 1000
+      // ),
+      // tokenization_price_per_token: formData.tokenization_price_per_token ? String(formData.tokenization_price_per_token).trim() : null,
+      // tokenization_token_price: formData.tokenization_token_price ? String(formData.tokenization_token_price).trim() : null,
+      // bedrooms: parseInt(formData.bedrooms) || 0,
+      // bathrooms: parseInt(formData.bathrooms) || 0,
+      // area_sqm: parseFloat(formData.area_sqm) || 0,
+      // is_rented: formData.is_rented || false,
+      // appreciation_percentage: parseFloat(formData.appreciation_percentage) || 0,
+      // property_features: formData.property_features || [],
+      // seo: seoData || {},
+      // is_active: formData.is_active !== undefined ? formData.is_active : true,
+      // is_featured: formData.is_featured || false,
+      // sort_order: parseInt(formData.sort_order) || 0
     };
     
-    // Remove location_* fields since we've converted them
-    delete finalData.location_address;
-    delete finalData.location_city;
-    delete finalData.location_state;
-    delete finalData.location_country;
-    delete finalData.location_latitude;
-    delete finalData.location_longitude;
+    // No need to delete fields - we're only sending DB fields now
+    // All commented-out fields are already excluded from finalData
     
-    // Remove top-level amenities and unit_types since they're in features
-    delete finalData.amenities;
-    delete finalData.unit_types;
-    
-    // Remove fields that shouldn't be sent to backend
-    delete finalData.investment_stats;
-    delete finalData.listing_price_formatted;
-    
-    // Only include documents if it has any data (object with at least one key)
+    // For documents - keep it if it has data, otherwise don't send it (backend might handle null/undefined)
+    // Don't send empty documents object as it might cause validation errors
     if (finalData.documents && Object.keys(finalData.documents).length === 0) {
-      delete finalData.documents; // Remove empty documents object
+      delete finalData.documents;
     }
     
-    // Ensure images field is always present (even if empty array)
-    if (!finalData.images) {
-      finalData.images = [];
+    // Remove null/empty optional fields to avoid validation issues
+    // But keep required fields even if they're empty strings (backend will validate)
+    const cleanData = { ...finalData };
+    
+    // Ensure images field is always an object (not array) - backend validation requires object
+    // Backend expects JSONB object, so convert array to object format
+    if (Array.isArray(cleanData.images)) {
+      const imageArray = cleanData.images;
+      if (imageArray.length === 0) {
+        cleanData.images = {}; // Empty object if no images (backend requires object, not array)
+      } else {
+        // Convert array to object - backend expects object format
+        // Try { urls: [...] } format
+        cleanData.images = { urls: imageArray };
+      }
+    } else if (!cleanData.images || typeof cleanData.images !== 'object') {
+      // If not an object, make it an empty object
+      cleanData.images = {};
+    }
+    const requiredFields = ['organizationId', 'type', 'status', 'totalValueUSDT', 'totalTokens', 
+                           'expectedROI', 'title', 'description', 'city', 'country', 'images'];
+    
+    // Calculate missing required DB fields
+    // availableTokens = totalTokens - soldTokens (for now, assume all are available initially)
+    if (!cleanData.availableTokens && cleanData.totalTokens) {
+      cleanData.availableTokens = cleanData.totalTokens; // Initially all tokens are available
     }
     
-    // Log images and documents specifically to verify they're being sent
-    console.log('📤 Submitting property data:', JSON.stringify(finalData, null, 2));
-    console.log('🖼️ Images being sent:', JSON.stringify(finalData.images, null, 2));
-    console.log('🖼️ Images count:', finalData.images?.length || 0);
-    console.log('🖼️ Images type check:', {
-      isArray: Array.isArray(finalData.images),
-      type: typeof finalData.images,
-      value: finalData.images,
-      hasImages: 'images' in finalData
+    // pricePerTokenUSDT = totalValueUSDT / totalTokens
+    if (!cleanData.pricePerTokenUSDT && cleanData.totalValueUSDT && cleanData.totalTokens) {
+      cleanData.pricePerTokenUSDT = parseFloat((cleanData.totalValueUSDT / cleanData.totalTokens).toFixed(6));
+    }
+    
+    Object.keys(cleanData).forEach(key => {
+      const value = cleanData[key];
+      
+      // Skip required fields - they should be sent even if empty
+      if (requiredFields.includes(key)) {
+        return;
+      }
+      
+      // Remove null, undefined, empty strings, and empty arrays (except images which is handled above)
+      if (value === null || value === undefined || 
+          (typeof value === 'string' && value.trim() === '') ||
+          (Array.isArray(value) && value.length === 0)) {
+        delete cleanData[key];
+      }
     });
-    console.log('📄 Documents being sent:', JSON.stringify(finalData.documents, null, 2));
-    console.log('📄 Documents count:', finalData.documents?.length || 0);
-    console.log('📄 Documents type check:', {
-      isArray: Array.isArray(finalData.documents),
-      type: typeof finalData.documents,
-      value: finalData.documents,
-      hasDocuments: 'documents' in finalData
+    
+    // Ensure numeric fields are actually numbers, not strings
+    if (cleanData.totalValueUSDT !== undefined) {
+      cleanData.totalValueUSDT = parseFloat(cleanData.totalValueUSDT) || 0;
+    }
+    if (cleanData.totalTokens !== undefined) {
+      cleanData.totalTokens = parseInt(cleanData.totalTokens) || 0;
+    }
+    if (cleanData.expectedROI !== undefined) {
+      cleanData.expectedROI = parseFloat(cleanData.expectedROI) || 0;
+    }
+    
+    // Use cleaned data
+    const dataToSend = cleanData;
+    
+    // Log all data being sent
+    console.log('📤 ====== FINAL DATA BEING SENT TO BACKEND ======');
+    console.log('📤 Cleaned data to send:', JSON.stringify(dataToSend, null, 2));
+    
+    // Log required fields specifically
+    console.log('🔍 Required fields check:', {
+      organizationId: dataToSend.organizationId,
+      type: dataToSend.type,
+      status: dataToSend.status,
+      totalValueUSDT: dataToSend.totalValueUSDT,
+      totalTokens: dataToSend.totalTokens,
+      expectedROI: dataToSend.expectedROI,
+      title: dataToSend.title,
+      description: dataToSend.description,
+      address: dataToSend.address,
+      city: dataToSend.city,
+      state: dataToSend.state,
+      country: dataToSend.country,
+      hasDocuments: !!dataToSend.documents && Object.keys(dataToSend.documents).length > 0
+    });
+    
+    console.log('🖼️ Images being sent:', {
+      count: dataToSend.images?.length || 0,
+      isArray: Array.isArray(dataToSend.images),
+      value: dataToSend.images
+    });
+    
+    console.log('📄 Documents being sent:', {
+      hasBrochure: !!dataToSend.documents?.brochure,
+      hasFloorPlan: !!dataToSend.documents?.floorPlan,
+      complianceCount: dataToSend.documents?.compliance?.length || 0,
+      value: dataToSend.documents
     });
     
     // Verify documents format for JSONB compatibility (new object structure)
     // Only check if documents object has any keys (meaning at least one document type exists)
-    const hasDocumentsInFinalData = finalData.documents && Object.keys(finalData.documents).length > 0;
-    if (hasDocumentsInFinalData) {
+    const hasDocumentsInData = dataToSend.documents && Object.keys(dataToSend.documents).length > 0;
+    if (hasDocumentsInData) {
       // Validate structure
       const isValidFormat = (
-        (!finalData.documents.brochure || (finalData.documents.brochure.url && finalData.documents.brochure.name)) &&
-        (!finalData.documents.floorPlan || finalData.documents.floorPlan.url) &&
-        (!Array.isArray(finalData.documents.compliance) || finalData.documents.compliance.every(c => c && c.url && c.type))
+        (!dataToSend.documents.brochure || (dataToSend.documents.brochure.url && dataToSend.documents.brochure.name)) &&
+        (!dataToSend.documents.floorPlan || dataToSend.documents.floorPlan.url) &&
+        (!Array.isArray(dataToSend.documents.compliance) || dataToSend.documents.compliance.every(c => c && c.url && c.type))
       );
       console.log('✅ Documents format valid for JSONB:', isValidFormat);
       if (!isValidFormat) {
         console.error('❌ Invalid document format! Each document must have: name, url, type');
-        console.error('❌ Documents that failed validation:', finalData.documents);
+        console.error('❌ Documents that failed validation:', dataToSend.documents);
       } else {
         console.log('✅ All documents are properly formatted for backend JSONB column');
       }
     } else {
-      console.warn('⚠️ No documents to send. Property will be created without documents.');
+      // For updates, documents might already exist in backend, so don't require them
+      if (!property) {
+        // Only require documents for new properties
+        console.error('❌ CRITICAL: No documents found! Documents are required for new properties.');
+        alert('❌ Error: Documents are required but none were found. Please add at least one document.');
+        return;
+      } else {
+        console.log('ℹ️ No documents in update - existing documents in backend will be preserved');
+      }
     }
     
-    // Final verification: Ensure documents field exists in finalData
-    if (!('documents' in finalData)) {
-      console.error('❌ CRITICAL: documents field missing from finalData!');
-      finalData.documents = [];
+    // Final validation - ensure required fields are present and valid
+    const finalValidationErrors = [];
+    if (!dataToSend.organizationId) finalValidationErrors.push('Organization ID is required');
+    if (!dataToSend.type) finalValidationErrors.push('Property type is required');
+    if (!dataToSend.status) finalValidationErrors.push('Status is required');
+    if (!dataToSend.totalValueUSDT || dataToSend.totalValueUSDT <= 0) finalValidationErrors.push('Total Value USDT must be greater than 0');
+    if (!dataToSend.totalTokens || dataToSend.totalTokens <= 0) finalValidationErrors.push('Total Tokens must be greater than 0');
+    if (dataToSend.expectedROI === undefined || dataToSend.expectedROI === null) finalValidationErrors.push('Expected ROI is required');
+    if (!dataToSend.title || dataToSend.title.trim() === '') finalValidationErrors.push('Title is required');
+    if (!dataToSend.description || dataToSend.description.trim() === '') finalValidationErrors.push('Description is required');
+    
+    if (finalValidationErrors.length > 0) {
+      const errorMsg = '⚠️ Validation Errors:\n\n' + finalValidationErrors.map((err, i) => `${i + 1}. ${err}`).join('\n');
+      alert(errorMsg);
+      console.error('❌ Validation failed:', finalValidationErrors);
+      return;
     }
     
-    onSave(finalData);
+    console.log('✅ ====== SENDING DATA TO BACKEND ======');
+    console.log('📤 Final payload:', JSON.stringify(dataToSend, null, 2));
+    onSave(dataToSend);
+  };
+
+  // Helper function to check if a value is empty
+  const isEmpty = (value) => {
+    if (value === null || value === undefined) return true;
+    if (typeof value === 'string' && (value.trim() === '' || value === 'null' || value === 'undefined')) return true;
+    // For numbers, only consider 0 as empty if it's explicitly 0 (not a valid value)
+    // But we'll allow 0 for some fields, so we'll check more carefully
+    if (typeof value === 'number' && isNaN(value)) return true;
+    if (Array.isArray(value) && value.length === 0) return true;
+    if (typeof value === 'object' && Object.keys(value).length === 0) return true;
+    return false;
+  };
+  
+  // Helper to check if a field should be filled (more lenient for edit mode)
+  const shouldFill = (value, fieldName) => {
+    // Always fill if completely empty
+    if (isEmpty(value)) return true;
+    
+    // For specific fields, also fill if they have default/placeholder values
+    const defaultValues = {
+      'title': ['', 'Untitled', 'New Property'],
+      'description': ['', 'No description'],
+      'location_address': ['', 'Address not set'],
+      'location_city': ['', 'City not set'],
+      'pricing_total_value': ['0', '0.00', ''],
+      'pricing_market_value': ['0', '0.00', ''],
+      'pricing_min_investment': ['0', '0.00', ''],
+      'tokenization_price_per_token': ['0', '0.00', ''],
+      'tokenization_token_price': ['0', '0.00', ''],
+    };
+    
+    if (defaultValues[fieldName]) {
+      const strValue = String(value).toLowerCase().trim();
+      return defaultValues[fieldName].some(def => strValue === def.toLowerCase());
+    }
+    
+    return false;
   };
 
   const fillRandomValues = () => {
+    console.log('🎲 Fill Random Values clicked');
+    console.log('📊 Current form data before fill:', formData);
+    
     const randomTitles = [
       'Luxury Heights Residency',
       'Golden Gate Apartments',
@@ -872,13 +1225,11 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
     ];
     
     const randomPropertyTypes = ['residential', 'commercial'];
-    const randomStatuses = ['active'];
     
     const randomTitle = randomTitles[Math.floor(Math.random() * randomTitles.length)];
     const randomDescription = randomDescriptions[Math.floor(Math.random() * randomDescriptions.length)];
     const randomAddress = randomAddresses[Math.floor(Math.random() * randomAddresses.length)];
     const randomPropertyType = randomPropertyTypes[Math.floor(Math.random() * randomPropertyTypes.length)];
-    const randomStatus = randomStatuses[Math.floor(Math.random() * randomStatuses.length)];
     
     // Get random organization from loaded organizations
     const randomOrg = organizations.length > 0 
@@ -886,13 +1237,13 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
       : null;
     const orgId = randomOrg ? (randomOrg.displayCode || randomOrg.id) : 'ORG-000001';
     
-    // Generate random pricing values
-    const totalValueUSDT = Math.floor(Math.random() * 70000000) + 3500000; // 3.5M to 70M USD
-    const totalValue = totalValueUSDT; // Already in USD
-    const minInvestment = Math.floor(Math.random() * 1000000) + 100000; // 100K to 1M
-    const roi = (Math.random() * 15 + 5).toFixed(1); // 5% to 20%
-    const totalTokens = Math.floor(Math.random() * 200000) + 10000; // 10K to 200K
-    const availableTokens = Math.floor(totalTokens * (Math.random() * 0.8 + 0.2)); // 20% to 100% of total
+    // Generate random pricing values (used if existing values are empty)
+    const totalValueUSDT = Math.floor(Math.random() * 70000000) + 3500000;
+    const totalValue = totalValueUSDT;
+    const minInvestment = Math.floor(Math.random() * 1000000) + 100000;
+    const roi = (Math.random() * 15 + 5).toFixed(1);
+    const totalTokens = Math.floor(Math.random() * 200000) + 10000;
+    const availableTokens = Math.floor(totalTokens * (Math.random() * 0.8 + 0.2));
     
     // Generate random dates
     const startDate = new Date();
@@ -900,109 +1251,223 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
     const completionDate = new Date(startDate);
     completionDate.setMonth(completionDate.getMonth() + Math.floor(Math.random() * 24) + 12);
     
-    setFormData({
-      // Required backend fields
-      organizationId: orgId,
-      type: randomPropertyType,
-      status: randomStatus,
-      totalValueUSDT: totalValueUSDT,
-      totalTokens: totalTokens,
-      expectedROI: parseFloat(roi),
-      
-      // Other fields
-      title: randomTitle,
-      slug: generateSlug(randomTitle),
-      description: randomDescription,
-      short_description: `Premium ${randomPropertyType} development in ${randomAddress.split(',')[0]}`,
-      location_address: randomAddress,
-      location_city: 'Karachi',
-      location_state: 'Sindh',
-      location_country: 'Pakistan',
-      location_latitude: (24.8 + Math.random() * 0.2).toFixed(6),
-      location_longitude: (67.0 + Math.random() * 0.2).toFixed(6),
-      property_type: randomPropertyType,
-      project_type: ['residential', 'commercial', 'mixed-use', 'residential-commercial', 'retail', 'office'][Math.floor(Math.random() * 6)],
-      floors: Math.floor(Math.random() * 20) + 5,
-      total_units: Math.floor(Math.random() * 10) + 1,
-      construction_progress: [0, 25, 50, 75, 100][Math.floor(Math.random() * 5)],
-      start_date: startDate.toISOString().split('T')[0],
-      expected_completion: completionDate.toISOString().split('T')[0],
-      handover_date: new Date(completionDate.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      pricing_total_value: totalValue.toString(),
-      pricing_market_value: Math.floor(totalValue * 0.9).toString(),
-      pricing_appreciation: (Math.random() * 20 + 10).toFixed(1),
-      pricing_expected_roi: roi,
-      pricing_min_investment: minInvestment.toString(),
-      tokenization_total_tokens: totalTokens,
-      tokenization_available_tokens: availableTokens,
-      tokenization_price_per_token: (totalValue / totalTokens).toFixed(2),
-      tokenization_token_price: (totalValue / totalTokens).toFixed(2),
-      unit_types: [
-        { type: '1 Bedroom', size: '800 sq ft', count: '1' },
-        { type: '2 Bedroom', size: '1200 sq ft', count: '2' },
-        { type: '3 Bedroom', size: '1800 sq ft', count: '3' }
-      ],
-      features: [
-        'Swimming Pool',
-        'Gymnasium',
-        'Parking',
-        'Security',
-        'Garden',
-        'Elevator',
-        'Power Backup',
-        'Water Treatment'
-      ],
-      images: [], // Don't autofill images - user must upload them
-      seo: {
-        title: `${randomTitle} - Premium Real Estate Investment`,
-        description: `Invest in ${randomTitle}, a premium ${randomPropertyType} development offering ${roi}% ROI.`,
-        keywords: `${randomPropertyType}, real estate, investment, Karachi, premium`
-      },
-      investment_stats: {
-        totalInvestors: Math.floor(Math.random() * 100),
-        totalInvestment: Math.floor(totalValue * 0.1),
-        averageInvestment: Math.floor(minInvestment * 1.2)
-      },
-      is_active: true,
-      is_featured: Math.random() > 0.5,
-      sort_order: Math.floor(Math.random() * 100),
-      bedrooms: Math.floor(Math.random() * 4) + 1,
-      bathrooms: Math.floor(Math.random() * 3) + 1,
-      area_sqm: Math.floor(Math.random() * 200) + 100,
-      is_rented: Math.random() > 0.7,
-      appreciation_percentage: (Math.random() * 30 + 10).toFixed(2),
-      amenities: [
-        'Swimming Pool',
-        'Gymnasium',
-        'Parking',
-        '24/7 Security',
-        'Garden',
-        'Elevator',
-        'Power Backup',
-        'Water Treatment',
-        'Club House',
-        'Playground'
-      ],
-      documents: {
-        brochure: null,
-        floorPlan: null,
-        compliance: []
-      }, // Don't autofill documents - user must upload them
-      property_features: [
-        'Modern Architecture',
-        'Energy Efficient',
-        'Smart Home Features',
-        'Premium Finishes',
-        'High Ceilings',
-        'Balcony Access'
-      ],
-      listing_price_formatted: `$${(totalValueUSDT / 1000000).toFixed(1)}M`
-    });
+    // Track which fields are being filled
+    const filledFields = [];
     
-    setSeoData({
-      title: `${randomTitle} - Premium Real Estate Investment`,
-      description: `Invest in ${randomTitle}, a premium ${randomPropertyType} development offering ${roi}% ROI.`,
-      keywords: `${randomPropertyType}, real estate, investment, Karachi, premium`
+    // ONLY fill empty fields - preserve existing values!
+    setFormData(prev => {
+      const updated = { ...prev };
+      
+      // Required backend fields - only fill if empty
+      if (shouldFill(prev.organizationId, 'organizationId') || isEmpty(prev.organizationId)) {
+        updated.organizationId = orgId;
+        filledFields.push('organizationId');
+      }
+      if (shouldFill(prev.type, 'type') || isEmpty(prev.type)) {
+        updated.type = randomPropertyType;
+        filledFields.push('type');
+      }
+      if (shouldFill(prev.status, 'status') || isEmpty(prev.status)) {
+        updated.status = 'active';
+        filledFields.push('status');
+      }
+      if (shouldFill(prev.totalValueUSDT, 'totalValueUSDT') || (prev.totalValueUSDT === 0 || isEmpty(prev.totalValueUSDT))) {
+        updated.totalValueUSDT = totalValueUSDT;
+        filledFields.push('totalValueUSDT');
+      }
+      if (shouldFill(prev.totalTokens, 'totalTokens') || (prev.totalTokens === 0 || isEmpty(prev.totalTokens))) {
+        updated.totalTokens = totalTokens;
+        filledFields.push('totalTokens');
+      }
+      if (shouldFill(prev.expectedROI, 'expectedROI') || (prev.expectedROI === 0 || isEmpty(prev.expectedROI))) {
+        updated.expectedROI = parseFloat(roi);
+        filledFields.push('expectedROI');
+      }
+      if (shouldFill(prev.fullROI, 'fullROI') || (prev.fullROI === 0 || isEmpty(prev.fullROI))) {
+        updated.fullROI = parseFloat(roi);
+        filledFields.push('fullROI');
+      }
+      
+      // Basic information - only fill if empty
+      if (shouldFill(prev.title, 'title') || isEmpty(prev.title)) {
+        updated.title = randomTitle;
+        updated.slug = generateSlug(randomTitle);
+        filledFields.push('title');
+      }
+      if (shouldFill(prev.description, 'description') || isEmpty(prev.description)) {
+        updated.description = randomDescription;
+        filledFields.push('description');
+      }
+      if (shouldFill(prev.short_description, 'short_description') || isEmpty(prev.short_description)) {
+        updated.short_description = `Premium ${prev.type || randomPropertyType} development in ${randomAddress.split(',')[0]}`;
+        filledFields.push('short_description');
+      }
+      
+      // Location - only fill if empty
+      if (shouldFill(prev.location_address, 'location_address') || isEmpty(prev.location_address)) {
+        updated.location_address = randomAddress;
+        filledFields.push('location_address');
+      }
+      if (shouldFill(prev.location_city, 'location_city') || isEmpty(prev.location_city)) {
+        updated.location_city = 'Karachi';
+        filledFields.push('location_city');
+      }
+      if (shouldFill(prev.location_state, 'location_state') || isEmpty(prev.location_state)) {
+        updated.location_state = 'Sindh';
+        filledFields.push('location_state');
+      }
+      if (shouldFill(prev.location_country, 'location_country') || isEmpty(prev.location_country)) {
+        updated.location_country = 'Pakistan';
+        filledFields.push('location_country');
+      }
+      if (shouldFill(prev.location_latitude, 'location_latitude') || isEmpty(prev.location_latitude)) {
+        updated.location_latitude = (24.8 + Math.random() * 0.2).toFixed(6);
+        filledFields.push('location_latitude');
+      }
+      if (shouldFill(prev.location_longitude, 'location_longitude') || isEmpty(prev.location_longitude)) {
+        updated.location_longitude = (67.0 + Math.random() * 0.2).toFixed(6);
+        filledFields.push('location_longitude');
+      }
+      
+      // Property details - only fill if empty
+      if (shouldFill(prev.property_type, 'property_type') || isEmpty(prev.property_type)) {
+        updated.property_type = prev.type || randomPropertyType;
+        filledFields.push('property_type');
+      }
+      if (shouldFill(prev.project_type, 'project_type') || isEmpty(prev.project_type)) {
+        updated.project_type = ['residential', 'commercial', 'mixed-use', 'residential-commercial', 'retail', 'office'][Math.floor(Math.random() * 6)];
+        filledFields.push('project_type');
+      }
+      if (shouldFill(prev.floors, 'floors') || isEmpty(prev.floors)) {
+        updated.floors = Math.floor(Math.random() * 20) + 5;
+        filledFields.push('floors');
+      }
+      if (shouldFill(prev.total_units, 'total_units') || isEmpty(prev.total_units)) {
+        updated.total_units = Math.floor(Math.random() * 10) + 1;
+        filledFields.push('total_units');
+      }
+      if (shouldFill(prev.construction_progress, 'construction_progress') || (prev.construction_progress === 0 || isEmpty(prev.construction_progress))) {
+        updated.construction_progress = [25, 50, 75, 100][Math.floor(Math.random() * 4)];
+        filledFields.push('construction_progress');
+      }
+      if (shouldFill(prev.start_date, 'start_date') || isEmpty(prev.start_date)) {
+        updated.start_date = startDate.toISOString().split('T')[0];
+        filledFields.push('start_date');
+      }
+      if (shouldFill(prev.expected_completion, 'expected_completion') || isEmpty(prev.expected_completion)) {
+        updated.expected_completion = completionDate.toISOString().split('T')[0];
+        filledFields.push('expected_completion');
+      }
+      if (shouldFill(prev.handover_date, 'handover_date') || isEmpty(prev.handover_date)) {
+        updated.handover_date = new Date(completionDate.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+        filledFields.push('handover_date');
+      }
+      
+      // Pricing - only fill if empty (use existing totalValueUSDT if available)
+      const existingTotalValue = prev.totalValueUSDT || totalValue;
+      if (shouldFill(prev.pricing_total_value, 'pricing_total_value') || isEmpty(prev.pricing_total_value)) {
+        updated.pricing_total_value = existingTotalValue.toString();
+        filledFields.push('pricing_total_value');
+      }
+      if (shouldFill(prev.pricing_market_value, 'pricing_market_value') || isEmpty(prev.pricing_market_value)) {
+        updated.pricing_market_value = Math.floor(existingTotalValue * 0.9).toString();
+        filledFields.push('pricing_market_value');
+      }
+      if (shouldFill(prev.pricing_appreciation, 'pricing_appreciation') || isEmpty(prev.pricing_appreciation)) {
+        updated.pricing_appreciation = (Math.random() * 20 + 10).toFixed(1);
+        filledFields.push('pricing_appreciation');
+      }
+      if (shouldFill(prev.pricing_expected_roi, 'pricing_expected_roi') || isEmpty(prev.pricing_expected_roi)) {
+        updated.pricing_expected_roi = prev.expectedROI || roi;
+        filledFields.push('pricing_expected_roi');
+      }
+      if (shouldFill(prev.pricing_min_investment, 'pricing_min_investment') || isEmpty(prev.pricing_min_investment)) {
+        updated.pricing_min_investment = minInvestment.toString();
+        filledFields.push('pricing_min_investment');
+      }
+      
+      // Tokenization - only fill if empty (use existing tokens if available)
+      const existingTotalTokens = prev.totalTokens || totalTokens;
+      const existingTotalValueForCalc = prev.totalValueUSDT || totalValue;
+      if (shouldFill(prev.tokenization_total_tokens, 'tokenization_total_tokens') || (prev.tokenization_total_tokens === 0 || isEmpty(prev.tokenization_total_tokens))) {
+        updated.tokenization_total_tokens = existingTotalTokens;
+        filledFields.push('tokenization_total_tokens');
+      }
+      if (shouldFill(prev.tokenization_available_tokens, 'tokenization_available_tokens') || (prev.tokenization_available_tokens === 0 || isEmpty(prev.tokenization_available_tokens))) {
+        updated.tokenization_available_tokens = Math.floor(existingTotalTokens * 0.9);
+        filledFields.push('tokenization_available_tokens');
+      }
+      if (shouldFill(prev.tokenization_price_per_token, 'tokenization_price_per_token') || isEmpty(prev.tokenization_price_per_token)) {
+        updated.tokenization_price_per_token = (existingTotalValueForCalc / existingTotalTokens).toFixed(2);
+        filledFields.push('tokenization_price_per_token');
+      }
+      if (shouldFill(prev.tokenization_token_price, 'tokenization_token_price') || isEmpty(prev.tokenization_token_price)) {
+        updated.tokenization_token_price = (existingTotalValueForCalc / existingTotalTokens).toFixed(2);
+        filledFields.push('tokenization_token_price');
+      }
+      
+      // Unit types - only fill if empty
+      if (isEmpty(prev.unit_types)) {
+        updated.unit_types = [
+          { type: '1 Bedroom', size: '800 sq ft', count: '1' },
+          { type: '2 Bedroom', size: '1200 sq ft', count: '2' },
+          { type: '3 Bedroom', size: '1800 sq ft', count: '3' }
+        ];
+        filledFields.push('unit_types');
+      }
+      
+      // Features - only fill if empty
+      if (isEmpty(prev.features)) {
+        updated.features = [
+          'Swimming Pool', 'Gymnasium', 'Parking', 'Security',
+          'Garden', 'Elevator', 'Power Backup', 'Water Treatment'
+        ];
+        filledFields.push('features');
+      }
+      
+      // Amenities - only fill if empty
+      if (isEmpty(prev.amenities)) {
+        updated.amenities = [
+          'Swimming Pool', 'Gymnasium', 'Parking', '24/7 Security',
+          'Garden', 'Elevator', 'Power Backup', 'Water Treatment',
+          'Club House', 'Playground'
+        ];
+        filledFields.push('amenities');
+      }
+      
+      // Specifications - only fill if using defaults (2, 2, 100)
+      if (prev.bedrooms === 2 || isEmpty(prev.bedrooms)) {
+        updated.bedrooms = Math.floor(Math.random() * 4) + 1;
+        filledFields.push('bedrooms');
+      }
+      if (prev.bathrooms === 2 || isEmpty(prev.bathrooms)) {
+        updated.bathrooms = Math.floor(Math.random() * 3) + 1;
+        filledFields.push('bathrooms');
+      }
+      if (prev.area_sqm === 100 || isEmpty(prev.area_sqm)) {
+        updated.area_sqm = Math.floor(Math.random() * 200) + 100;
+        filledFields.push('area_sqm');
+      }
+      if (isEmpty(prev.appreciation_percentage) || prev.appreciation_percentage === 20) {
+        updated.appreciation_percentage = (Math.random() * 30 + 10).toFixed(2);
+        filledFields.push('appreciation_percentage');
+      }
+      
+      // Property features - only fill if empty
+      if (isEmpty(prev.property_features)) {
+        updated.property_features = [
+          'Smart Home Features', 'Premium Finishes', 'High Ceilings',
+          'Balcony Access', 'Modern Kitchen', 'Walk-in Closet'
+        ];
+        filledFields.push('property_features');
+      }
+      
+      // DON'T touch images - user must upload them
+      // DON'T touch documents - user must upload them
+      
+      console.log('✅ Fill Random: Filled', filledFields.length, 'fields:', filledFields);
+      console.log('📊 Updated form data:', updated);
+      return updated;
     });
   };
 
@@ -1460,20 +1925,29 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
   };
 
   const handleNextStep = () => {
-    if (validateStep(currentStep)) {
+    // Allow navigation without validation - users should be able to edit both tabs freely
+    // Skip step 2 (commented out) - go directly from 1 to 3
+    if (currentStep === 1) {
+      setCurrentStep(3);
+    } else {
       setCurrentStep(prev => Math.min(prev + 1, totalSteps));
-      // Scroll to top of form
-      setTimeout(() => {
-        const formContent = document.querySelector('.form-scrollable-content');
-        if (formContent) {
-          formContent.scrollTop = 0;
-        }
-      }, 100);
     }
+    // Scroll to top of form
+    setTimeout(() => {
+      const formContent = document.querySelector('.form-scrollable-content');
+      if (formContent) {
+        formContent.scrollTop = 0;
+      }
+    }, 100);
   };
 
   const handlePreviousStep = () => {
-    setCurrentStep(prev => Math.max(prev - 1, 1));
+    // Skip step 2 (commented out) - go directly from 3 to 1
+    if (currentStep === 3) {
+      setCurrentStep(1);
+    } else {
+      setCurrentStep(prev => Math.max(prev - 1, 1));
+    }
     // Scroll to top of form
     setTimeout(() => {
       const formContent = document.querySelector('.form-scrollable-content');
@@ -1489,15 +1963,11 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
       return;
     }
     
-    // Allow jumping to previous steps without validation
-    if (step < currentStep) {
-      setCurrentStep(step);
-    } else if (step > currentStep) {
-      // Validate current step before moving forward
-      if (validateStep(currentStep)) {
-        setCurrentStep(step);
-      }
-    }
+    // Step 2 is commented out, so we only have steps 1 and 3
+    // Allow free navigation between steps - no validation required
+    // Users should be able to edit both tabs freely
+    setCurrentStep(step);
+    
     setTimeout(() => {
       const formContent = document.querySelector('.form-scrollable-content');
       if (formContent) {
@@ -1506,9 +1976,35 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
     }, 100);
   };
 
-  return (
-    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 h-full w-full z-50 flex items-start justify-center p-4 overflow-y-auto">
-      <div className="relative my-4 mx-auto border w-11/12 max-w-7xl shadow-lg rounded-md bg-card max-h-[95vh] flex flex-col">
+  // Show loading state when editing and waiting for property data OR organizations
+  if (property && (loadingPropertyData || loadingOrgs)) {
+    if (inline) {
+      return (
+        <div className="bg-card rounded-lg p-8 shadow-lg text-center border border-border">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-card-foreground font-medium">Loading property data...</p>
+          <p className="text-muted-foreground text-sm mt-2">
+            {loadingPropertyData ? 'Fetching property details...' : 'Loading organizations...'}
+          </p>
+        </div>
+      );
+    }
+    return (
+      <div className="fixed inset-0 bg-gray-600 bg-opacity-50 h-full w-full z-50 flex items-center justify-center">
+        <div className="bg-card rounded-lg p-8 shadow-lg text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-card-foreground font-medium">Loading property data...</p>
+          <p className="text-muted-foreground text-sm mt-2">
+            {loadingPropertyData ? 'Fetching property details...' : 'Loading organizations...'}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Form content (shared between modal and inline)
+  const formContent = (
+    <div className={`${inline ? 'w-full border border-border' : 'relative my-4 mx-auto border w-11/12 max-w-7xl'} shadow-lg rounded-md bg-card ${inline ? 'min-h-[600px]' : 'max-h-[95vh]'} flex flex-col`}>
         {/* Sticky Header with Close Button */}
         <div className="sticky top-0 z-10 bg-card border-b border-border px-5 py-4 rounded-t-md shadow-sm">
           <div className="flex justify-between items-center mb-4">
@@ -1523,21 +2019,14 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
             </button>
           </div>
 
-          {/* Step Indicator */}
+          {/* Step Indicator - Step 2 commented out (not in DB) */}
           <div className="flex items-center justify-center space-x-2">
-            {[1, 2, 3].map((step) => (
+            {[1, 3].map((step) => (
               <React.Fragment key={step}>
                 <button
                   type="button"
                   onClick={() => goToStep(step)}
-                  className={`flex items-center justify-center transition-all ${
-                    step < currentStep
-                      ? 'cursor-pointer'
-                      : step === currentStep
-                      ? ''
-                      : 'cursor-not-allowed opacity-50'
-                  }`}
-                  disabled={step > currentStep}
+                  className="flex items-center justify-center transition-all cursor-pointer"
                 >
                   <div className={`flex items-center ${
                     step === currentStep
@@ -1554,7 +2043,7 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                       {step < currentStep ? (
                         <Check className="w-5 h-5" />
                       ) : (
-                        step
+                        step === 1 ? 1 : 2
                       )}
                     </div>
                     <div className="ml-2 text-left hidden md:block">
@@ -1564,16 +2053,15 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                           : 'text-muted-foreground'
                       }`}>
                         {step === 1 && 'Basic & Location'}
-                        {step === 2 && 'Financial & Project'}
                         {step === 3 && 'Media & Settings'}
                       </div>
                       <div className="text-xs text-muted-foreground">
-                        Step {step} of {totalSteps}
+                        Step {step === 1 ? 1 : 2} of 2
                       </div>
                     </div>
                   </div>
                 </button>
-                {step < totalSteps && (
+                {step === 1 && (
                   <ChevronRight className="w-5 h-5 text-muted-foreground flex-shrink-0" />
                 )}
               </React.Fragment>
@@ -1675,12 +2163,12 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                   Total token supply for this property (e.g., 20000)
                 </p>
               </div>
-              <div>
+              {/* COMMENTED OUT: Construction Progress - Not in DB */}
+              {/* <div>
                 <label className="block text-sm font-medium text-foreground mb-1">
                   Construction Progress (%) *
                 </label>
                 <div className="space-y-3">
-                  {/* Quick Progress Buttons */}
                   <div className="flex space-x-2">
                     <button
                       type="button"
@@ -1728,7 +2216,6 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                     </button>
                   </div>
                   
-                  {/* Manual Input Field */}
                   <input
                     type="number"
                     min="0"
@@ -1743,8 +2230,9 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                 <p className="text-xs text-muted-foreground mt-1">
                   Used to calculate Expected ROI below
                 </p>
-              </div>
-              <div>
+              </div> */}
+              {/* COMMENTED OUT: Full ROI - Not in DB */}
+              {/* <div>
                 <label className="block text-sm font-medium text-foreground mb-1">
                   Full ROI (%) *
                   <span className="text-xs text-muted-foreground ml-2">
@@ -1762,13 +2250,10 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                   className="w-full px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
                   placeholder="Enter full ROI (e.g., 11.5)"
                 />
-              </div>
+              </div> */}
               <div>
                 <label className="block text-sm font-medium text-foreground mb-1">
                   Expected ROI (%) *
-                  <span className="text-xs text-primary ml-2">
-                    (Auto-calculated: {formData.construction_progress || 0}% of Full ROI)
-                  </span>
                 </label>
                 <input
                   type="number"
@@ -1778,12 +2263,9 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                   required
                   min="0"
                   step="0.1"
-                  readOnly
-                  className="w-full px-3 py-2 border border-input bg-accent text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring cursor-not-allowed"
+                  className="w-full px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
+                  placeholder="Enter Expected ROI (e.g., 11.5)"
                 />
-                <p className="text-xs text-muted-foreground mt-1">
-                  Calculated as: ({formData.construction_progress || 0}% construction) × ({formData.fullROI || 0}% full ROI) = {formData.expectedROI || 0}%
-                </p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-foreground mb-1">
@@ -1841,7 +2323,8 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                   className="w-full px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
                 />
               </div>
-              <div className="md:col-span-2">
+              {/* COMMENTED OUT: Short Description - Not in DB */}
+              {/* <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-foreground mb-1">
                   Short Description *
                 </label>
@@ -1853,7 +2336,7 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                   rows={2}
                   className="w-full px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
                 />
-              </div>
+              </div> */}
             </div>
           </Card>
 
@@ -1864,7 +2347,8 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
               Location Information
             </h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="md:col-span-2">
+              {/* COMMENTED OUT: Address - Not in DB */}
+              {/* <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-foreground mb-1">
                   Address *
                 </label>
@@ -1876,7 +2360,7 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                   rows={2}
                   className="w-full px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
                 />
-              </div>
+              </div> */}
               <div>
                 <label className="block text-sm font-medium text-foreground mb-1">
                   City *
@@ -1890,7 +2374,8 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                   className="w-full px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
                 />
               </div>
-              <div>
+              {/* COMMENTED OUT: State - Not in DB */}
+              {/* <div>
                 <label className="block text-sm font-medium text-foreground mb-1">
                   State *
                 </label>
@@ -1902,7 +2387,7 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                   required
                   className="w-full px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
                 />
-              </div>
+              </div> */}
               <div>
                 <label className="block text-sm font-medium text-foreground mb-1">
                   Country *
@@ -1916,7 +2401,8 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                   className="w-full px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
                 />
               </div>
-              <div>
+              {/* COMMENTED OUT: Latitude/Longitude - Not in DB */}
+              {/* <div>
                 <label className="block text-sm font-medium text-foreground mb-1">
                   Latitude
                 </label>
@@ -1941,11 +2427,11 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                   onChange={handleChange}
                   className="w-full px-3 py-2 border border-input bg-card text-card-foreground placeholder:text-muted-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
                 />
-              </div>
+              </div> */}
             </div>
             
-            {/* Location Map */}
-            <div className="mt-4">
+            {/* COMMENTED OUT: Location Map - Not in DB */}
+            {/* <div className="mt-4">
               <label className="block text-sm font-medium text-foreground mb-2">
                 Property Location Map
               </label>
@@ -1958,13 +2444,14 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                 onLocationChange={handleLocationChange}
                 height="400px"
               />
-            </div>
+            </div> */}
           </Card>
             </>
           )}
 
-          {/* STEP 2: Financial & Project Details */}
-          {currentStep === 2 && (
+          {/* STEP 2: Financial & Project Details - COMMENTED OUT (Not in DB) */}
+          {/* All fields in Step 2 (Property Details, Pricing, Tokenization, Specifications, Unit Types) are not in database schema */}
+          {false && currentStep === 2 && (
             <>
           {/* Property Details */}
           <Card className="p-6">
@@ -2744,8 +3231,8 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
             </div>
           </Card>
 
-          {/* Property Features */}
-          <Card className="p-6">
+          {/* COMMENTED OUT: Property Features - Not in DB */}
+          {/* <Card className="p-6">
             <h4 className="text-lg font-semibold text-card-foreground mb-4">Property Features (optional)</h4>
             <p className="text-sm text-muted-foreground mb-4">
               Add specific property features like premium finishes, high ceilings, balcony access, etc. This field is optional.
@@ -2779,7 +3266,7 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                 ))}
               </div>
             </div>
-          </Card>
+          </Card> */}
 
           {/* Images */}
           <Card className="p-6">
@@ -2877,8 +3364,8 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
             </div>
           </Card>
 
-          {/* SEO Information */}
-          <Card className="p-6">
+          {/* COMMENTED OUT: SEO Information - Not in DB */}
+          {/* <Card className="p-6">
             <h4 className="text-lg font-semibold text-card-foreground mb-4">SEO Information</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
@@ -2915,10 +3402,10 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                 />
               </div>
             </div>
-          </Card>
+          </Card> */}
 
-          {/* Status and Visibility */}
-          <Card className="p-6">
+          {/* COMMENTED OUT: Status and Visibility - Not in DB */}
+          {/* <Card className="p-6">
             <h4 className="text-lg font-semibold text-card-foreground mb-4 flex items-center">
               <TrendingUp className="w-5 h-5 mr-2" />
               Status and Visibility
@@ -2961,7 +3448,7 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                 </div>
               </div>
             </div>
-          </Card>
+          </Card> */}
             </>
           )}
 
@@ -3011,11 +3498,22 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
             <div className="flex items-center space-x-3">
               {/* Step Progress Indicator */}
               <div className="text-sm text-muted-foreground font-medium hidden sm:block">
-                Step {currentStep} of {totalSteps}
+                Step {currentStep === 1 ? 1 : 2} of {totalSteps}
               </div>
 
-              {/* Next Button or Submit Button */}
-              {currentStep < totalSteps ? (
+              {/* Next Button or Submit Button - Hide Next button when editing, show only Submit */}
+              {property ? (
+                // When editing: Always show Submit button (users navigate via step indicators at top)
+                <Button
+                  type="submit"
+                  disabled={isLoading}
+                  className="flex items-center space-x-2 bg-green-600 hover:bg-green-700"
+                >
+                  <Save className="w-4 h-4" />
+                  <span>{isLoading ? 'Saving...' : 'Update Property'}</span>
+                </Button>
+              ) : currentStep < totalSteps ? (
+                // When creating new: Show Next button until last step
                 <Button
                   type="button"
                   onClick={handleNextStep}
@@ -3026,13 +3524,14 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
                   <ChevronRight className="w-4 h-4" />
                 </Button>
               ) : (
+                // When creating new: Show Submit button on last step
                 <Button
                   type="submit"
                   disabled={isLoading}
                   className="flex items-center space-x-2 bg-green-600 hover:bg-green-700"
                 >
                   <Save className="w-4 h-4" />
-                  <span>{isLoading ? 'Saving...' : (property ? 'Update Property' : 'Create Property')}</span>
+                  <span>{isLoading ? 'Saving...' : 'Create Property'}</span>
                 </Button>
               )}
             </div>
@@ -3040,6 +3539,16 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading }) => {
         </form>
         </div>
       </div>
+  );
+
+  // Return inline or modal based on prop
+  if (inline) {
+    return formContent;
+  }
+
+  return (
+    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 h-full w-full z-50 flex items-start justify-center p-4 overflow-y-auto">
+      {formContent}
     </div>
   );
 };

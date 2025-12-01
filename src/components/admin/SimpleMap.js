@@ -2,34 +2,59 @@ import React, { useState, useEffect } from 'react';
 import { MapPin, Navigation } from 'lucide-react';
 
 const SimpleMap = ({ latitude, longitude, onLocationChange, height = '400px' }) => {
-  const [lat, setLat] = useState(latitude || 24.8607);
-  const [lng, setLng] = useState(longitude || 67.0011);
+  // Ensure initial values are always numbers
+  const parseCoord = (value, defaultValue) => {
+    if (!value) return defaultValue;
+    const parsed = parseFloat(value);
+    return isNaN(parsed) ? defaultValue : parsed;
+  };
+
+  const [lat, setLat] = useState(parseCoord(latitude, 24.8607));
+  const [lng, setLng] = useState(parseCoord(longitude, 67.0011));
 
   useEffect(() => {
-    if (latitude && longitude) {
-      setLat(parseFloat(latitude));
-      setLng(parseFloat(longitude));
+    if (latitude !== undefined && latitude !== null && latitude !== '') {
+      const parsedLat = parseFloat(latitude);
+      if (!isNaN(parsedLat)) {
+        setLat(parsedLat);
+      }
+    }
+    if (longitude !== undefined && longitude !== null && longitude !== '') {
+      const parsedLng = parseFloat(longitude);
+      if (!isNaN(parsedLng)) {
+        setLng(parsedLng);
+      }
     }
   }, [latitude, longitude]);
 
   const handleLatChange = (e) => {
     const value = parseFloat(e.target.value);
-    setLat(value);
-    onLocationChange(value, lng);
+    if (!isNaN(value)) {
+      setLat(value);
+      const currentLng = typeof lng === 'number' && !isNaN(lng) ? lng : parseFloat(lng) || 67.0011;
+      onLocationChange(value, currentLng);
+    }
   };
 
   const handleLngChange = (e) => {
     const value = parseFloat(e.target.value);
-    setLng(value);
-    onLocationChange(lat, value);
+    if (!isNaN(value)) {
+      setLng(value);
+      const currentLat = typeof lat === 'number' && !isNaN(lat) ? lat : parseFloat(lat) || 24.8607;
+      onLocationChange(currentLat, value);
+    }
   };
 
   const getGoogleMapsUrl = () => {
-    return `https://www.google.com/maps?q=${lat},${lng}&z=15`;
+    const latNum = typeof lat === 'number' ? lat : parseFloat(lat) || 24.8607;
+    const lngNum = typeof lng === 'number' ? lng : parseFloat(lng) || 67.0011;
+    return `https://www.google.com/maps?q=${latNum},${lngNum}&z=15`;
   };
 
   const getOpenStreetMapUrl = () => {
-    return `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}&zoom=15`;
+    const latNum = typeof lat === 'number' ? lat : parseFloat(lat) || 24.8607;
+    const lngNum = typeof lng === 'number' ? lng : parseFloat(lng) || 67.0011;
+    return `https://www.openstreetmap.org/?mlat=${latNum}&mlon=${lngNum}&zoom=15`;
   };
 
   return (
@@ -40,7 +65,7 @@ const SimpleMap = ({ latitude, longitude, onLocationChange, height = '400px' }) 
           <MapPin className="w-12 h-12 text-blue-600 mx-auto mb-2" />
           <p className="text-sm text-muted-foreground mb-2">Property Location</p>
           <p className="text-xs text-gray-500">
-            {lat.toFixed(6)}, {lng.toFixed(6)}
+            {typeof lat === 'number' && !isNaN(lat) ? lat.toFixed(6) : lat}, {typeof lng === 'number' && !isNaN(lng) ? lng.toFixed(6) : lng}
           </p>
         </div>
         
@@ -79,7 +104,7 @@ const SimpleMap = ({ latitude, longitude, onLocationChange, height = '400px' }) 
             <input
               type="number"
               step="any"
-              value={lat}
+              value={typeof lat === 'number' && !isNaN(lat) ? lat : ''}
               onChange={handleLatChange}
               className="w-full px-2 py-1 text-sm border border-input rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
               placeholder="24.8607"
@@ -92,7 +117,7 @@ const SimpleMap = ({ latitude, longitude, onLocationChange, height = '400px' }) 
             <input
               type="number"
               step="any"
-              value={lng}
+              value={typeof lng === 'number' && !isNaN(lng) ? lng : ''}
               onChange={handleLngChange}
               className="w-full px-2 py-1 text-sm border border-input rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
               placeholder="67.0011"
