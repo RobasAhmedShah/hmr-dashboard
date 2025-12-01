@@ -136,6 +136,7 @@ export const getPropertyImage = (property) => {
   // Helper to ensure full URL
   const ensureFullUrl = (url) => {
     if (!url) return null;
+    if (typeof url !== 'string') return null;
     // If already a full URL (starts with http:// or https://), return as-is
     if (url.startsWith('http://') || url.startsWith('https://')) {
       return url;
@@ -148,29 +149,20 @@ export const getPropertyImage = (property) => {
     return `${API_BASE_URL}/${url}`;
   };
 
-  // Parse images if it's a JSON string (from database)
-  // Database stores images as JSON string like: "[\"https://...\"]"
+  // Parse images - can be JSON string, array, or object
   let images = property.images;
+  
+  // Parse JSON string
   if (typeof images === 'string') {
     const trimmed = images.trim();
-    // Check if it looks like a JSON array
-    if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+    if (trimmed.startsWith('[') || trimmed.startsWith('{')) {
       try {
         images = JSON.parse(images);
-        console.log('✅ getPropertyImage - Parsed JSON:', images);
       } catch (e) {
-        console.warn('❌ getPropertyImage - Failed to parse JSON:', e, 'Raw:', images);
+        console.warn('❌ getPropertyImage - Failed to parse JSON:', e);
         images = null;
       }
-    } else {
-      console.log('⚠️ getPropertyImage - String but not JSON array:', images);
     }
-  }
-  
-  // Debug: Log what we're working with
-  if (property.images) {
-    console.log('🔍 getPropertyImage - Type:', typeof property.images, 'Value:', property.images);
-    console.log('🔍 getPropertyImage - Parsed:', images);
   }
    
   // Direct image property (from database)
@@ -178,22 +170,49 @@ export const getPropertyImage = (property) => {
     return ensureFullUrl(property.image);
   }
   
-  // Images object with thumbnail
-  if (images?.thumbnail) {
-    return ensureFullUrl(images.thumbnail);
+  // Handle images object or array
+  if (images) {
+    // Images object with urls array: { urls: ['url1', 'url2', ...] }
+    if (images.urls && Array.isArray(images.urls) && images.urls.length > 0) {
+      return ensureFullUrl(images.urls[0]);
+    }
+    
+    // Images object with thumbnail
+    if (images.thumbnail) {
+      return ensureFullUrl(images.thumbnail);
+    }
+    
+    // Images object with gallery array
+    if (images.gallery && Array.isArray(images.gallery) && images.gallery.length > 0) {
+      return ensureFullUrl(images.gallery[0]);
+    }
+    
+    // Direct images array
+    if (Array.isArray(images) && images.length > 0) {
+      const firstImg = images[0];
+      if (typeof firstImg === 'string') {
+        return ensureFullUrl(firstImg);
+      }
+      if (typeof firstImg === 'object' && firstImg.url) {
+        return ensureFullUrl(firstImg.url);
+      }
+    }
+    
+    // Images object with other keys (like main, primary, etc.)
+    if (typeof images === 'object' && !Array.isArray(images)) {
+      const values = Object.values(images);
+      for (const val of values) {
+        if (typeof val === 'string' && val.length > 0) {
+          return ensureFullUrl(val);
+        }
+        if (typeof val === 'object' && val.url) {
+          return ensureFullUrl(val.url);
+        }
+      }
+    }
   }
   
-  // Images object with gallery array
-  if (images?.gallery && Array.isArray(images.gallery) && images.gallery.length > 0) {
-    return ensureFullUrl(images.gallery[0]);
-  }
-  
-  // Direct images array (from parsed JSON string or direct array)
-  if (images && Array.isArray(images) && images.length > 0) {
-    return ensureFullUrl(images[0]);
-  }
-  
-  // Check for image_url field (common in databases)
+  // Check for image_url field
   if (property.image_url) {
     return ensureFullUrl(property.image_url);
   }
@@ -218,6 +237,7 @@ export const getPropertyImages = (property) => {
   // Helper to ensure full URL
   const ensureFullUrl = (url) => {
     if (!url) return null;
+    if (typeof url !== 'string') return null;
     // If already a full URL (starts with http:// or https://), return as-is
     if (url.startsWith('http://') || url.startsWith('https://')) {
       return url;
@@ -230,36 +250,66 @@ export const getPropertyImages = (property) => {
     return `${API_BASE_URL}/${url}`;
   };
 
-  // Parse images if it's a JSON string (from database)
-  // Database stores images as JSON string like: "[\"https://...\"]"
+  // Parse images - can be JSON string, array, or object
   let images = property.images;
+  
+  // Parse JSON string
   if (typeof images === 'string') {
     const trimmed = images.trim();
-    // Check if it looks like a JSON array
-    if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+    if (trimmed.startsWith('[') || trimmed.startsWith('{')) {
       try {
         images = JSON.parse(images);
-        console.log('✅ getPropertyImages - Parsed JSON:', images);
       } catch (e) {
-        console.warn('❌   getPropertyImages - Failed to parse JSON:', e, 'Raw:', images);
+        console.warn('❌ getPropertyImages - Failed to parse JSON:', e);
         images = null;
       }
-    } else {
-      console.log('⚠️ getPropertyImages - String but not JSON array:', images);
     }
   }
-   
-  // Images object with gallery array
-  if (images?.gallery && Array.isArray(images.gallery)) {
-    return images.gallery.map(img => ensureFullUrl(img)).filter(Boolean);
+  
+  // Handle images object or array
+  if (images) {
+    // Images object with urls array: { urls: ['url1', 'url2', ...] }
+    if (images.urls && Array.isArray(images.urls)) {
+      return images.urls
+        .map(url => ensureFullUrl(url))
+        .filter(Boolean);
+    }
+    
+    // Images object with gallery array
+    if (images.gallery && Array.isArray(images.gallery)) {
+      return images.gallery
+        .map(img => typeof img === 'string' ? ensureFullUrl(img) : (img?.url ? ensureFullUrl(img.url) : null))
+        .filter(Boolean);
+    }
+    
+    // Direct images array
+    if (Array.isArray(images)) {
+      return images
+        .map(img => {
+          if (typeof img === 'string') return ensureFullUrl(img);
+          if (typeof img === 'object' && img.url) return ensureFullUrl(img.url);
+          return null;
+        })
+        .filter(Boolean);
+    }
+    
+    // Images object with other keys - collect all URL values
+    if (typeof images === 'object' && !Array.isArray(images)) {
+      const result = [];
+      for (const val of Object.values(images)) {
+        if (typeof val === 'string' && val.length > 0) {
+          const url = ensureFullUrl(val);
+          if (url) result.push(url);
+        } else if (typeof val === 'object' && val.url) {
+          const url = ensureFullUrl(val.url);
+          if (url) result.push(url);
+        }
+      }
+      if (result.length > 0) return result;
+    }
   }
   
-  // Direct images array (from parsed JSON string or direct array)
-  if (images && Array.isArray(images)) {
-    return images.map(img => ensureFullUrl(img)).filter(Boolean);
-  }
-  
-  // Single image
+  // Single image fallback
   const singleImage = getPropertyImage(property);
   return singleImage ? [singleImage] : [];
 };
