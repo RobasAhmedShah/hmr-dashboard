@@ -348,15 +348,27 @@ const PropertiesManagement = () => {
         
         alert('✅ Property updated successfully!');
       },
-      onError: (error) => {
-        console.error('Failed to update property:', error);
-        console.error('Error details:', {
+      onError: (error, variables) => {
+        console.error('❌ Failed to update property:', error);
+        console.error('📋 Error details:', {
           message: error.message,
           response: error.response?.data,
           status: error.response?.status,
           endpoint: error.config?.url,
-          method: error.config?.method
+          method: error.config?.method,
+          requestData: error.config?.data
         });
+        
+        // Log the full response for debugging
+        if (error.response?.data) {
+          console.error('🔍 Backend Error Response:', JSON.stringify(error.response.data, null, 2));
+        }
+        
+        // Log the data that was sent for debugging
+        const sentData = variables?.data || error.config?.data;
+        if (sentData) {
+          console.error('📤 Data that was sent:', JSON.stringify(sentData, null, 2));
+        }
         
         let errorMessage = '❌ Failed to update property\n\n';
         
@@ -370,8 +382,17 @@ const PropertiesManagement = () => {
           errorMessage += '4. Return updated property data\n\n';
           errorMessage += '💡 Current Status: Frontend is ready, waiting for backend implementation.';
         } else if (error.response?.status === 400) {
-          errorMessage += '⚠️ Validation Error\n\n';
-          errorMessage += error.response?.data?.message || 'Please check all required fields.';
+          errorMessage += '⚠️ Validation Error (400)\n\n';
+          const backendMessage = error.response?.data?.message || error.response?.data?.error || 'Please check all required fields.';
+          errorMessage += backendMessage;
+          
+          // If backend provides field-specific errors, show them
+          if (error.response?.data?.errors) {
+            errorMessage += '\n\nField Errors:\n';
+            Object.entries(error.response.data.errors).forEach(([field, message]) => {
+              errorMessage += `• ${field}: ${message}\n`;
+            });
+          }
         } else {
           errorMessage += error.response?.data?.message || error.message;
         }
@@ -865,20 +886,52 @@ const PropertiesManagement = () => {
           <h2 className="text-2xl font-bold text-card-foreground">Properties Management</h2>
           <p className="text-muted-foreground">
             Manage all properties in your platform
-            {properties.length > 0 && (
+            {!showPropertyForm && properties.length > 0 && (
               <span className="ml-2 text-blue-600 font-semibold">
                 ({properties.length} {properties.length === 1 ? 'property' : 'properties'} found)
               </span>
             )}
           </p>
         </div>
-        <Button onClick={handleCreateProperty} className="flex items-center space-x-2">
-          <Plus className="w-4 h-4" />
-          <span>Add Property</span>
-        </Button>
+        {!showPropertyForm && (
+          <Button onClick={handleCreateProperty} className="flex items-center space-x-2">
+            <Plus className="w-4 h-4" />
+            <span>Add Property</span>
+          </Button>
+        )}
+        {showPropertyForm && (
+          <Button 
+            onClick={() => {
+              setShowPropertyForm(false);
+              setEditingProperty(null);
+            }} 
+            variant="outline"
+            className="flex items-center space-x-2"
+          >
+            <X className="w-4 h-4" />
+            <span>Cancel & Back to List</span>
+          </Button>
+        )}
       </div>
 
-      {/* Filters */}
+      {/* Property Form - Inline */}
+      {showPropertyForm && (
+        <div className="mb-6">
+          <PropertyForm
+            property={editingProperty}
+            onSave={handleSaveProperty}
+            onCancel={() => {
+              setShowPropertyForm(false);
+              setEditingProperty(null);
+            }}
+            isLoading={createPropertyMutation.isLoading || updatePropertyMutation.isLoading}
+            inline={true}
+          />
+        </div>
+      )}
+
+      {/* Filters - Hide when form is open */}
+      {!showPropertyForm && (
       <Card className="p-6">
         <div className="flex justify-between items-center mb-4">
           <div className="flex items-center space-x-2">
@@ -1050,9 +1103,10 @@ const PropertiesManagement = () => {
           </div>
         )}
       </Card>
+      )}
 
-
-      {/* Properties Table */}
+      {/* Properties Table - Hide when form is open */}
+      {!showPropertyForm && (
       <Card className="overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full table-auto">
@@ -1344,6 +1398,7 @@ const PropertiesManagement = () => {
           </div>
         )}
       </Card>
+      )}
 
       {/* Property Details Modal */}
       {showModal && selectedProperty && (() => {
@@ -1492,18 +1547,6 @@ const PropertiesManagement = () => {
         );
       })()}
 
-      {/* Property Form Modal */}
-      {showPropertyForm && (
-        <PropertyForm
-          property={editingProperty}
-          onSave={handleSaveProperty}
-          onCancel={() => {
-            setShowPropertyForm(false);
-            setEditingProperty(null);
-          }}
-          isLoading={createPropertyMutation.isLoading || updatePropertyMutation.isLoading}
-        />
-      )}
 
       {/* Delete Confirmation Modal */}
       {showDeleteModal && propertyToDelete && (

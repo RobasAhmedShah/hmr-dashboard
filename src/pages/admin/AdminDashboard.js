@@ -44,6 +44,7 @@ const AdminDashboard = () => {
     from: null,
     to: null
   });
+  const [showTopSellers, setShowTopSellers] = useState(true); // Flip state for tokens chart
   const { adminUser, isAuthenticated, logout } = useAdminAuth();
   const navigate = useNavigate();
 
@@ -432,37 +433,46 @@ const AdminDashboard = () => {
     const mixedUseCount = propertyTypeCounts['mixed-use'];
     const totalPropertyTypes = residentialCount + commercialCount + mixedUseCount;
     
-    // Calculate total available tokens from all properties
-    const totalAvailableTokens = properties.reduce((sum, property) => {
+    // Calculate tokens sold per property (total - available)
+    const propertiesWithTokensSold = properties.map(property => {
+      const totalTokens = parseFloat(
+        property.totalTokens || 
+        property.total_tokens || 
+        property.tokenization_total_tokens || 
+        0
+      );
       const availableTokens = parseFloat(
         property.availableTokens || 
         property.available_tokens || 
         property.tokenization_available_tokens || 
         0
       );
-      return sum + availableTokens;
-    }, 0);
+      const tokensSold = Math.max(0, totalTokens - availableTokens);
+      const title = property.title || property.name || `Property ${property.id?.slice(0, 6) || 'Unknown'}`;
+      return {
+        id: property.id,
+        title: title.length > 12 ? title.substring(0, 12) + '...' : title,
+        fullTitle: title,
+        tokensSold,
+        totalTokens,
+        availableTokens
+      };
+    });
     
-    // Calculate available tokens per property for bar chart (show top properties or distribute)
-    const tokensPerProperty = properties
-      .map(property => {
-        return parseFloat(
-          property.availableTokens || 
-          property.available_tokens || 
-          property.tokenization_available_tokens || 
-          0
-        );
-      })
-      .filter(tokens => tokens > 0)
-      .sort((a, b) => b - a)
-      .slice(0, 7); // Take top 7 for the 7 months display
+    // Sort by tokens sold - descending (most sold first)
+    const sortedByMostSold = [...propertiesWithTokensSold]
+      .filter(p => p.totalTokens > 0) // Only include properties with tokens
+      .sort((a, b) => b.tokensSold - a.tokensSold)
+      .slice(0, 5); // Top 5 most sold
     
-    // If we have less than 7 properties, fill with zeros or distribute total
-    const tokensChartData = tokensPerProperty.length > 0 
-      ? tokensPerProperty.length < 7
-        ? [...tokensPerProperty, ...Array(7 - tokensPerProperty.length).fill(0)]
-        : tokensPerProperty
-      : [0, 0, 0, 0, 0, 0, 0];
+    // Sort by tokens sold - ascending (least sold first)
+    const sortedByLeastSold = [...propertiesWithTokensSold]
+      .filter(p => p.totalTokens > 0) // Only include properties with tokens
+      .sort((a, b) => a.tokensSold - b.tokensSold)
+      .slice(0, 5); // Top 5 least sold
+    
+    // Use the selected view
+    const tokensChartData = showTopSellers ? sortedByMostSold : sortedByLeastSold;
     
     // Calculate KYC approved and unapproved counts
     const kycApproved = kycList.filter(kyc => 
@@ -516,7 +526,7 @@ const AdminDashboard = () => {
               ${totalInvestmentValue.toFixed(6)}
             </div>
             <div className="text-[10px] opacity-75 mt-1">Investments vs last month</div>
-          </div>
+        </div>
 
           {/* Total Properties */}
           <div 
@@ -530,15 +540,15 @@ const AdminDashboard = () => {
               <div className="px-1.5 py-0.5 bg-green-500/10 text-green-600 dark:text-green-400 rounded-md text-[10px] font-bold">
                 +0.5%
               </div>
-            </div>
+                </div>
             <div>
               <div className="text-[10px] text-muted-foreground">Total Properties</div>
               <div className="text-xl font-extrabold text-card-foreground mt-0.5">
                 {totalProperties}
-              </div>
+                </div>
               <div className="text-[9px] text-muted-foreground">Properties vs last month</div>
-            </div>
-          </div>
+                </div>
+              </div>
 
           {/* Total Users */}
           <div 
@@ -552,15 +562,15 @@ const AdminDashboard = () => {
               <div className="px-1.5 py-0.5 bg-green-500/10 text-green-600 dark:text-green-400 rounded-md text-[10px] font-bold">
                 +0.5%
               </div>
-            </div>
+                </div>
             <div>
               <div className="text-[10px] text-muted-foreground">Total Users</div>
               <div className="text-xl font-extrabold text-card-foreground mt-0.5">
                 {totalUsers}
-              </div>
+                </div>
               <div className="text-[9px] text-muted-foreground">Active users vs last month</div>
-            </div>
-          </div>
+                </div>
+              </div>
 
           {/* Total Organizations */}
           <div 
@@ -574,15 +584,15 @@ const AdminDashboard = () => {
               <div className="px-1.5 py-0.5 bg-red-500/10 text-red-600 dark:text-red-400 rounded-md text-[10px] font-bold">
                 -2.03%
               </div>
-            </div>
+                </div>
             <div>
               <div className="text-[10px] text-muted-foreground">Total Organizations</div>
               <div className="text-xl font-extrabold text-card-foreground mt-0.5">
                 {totalOrganizations}
-              </div>
+                </div>
               <div className="text-[9px] text-muted-foreground">Organizations vs last month</div>
-            </div>
-          </div>
+                </div>
+              </div>
 
           {/* Total Transactions */}
           <div 
@@ -605,56 +615,84 @@ const AdminDashboard = () => {
               <div className="text-[9px] text-muted-foreground">Transactions vs last month</div>
             </div>
           </div>
-        </div>
+                </div>
 
         {/* Bottom Row - 3 Cards */}
         <div className="grid grid-cols-3 gap-3 flex-1 min-h-0 overflow-hidden">
-          {/* Customer Habits - Bar Chart (Total Available Tokens) */}
+          {/* Tokens Sold Chart - Flippable */}
           <div 
-            onClick={() => setActiveTab('tokens')}
-            className="bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl border border-white/30 dark:border-white/10 p-4 rounded-3xl shadow-lg flex flex-col min-h-0 overflow-hidden cursor-pointer hover:scale-[1.02] transition-transform duration-200"
+            className="bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl border border-white/30 dark:border-white/10 p-4 rounded-3xl shadow-lg flex flex-col min-h-0 overflow-hidden"
           >
             <div className="flex justify-between items-center mb-3">
-              <h3 className="text-sm font-bold text-card-foreground">Total Available Tokens</h3>
-              <div className="text-[10px] text-muted-foreground">This year</div>
+              <h3 className="text-sm font-bold text-card-foreground">
+                {showTopSellers ? '🔥 Top 5 Most Tokens Sold' : '📉 Top 5 Least Tokens Sold'}
+              </h3>
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowTopSellers(!showTopSellers);
+                }}
+                className="text-[10px] px-2 py-1 rounded-full bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-blue-800/50 transition-colors"
+              >
+                {showTopSellers ? 'Show Least' : 'Show Most'}
+              </button>
             </div>
             
-            <div className="flex gap-1.5 items-end flex-1 min-h-0">
-              {tokensChartData.map((tokens, i) => {
-                const maxValue = Math.max(...tokensChartData, 1);
-                const height = maxValue > 0 ? Math.max(5, Math.min(100, (tokens / maxValue) * 100)) : 0;
+            <div className="flex gap-2 items-end flex-1 min-h-0">
+              {tokensChartData.length > 0 ? tokensChartData.map((property, i) => {
+                const maxValue = Math.max(...tokensChartData.map(p => p.tokensSold), 1);
+                const height = maxValue > 0 ? Math.max(5, Math.min(100, (property.tokensSold / maxValue) * 100)) : 5;
                 
                 return (
-                  <div key={i} className="flex-1 flex flex-col items-center h-full">
+                  <div key={property.id || i} className="flex-1 flex flex-col items-center h-full min-w-0">
                     <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-t-lg flex items-end relative group h-full">
                       <div 
-                        className="w-full bg-gradient-to-t from-blue-600 to-blue-500 dark:from-blue-700 dark:to-blue-600 rounded-t-lg transition-all duration-500"
+                        className={`w-full rounded-t-lg transition-all duration-500 ${
+                          showTopSellers 
+                            ? 'bg-gradient-to-t from-green-600 to-green-400 dark:from-green-700 dark:to-green-500' 
+                            : 'bg-gradient-to-t from-orange-600 to-orange-400 dark:from-orange-700 dark:to-orange-500'
+                        }`}
                         style={{ height: `${height}%` }}
                       ></div>
-                      <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 bg-gray-900 dark:bg-gray-700 text-white text-[9px] px-1.5 py-0.5 rounded pointer-events-none transition-opacity whitespace-nowrap">
-                        {tokens > 0 ? tokens.toLocaleString() : '0'}
+                      <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 bg-gray-900 dark:bg-gray-700 text-white text-[9px] px-2 py-1 rounded pointer-events-none transition-opacity whitespace-nowrap z-10">
+                        <div className="font-semibold">{property.fullTitle}</div>
+                        <div>{property.tokensSold.toLocaleString()} sold / {property.totalTokens.toLocaleString()} total</div>
                       </div>
                     </div>
                   </div>
                 );
-              })}
+              }) : (
+                <div className="flex-1 flex items-center justify-center text-muted-foreground text-sm">
+                  No properties with tokens
+                </div>
+              )}
             </div>
-            <div className="flex justify-between mt-2 text-[9px] text-muted-foreground">
-              <span>Jan</span><span>Feb</span><span>Mar</span><span>Apr</span><span>May</span><span>Jun</span><span>Jul</span>
+            <div className="flex justify-between mt-2 text-[8px] text-muted-foreground truncate">
+              {tokensChartData.map((property, i) => (
+                <span key={i} className="flex-1 text-center truncate px-0.5" title={property.fullTitle}>
+                  {property.title}
+                </span>
+              ))}
+            </div>
+            <div 
+              onClick={() => setActiveTab('properties')}
+              className="mt-2 text-center text-[10px] text-blue-500 hover:text-blue-600 cursor-pointer"
+            >
+              View All Properties →
             </div>
           </div>
 
           {/* Investment Statistic - Donut Chart */}
           <div 
             onClick={() => setActiveTab('investments')}
-            className="bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl border border-white/30 dark:border-white/10 p-4 rounded-3xl shadow-lg flex flex-col min-h-0 overflow-hidden cursor-pointer hover:scale-[1.02] transition-transform duration-200"
+            className="bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl border border-white/30 dark:border-white/10 p-4 rounded-3xl shadow-lg flex flex-col overflow-hidden cursor-pointer hover:scale-[1.02] transition-transform duration-200"
           >
-            <div className="flex justify-between items-center mb-3">
+            <div className="flex justify-between items-center mb-2">
               <h3 className="text-sm font-bold text-card-foreground">Investment Statistic</h3>
               <div className="text-[10px] text-muted-foreground">Today</div>
             </div>
             
-            <div className="flex items-center gap-3 flex-1">
+            <div className="flex items-center gap-3">
               {/* Donut Chart */}
               <div className="relative w-24 h-24 flex-shrink-0">
                 <svg viewBox="0 0 36 36" className="w-full h-full -rotate-90">
@@ -685,10 +723,10 @@ const AdminDashboard = () => {
                     strokeDashoffset={`-${totalPropertyTypes > 0 ? ((residentialCount + commercialCount) / totalPropertyTypes * 100) : 0}`}
                     strokeLinecap="round" />
                 </svg>
-              </div>
+            </div>
               
               <div className="flex-1">
-                <div className="space-y-1 mt-2">
+                <div className="space-y-1">
                   <div className="flex justify-between text-[10px]">
                     <span className="text-muted-foreground flex items-center gap-1">
                       <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
@@ -710,7 +748,7 @@ const AdminDashboard = () => {
                         Mixed-Use
                       </span>
                       <span className="font-bold text-card-foreground">{mixedUseCount}</span>
-                    </div>
+            </div>
                   )}
                 </div>
               </div>
@@ -720,14 +758,14 @@ const AdminDashboard = () => {
           {/* Customer Growth - KYC Status */}
           <div 
             onClick={() => setActiveTab('kyc')}
-            className="bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl border border-white/30 dark:border-white/10 p-4 rounded-3xl shadow-lg flex flex-col min-h-0 overflow-hidden cursor-pointer hover:scale-[1.02] transition-transform duration-200"
+            className="bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl border border-white/30 dark:border-white/10 p-4 rounded-3xl shadow-lg flex flex-col overflow-hidden cursor-pointer hover:scale-[1.02] transition-transform duration-200"
           >
-            <div className="flex justify-between items-center mb-3">
+            <div className="flex justify-between items-center mb-2">
               <h3 className="text-sm font-bold text-card-foreground">KYC Status</h3>
               <div className="text-[10px] text-muted-foreground">Today</div>
             </div>
             
-            <div className="space-y-3 flex-1 flex flex-col justify-center">
+            <div className="space-y-2">
               <div className="flex items-center gap-3">
                 <div className="w-14 h-14 rounded-full bg-green-500/10 dark:bg-green-500/20 flex items-center justify-center flex-shrink-0">
                   <span className="font-bold text-card-foreground text-sm">{kycApproved}</span>
