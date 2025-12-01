@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from 'react-query';
 import { UserProvider } from './contexts/UserContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { ServiceWorkerListener } from './components/ServiceWorkerListener';
+import { ToastProvider } from './components/ui/Toast';
 
 // Pages
 import Home from './pages/user/Home';
@@ -42,11 +43,12 @@ const queryClient = new QueryClient({
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
-        <UserProvider>
-          <Router>
-            <ServiceWorkerListener />
-            <div className="App">
+      <ToastProvider>
+        <ThemeProvider>
+          <UserProvider>
+            <Router>
+              <ServiceWorkerListener />
+              <div className="App">
               <Routes>
                 {/* Public Routes */}
                 <Route path="/" element={<Home />} />
@@ -97,10 +99,11 @@ function App() {
                 
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
-            </div>
-          </Router>
-        </UserProvider>
-      </ThemeProvider>
+              </div>
+            </Router>
+          </UserProvider>
+        </ThemeProvider>
+      </ToastProvider>
     </QueryClientProvider>
   );
 }

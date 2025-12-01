@@ -23,8 +23,10 @@ import Input from '../../components/ui/Input';
 import PropertyForm from '../../components/admin/PropertyForm';
 import { adminAPI, rewardsAPI, investmentsAPI, blocksBackendAPI } from '../../services/api';
 import { useAdminAuth } from '../../components/admin/AdminAuth';
+import { useToast } from '../../components/ui/Toast';
 
 const PropertiesManagement = () => {
+  const toast = useToast();
   const { isAuthenticated } = useAdminAuth();
   
   const [filters, setFilters] = useState({
@@ -107,7 +109,7 @@ const PropertiesManagement = () => {
           errorMessage += error.response?.data?.message || error.message;
         }
         
-        alert(errorMessage);
+        toast.error(errorMessage);
       }
     }
   );
@@ -197,7 +199,7 @@ const PropertiesManagement = () => {
           }
         }
         
-        alert(`✅ Property "${displayCode}" created successfully!`);
+        toast.success(`Property "${displayCode}" created successfully!`);
       },
       onError: (error) => {
         console.error('❌ Failed to create property:', error);
@@ -260,7 +262,7 @@ const PropertiesManagement = () => {
           errorMessage += error.response?.data?.message || error.message;
         }
         
-        alert(errorMessage);
+        toast.error(errorMessage);
       }
     }
   );
@@ -346,7 +348,7 @@ const PropertiesManagement = () => {
           }
         }
         
-        alert('✅ Property updated successfully!');
+        toast.success('Property updated successfully!');
       },
       onError: (error, variables) => {
         console.error('❌ Failed to update property:', error);
@@ -397,7 +399,7 @@ const PropertiesManagement = () => {
           errorMessage += error.response?.data?.message || error.message;
         }
         
-        alert(errorMessage);
+        toast.error(errorMessage);
       }
     }
   );
@@ -411,7 +413,7 @@ const PropertiesManagement = () => {
         setShowDeleteModal(false);
         setPropertyToDelete(null);
         console.log('Property deleted successfully');
-        alert('✅ Property deleted successfully!');
+        toast.success('Property deleted successfully!');
       },
       onError: (error) => {
         console.error('Failed to delete property:', error);
@@ -441,7 +443,7 @@ const PropertiesManagement = () => {
           errorMessage += error.response?.data?.message || error.message;
         }
         
-        alert(errorMessage);
+        toast.error(errorMessage);
         setShowDeleteModal(false);
         setPropertyToDelete(null);
       }
@@ -521,12 +523,12 @@ const PropertiesManagement = () => {
         queryClient.invalidateQueries(['all-investments']);
         // Show success message
         const message = result.message || `Successfully distributed ${rewardAmount} USDT`;
-        alert(`✅ ${message}`);
+        toast.success(message);
       },
       onError: (error) => {
         console.error('❌ Failed to distribute reward:', error);
         const errorMsg = error.response?.data?.message || error.message || 'Unknown error';
-        alert(`❌ Failed to distribute reward: ${errorMsg}`);
+        toast.error(`Failed to distribute reward: ${errorMsg}`);
       }
     }
   );
@@ -543,7 +545,7 @@ const PropertiesManagement = () => {
   const confirmDistributeReward = () => {
     if (!propertyForReward) return;
     if (!rewardAmount || parseFloat(rewardAmount) <= 0) {
-      alert('Please enter a valid reward amount (greater than 0)');
+      toast.warning('Please enter a valid reward amount (greater than 0)');
       return;
     }
 
@@ -1181,9 +1183,9 @@ const PropertiesManagement = () => {
                   mappedProperty.tokenization_available_tokens
                 );
                 
-                // Explicit check for delete button - consider very small funding as "no funding"
-                const canDelete = fundingPercentage < 0.0001; // Less than 0.01%
-                const isDisabled = fundingPercentage >= 0.0001; // 0.01% or more
+                // Only allow delete if funding is exactly zero (no investors)
+                const canDelete = fundingPercentage === 0;
+                const isDisabled = fundingPercentage > 0;
                 
                 // Debug logging for all properties
                 console.log(`🏢 ${mappedProperty.title}:`, {
@@ -1267,12 +1269,12 @@ const PropertiesManagement = () => {
                       <div className="flex items-center">
                         <div className="w-12 bg-muted rounded-full h-1.5 mr-1.5 flex-shrink-0">
                           <div
-                            className={`h-1.5 rounded-full ${isDisabled ? 'bg-green-600' : 'bg-gray-400'}`}
-                            style={{ width: `${Math.max(fundingPercentage, 0.1)}%` }}
+                            className={`h-1.5 rounded-full ${fundingPercentage > 0 ? 'bg-green-600' : 'bg-gray-400'}`}
+                            style={{ width: `${Math.min(Math.max(fundingPercentage, 0), 100)}%` }}
                           ></div>
                         </div>
-                        <span className={`text-xs ${isDisabled ? 'text-green-600 font-medium' : 'text-muted-foreground'}`}>
-                          {fundingPercentage < 0.01 ? fundingPercentage.toFixed(2) : Math.round(fundingPercentage)}%
+                        <span className={`text-xs ${fundingPercentage > 0 ? 'text-green-600 font-medium' : 'text-muted-foreground'}`}>
+                          {fundingPercentage === 0 ? '0%' : fundingPercentage < 1 ? `${fundingPercentage.toFixed(2)}%` : `${Math.round(fundingPercentage)}%`}
                         </span>
                       </div>
                     </td>
@@ -1313,22 +1315,14 @@ const PropertiesManagement = () => {
                           size="sm" 
                           className={`h-7 w-7 p-0 ${isDisabled ? 'text-muted-foreground cursor-not-allowed opacity-50' : 'text-red-600 hover:text-red-700 hover:bg-red-50'}`}
                           onClick={() => {
-                            console.log(`Delete clicked for ${mappedProperty.title}:`, {
-                              fundingPercentage,
-                              canDelete: canDelete,
-                              isDisabled: isDisabled,
-                              total: mappedProperty.tokenization_total_tokens,
-                              available: mappedProperty.tokenization_available_tokens
-                            });
                             if (isDisabled) {
-                              console.log(`Cannot delete ${mappedProperty.title} - funding: ${fundingPercentage}%`);
-                              alert(`⚠️ Cannot delete property with ${fundingPercentage.toFixed(2)}% funding.\n\nProperties can only be deleted if they have zero funding.`);
+                              toast.warning(`Cannot delete - ${fundingPercentage.toFixed(1)}% funded`);
                               return;
                             }
                             handleDeleteProperty(mappedProperty);
                           }}
                           disabled={isDisabled}
-                          title={isDisabled ? `Cannot delete property with ${fundingPercentage.toFixed(5)}% funding` : 'Delete Property'}
+                          title={isDisabled ? `Cannot delete - ${fundingPercentage.toFixed(1)}% funded` : 'Delete Property (0% funded)'}
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </Button>

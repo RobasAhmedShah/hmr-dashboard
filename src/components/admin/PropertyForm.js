@@ -5,11 +5,13 @@ import Button from '../ui/Button';
 import SimpleMap from './SimpleMap';
 import { adminAPI, uploadAPI, propertiesAPI, blocksBackendAPI } from '../../services/api';
 import { supabaseUpload } from '../../services/supabaseUpload';
+import { useToast } from '../ui/Toast';
 
 // Using Supabase for both document and image uploads
 console.log('✅ PropertyForm: Using Supabase for document and image uploads');
 
 const PropertyForm = ({ property, onSave, onCancel, isLoading, inline = false }) => {
+  const toast = useToast();
   // Multi-step form state
   const [currentStep, setCurrentStep] = useState(1);
   const totalSteps = 2; // Only 2 steps (step 2 is commented out)
@@ -260,24 +262,48 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading, inline = false })
       // Log all keys in the property object to see what fields exist
       console.log('🔑 All property keys:', Object.keys(propertyToLoad));
       
-      // Handle images - can be JSON string or array
+      // Handle images - can be JSON string, array, or object with urls
       let imagesArray = [];
       if (propertyToLoad.images) {
-        if (typeof propertyToLoad.images === 'string') {
+        let imageData = propertyToLoad.images;
+        
+        // If it's a string, try to parse it as JSON
+        if (typeof imageData === 'string') {
           try {
-            imagesArray = JSON.parse(propertyToLoad.images);
+            imageData = JSON.parse(imageData);
           } catch (e) {
             console.warn('Failed to parse images JSON:', e);
-            imagesArray = [];
+            imageData = null;
           }
-        } else if (Array.isArray(propertyToLoad.images)) {
-          imagesArray = propertyToLoad.images;
-        } else if (typeof propertyToLoad.images === 'object') {
-          // Handle old format: { main: { url: '...' }, gallery: { url: '...' } }
-          imagesArray = Object.values(propertyToLoad.images)
-            .map(img => (typeof img === 'object' && img.url ? img.url : img))
-            .filter(Boolean);
         }
+        
+        if (imageData) {
+          if (Array.isArray(imageData)) {
+            // Direct array of URLs or objects
+            imagesArray = imageData.map(img => {
+              if (typeof img === 'string') return img;
+              if (typeof img === 'object' && img.url) return img.url;
+              return null;
+            }).filter(Boolean);
+          } else if (typeof imageData === 'object') {
+            // Object format - could be { urls: [...] } or { main: { url: '...' } }
+            if (Array.isArray(imageData.urls)) {
+              // Format: { urls: ['url1', 'url2', ...] }
+              imagesArray = imageData.urls.filter(url => typeof url === 'string' && url.length > 0);
+            } else {
+              // Format: { main: { url: '...' }, gallery: { url: '...' } }
+              imagesArray = Object.values(imageData)
+                .map(img => {
+                  if (typeof img === 'string') return img;
+                  if (typeof img === 'object' && img.url) return img.url;
+                  return null;
+                })
+                .filter(Boolean);
+            }
+          }
+        }
+        
+        console.log('🖼️ Parsed images:', { raw: propertyToLoad.images, parsed: imagesArray });
       }
       
       // Extract amenities and unit_types from features object (if nested)
@@ -857,8 +883,8 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading, inline = false })
     
     // Show validation errors if any
     if (validationErrors.length > 0) {
-      const errorMessage = '⚠️ Please fix the following errors:\n\n' + validationErrors.map((err, i) => `${i + 1}. ${err}`).join('\n');
-      alert(errorMessage);
+      const errorMessage = 'Please fix: ' + validationErrors.join(', ');
+      toast.error(errorMessage);
       console.error('❌ Validation errors:', validationErrors);
       return;
     }
@@ -1120,7 +1146,7 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading, inline = false })
       if (!property) {
         // Only require documents for new properties
         console.error('❌ CRITICAL: No documents found! Documents are required for new properties.');
-        alert('❌ Error: Documents are required but none were found. Please add at least one document.');
+        toast.error('Documents are required. Please add at least one document.');
         return;
       } else {
         console.log('ℹ️ No documents in update - existing documents in backend will be preserved');
@@ -1139,8 +1165,8 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading, inline = false })
     if (!dataToSend.description || dataToSend.description.trim() === '') finalValidationErrors.push('Description is required');
     
     if (finalValidationErrors.length > 0) {
-      const errorMsg = '⚠️ Validation Errors:\n\n' + finalValidationErrors.map((err, i) => `${i + 1}. ${err}`).join('\n');
-      alert(errorMsg);
+      const errorMsg = 'Validation: ' + finalValidationErrors.join(', ');
+      toast.error(errorMsg);
       console.error('❌ Validation failed:', finalValidationErrors);
       return;
     }
@@ -1570,7 +1596,7 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading, inline = false })
   // Documents Management - New object structure
   const addDocument = () => {
     if (!newDocument.url || !newDocument.type) {
-      alert('Please provide a URL and select a document type.');
+      toast.warning('Please provide a URL and select a document type.');
       return;
     }
 
@@ -1578,7 +1604,7 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading, inline = false })
     
     if (type === 'brochure') {
       if (!newDocument.name) {
-        alert('Please provide a name for the brochure.');
+        toast.warning('Please provide a name for the brochure.');
         return;
       }
       setFormData(prev => ({
@@ -1608,7 +1634,7 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading, inline = false })
       }));
     } else if (type === 'compliance') {
       if (!newDocument.name) {
-        alert('Please provide a type for the compliance document (e.g., Building Permit).');
+        toast.warning('Please provide a type for the compliance document (e.g., Building Permit).');
         return;
       }
       setFormData(prev => ({
@@ -1677,13 +1703,13 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading, inline = false })
     const allowedTypes = ['.pdf', '.doc', '.docx', '.txt', '.xls', '.xlsx', '.ppt', '.pptx'];
     const fileExt = '.' + file.name.split('.').pop().toLowerCase();
     if (!allowedTypes.includes(fileExt)) {
-      alert('Invalid file type. Please upload PDF, DOC, DOCX, TXT, XLS, XLSX, PPT, or PPTX files.');
+      toast.error('Invalid file type. Please upload PDF, DOC, DOCX, TXT, XLS, XLSX, PPT, or PPTX files.');
       return;
     }
 
     // Validate file size (10MB)
     if (file.size > 10 * 1024 * 1024) {
-      alert('File size exceeds 10MB limit.');
+      toast.error('File size exceeds 10MB limit.');
       return;
     }
 
@@ -1731,7 +1757,7 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading, inline = false })
       console.log('📄 Document URL set in form:', documentUrl);
       console.log('📄 Current newDocument state:', { ...newDocument, url: documentUrl });
       
-      alert('✅ Document uploaded successfully! Please select a document type and click "Add Document" to include it.');
+      toast.success('Document uploaded! Select type and add it.');
     } catch (error) {
       console.error('❌ Document upload error:', error);
       let errorMessage = 'Failed to upload document. Please try again.';
@@ -1741,10 +1767,10 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading, inline = false })
       } else if (error.message?.includes('row-level security') || error.message?.includes('policy')) {
         errorMessage += '\n\n💡 Solution: Check your Supabase storage policies. You need an INSERT policy for the "anon" role on the "property-documents" bucket.';
       } else if (error.message?.includes('No URL returned')) {
-        errorMessage += '\n\n💡 Solution: Supabase did not return a document URL. Check Supabase configuration.';
+        errorMessage += ' Check Supabase config.';
       }
       
-      alert(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setUploadingDocument(false);
       // Reset file input
@@ -1797,9 +1823,9 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading, inline = false })
         };
       });
       setNewImage({ url: '', alt: '', type: 'main' });
-      alert('Image added successfully!');
+      toast.success('Image added successfully!');
     } else {
-      alert('Please upload an image first.');
+      toast.warning('Please upload an image first.');
     }
   };
 
@@ -1811,13 +1837,13 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading, inline = false })
     // Validate file type
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
     if (!allowedTypes.includes(file.type)) {
-      alert('Invalid file type. Please upload JPG, PNG, GIF, or WEBP images.');
+      toast.error('Invalid file type. Use JPG, PNG, GIF, or WEBP.');
       return;
     }
 
     // Validate file size (10MB)
     if (file.size > 10 * 1024 * 1024) {
-      alert('File size exceeds 10MB limit.');
+      toast.error('File size exceeds 10MB limit.');
       return;
     }
 
@@ -1845,29 +1871,10 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading, inline = false })
         url: result.url // This is the Supabase public URL
       }));
       
-      alert('Image uploaded successfully! Click "Add Image" to add it to the property.');
+      toast.success('Image uploaded! Click "Add Image" to add it.');
     } catch (error) {
       console.error('❌ Image upload error:', error);
-      console.error('Error details:', {
-        message: error.message,
-        name: error.name,
-        stack: error.stack
-      });
-      
-      // Show detailed error message with troubleshooting tips
-      let errorMessage = error.message || 'Unknown error occurred.';
-      
-      if (error.message?.includes('Bucket not found')) {
-        errorMessage += '\n\n💡 Solution: Make sure the bucket "property-images" exists in your Supabase dashboard.';
-      } else if (error.message?.includes('row-level security') || error.message?.includes('policy')) {
-        errorMessage += '\n\n💡 Solution: Check your Supabase storage policies. You need an INSERT policy that allows uploads.';
-      } else if (error.message?.includes('JWT') || error.message?.includes('auth')) {
-        errorMessage += '\n\n💡 Solution: Check your Supabase API keys in the .env file.';
-      }
-      
-      errorMessage += '\n\nCheck browser console (F12) for more details.';
-      
-      alert(`Failed to upload image:\n\n${errorMessage}`);
+      toast.error('Failed to upload image. Check console for details.');
     } finally {
       setUploadingImage(false);
       // Reset file input
@@ -1893,19 +1900,19 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading, inline = false })
     if (step === 1) {
       // Validate Step 1: Basic & Location
       if (!formData.organizationId) {
-        alert('⚠️ Please select an organization');
+        toast.warning('Please select an organization');
         return false;
       }
       if (!formData.type) {
-        alert('⚠️ Please select property type');
+        toast.warning('Please select property type');
         return false;
       }
       if (!formData.totalValueUSDT || formData.totalValueUSDT <= 0) {
-        alert('⚠️ Please enter total value (USDT)');
+        toast.warning('Please enter total value (USDT)');
         return false;
       }
       if (!formData.totalTokens || formData.totalTokens <= 0) {
-        alert('⚠️ Please enter total tokens');
+        toast.warning('Please enter total tokens');
         return false;
       }
     } else if (step === 2) {
@@ -1917,7 +1924,7 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading, inline = false })
                           formData.documents?.floorPlan || 
                           (formData.documents?.compliance && formData.documents.compliance.length > 0);
       if (!hasDocuments) {
-        alert('⚠️ Please add at least one document (brochure, floor plan, or compliance document)');
+        toast.warning('Please add at least one document');
         return false;
       }
     }
