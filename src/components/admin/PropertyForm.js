@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Save, Building2, MapPin, DollarSign, TrendingUp, Hash, Plus, Trash2, Settings, Edit, Upload, FileText, ChevronRight, ChevronLeft, Check } from 'lucide-react';
+import { X, Save, Building2, MapPin, DollarSign, TrendingUp, Hash, Plus, Trash2, Settings, Edit, Upload, FileText, ChevronRight, ChevronLeft, Check, Info } from 'lucide-react';
 import Card from '../ui/Card';
 import Button from '../ui/Button';
 import SimpleMap from './SimpleMap';
@@ -9,6 +9,64 @@ import { useToast } from '../ui/Toast';
 
 // Using Supabase for both document and image uploads
 console.log('✅ PropertyForm: Using Supabase for document and image uploads');
+
+// Info Tooltip Component
+const InfoTooltip = ({ text }) => {
+  const [showTooltip, setShowTooltip] = useState(false);
+  
+  return (
+    <div className="relative inline-block ml-1">
+      <Info 
+        className="w-4 h-4 text-muted-foreground hover:text-primary cursor-help"
+        onMouseEnter={() => setShowTooltip(true)}
+        onMouseLeave={() => setShowTooltip(false)}
+      />
+      {showTooltip && (
+        <div className="absolute z-50 w-64 p-2 mt-1 text-xs text-card-foreground bg-popover border border-border rounded-md shadow-lg left-0 top-full">
+          {text}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Field guidance text mapping
+const fieldGuidance = {
+  organizationId: "Select the organization that owns this property. This is required.",
+  type: "Choose whether this is a residential or commercial property.",
+  totalValueUSDT: "Enter the total property value in USDT. This is the complete valuation of the property.",
+  totalTokens: "Enter the total number of tokens available for this property. This represents the total token supply.",
+  title: "Enter a clear, descriptive title for the property (e.g., 'Luxury Apartment Complex in Downtown').",
+  slug: "A URL-friendly version of the title (auto-generated from title). Used in property URLs.",
+  description: "Provide a detailed description of the property, including features, amenities, and highlights.",
+  short_description: "A brief summary (1-2 sentences) that appears in property listings and cards.",
+  location_address: "Enter the complete street address of the property.",
+  location_city: "The city where the property is located.",
+  location_state: "The state or province where the property is located.",
+  location_country: "The country where the property is located.",
+  location_latitude: "The latitude coordinate of the property location (auto-filled from map).",
+  location_longitude: "The longitude coordinate of the property location (auto-filled from map).",
+  property_type: "Select the type of property (e.g., Apartment, Villa, Office, Retail).",
+  project_type: "Specify the project type (e.g., New Development, Renovation, Existing).",
+  floors: "Enter the number of floors in the building.",
+  total_units: "Enter the total number of units in the property.",
+  construction_progress: "Enter the current construction progress as a percentage (0-100).",
+  start_date: "The date when construction or project started.",
+  expected_completion: "The expected completion date of the project.",
+  handover_date: "The date when the property will be handed over to owners/investors.",
+  pricing_total_value: "The total market value of the property in the local currency.",
+  pricing_market_value: "The current market value of the property.",
+  pricing_appreciation: "Expected annual appreciation percentage.",
+  pricing_expected_roi: "Expected return on investment percentage per year.",
+  pricing_min_investment: "Minimum investment amount required to invest in this property.",
+  tokenization_total_tokens: "Total number of tokens representing the entire property.",
+  tokenization_available_tokens: "Number of tokens currently available for purchase.",
+  tokenization_price_per_token: "Price per token in USDT.",
+  tokenization_token_price: "Alternative field for token price in USDT.",
+  status: "Select the current status of the property (Active, Coming Soon, etc.).",
+  is_featured: "Check to feature this property on the homepage and listings.",
+  is_active: "Check to make this property visible to users.",
+};
 
 const PropertyForm = ({ property, onSave, onCancel, isLoading, inline = false }) => {
   const toast = useToast();
@@ -2092,8 +2150,9 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading, inline = false })
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Required Backend Fields */}
               <div>
-                <label className="block text-sm font-medium text-foreground mb-1">
+                <label className="block text-sm font-medium text-foreground mb-1 flex items-center">
                   Organization ID * {loadingOrgs && <span className="text-xs text-muted-foreground">(Loading...)</span>}
+                  <InfoTooltip text={fieldGuidance.organizationId} />
                 </label>
                 {organizations.length > 0 ? (
                   <select
@@ -2123,8 +2182,9 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading, inline = false })
                 )}
               </div>
               <div>
-                <label className="block text-sm font-medium text-foreground mb-1">
+                <label className="block text-sm font-medium text-foreground mb-1 flex items-center">
                   Property Type *
+                  <InfoTooltip text={fieldGuidance.type} />
                 </label>
                 <select
                   name="type"
@@ -2138,8 +2198,9 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading, inline = false })
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-foreground mb-1">
+                <label className="block text-sm font-medium text-foreground mb-1 flex items-center">
                   Total Value (USDT) *
+                  <InfoTooltip text={fieldGuidance.totalValueUSDT} />
                 </label>
                 <input
                   type="number"
@@ -2153,8 +2214,9 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading, inline = false })
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-foreground mb-1">
+                <label className="block text-sm font-medium text-foreground mb-1 flex items-center">
                   Total Tokens *
+                  <InfoTooltip text={fieldGuidance.totalTokens} />
                 </label>
                 <input
                   type="number"
@@ -2259,8 +2321,9 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading, inline = false })
                 />
               </div> */}
               <div>
-                <label className="block text-sm font-medium text-foreground mb-1">
+                <label className="block text-sm font-medium text-foreground mb-1 flex items-center">
                   Expected ROI (%) *
+                  <InfoTooltip text={fieldGuidance.pricing_expected_roi} />
                 </label>
                 <input
                   type="number"
@@ -2294,8 +2357,9 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading, inline = false })
                 <p className="text-sm font-medium text-muted-foreground mb-4">Optional Display Information</p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-foreground mb-1">
+                <label className="block text-sm font-medium text-foreground mb-1 flex items-center">
                   Property Title
+                  <InfoTooltip text={fieldGuidance.title} />
                 </label>
                 <input
                   type="text"
@@ -2306,8 +2370,9 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading, inline = false })
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-foreground mb-1">
+                <label className="block text-sm font-medium text-foreground mb-1 flex items-center">
                   Slug
+                  <InfoTooltip text={fieldGuidance.slug} />
                 </label>
                 <input
                   type="text"
@@ -2318,8 +2383,9 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading, inline = false })
                 />
               </div>
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-foreground mb-1">
+                <label className="block text-sm font-medium text-foreground mb-1 flex items-center">
                   Description *
+                  <InfoTooltip text={fieldGuidance.description} />
                 </label>
                 <textarea
                   name="description"
@@ -2369,8 +2435,9 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading, inline = false })
                 />
               </div> */}
               <div>
-                <label className="block text-sm font-medium text-foreground mb-1">
+                <label className="block text-sm font-medium text-foreground mb-1 flex items-center">
                   City *
+                  <InfoTooltip text={fieldGuidance.location_city} />
                 </label>
                 <input
                   type="text"
@@ -2396,8 +2463,9 @@ const PropertyForm = ({ property, onSave, onCancel, isLoading, inline = false })
                 />
               </div> */}
               <div>
-                <label className="block text-sm font-medium text-foreground mb-1">
+                <label className="block text-sm font-medium text-foreground mb-1 flex items-center">
                   Country *
+                  <InfoTooltip text={fieldGuidance.location_country} />
                 </label>
                 <input
                   type="text"
