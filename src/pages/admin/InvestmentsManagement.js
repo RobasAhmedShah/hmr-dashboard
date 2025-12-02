@@ -286,6 +286,7 @@ const InvestmentsManagement = () => {
 
   const getStatusBadge = (status) => {
     const statusMap = {
+      'confirmed': { variant: 'success', text: 'Confirmed', icon: CheckCircle },
       'active': { variant: 'success', text: 'Active', icon: CheckCircle },
       'pending': { variant: 'warning', text: 'Pending', icon: Clock },
       'completed': { variant: 'success', text: 'Completed', icon: CheckCircle },
@@ -444,9 +445,9 @@ const InvestmentsManagement = () => {
               className="w-full px-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-ring"
             >
               <option value="">All Status</option>
-              <option value="active">Active</option>
               <option value="pending">Pending</option>
               <option value="completed">Completed</option>
+              <option value="confirmed">Confirmed</option>
               <option value="cancelled">Cancelled</option>
               <option value="failed">Failed</option>
             </select>
@@ -498,40 +499,37 @@ const InvestmentsManagement = () => {
 
       {/* Investments Table */}
       <Card className="overflow-hidden">
-        <div>
-          <table className="w-full table-fixed text-sm">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm table-auto">
             <thead className="bg-accent">
               <tr>
-                <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider w-[10rem]">
+                <th className="px-2 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap">
                   Investment
                 </th>
-                <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider w-[18rem]">
+                <th className="px-2 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap">
                   Investor
                 </th>
-                <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider w-[16rem]">
+                <th className="px-2 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap">
                   Property
                 </th>
-                <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider w-[8rem]">
+                <th className="px-2 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap">
                   Amount
                 </th>
-                <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider w-[7rem]">
+                <th className="px-2 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap">
                   Tokens
                 </th>
-                <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider w-[8rem]">
+                <th className="px-2 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap">
                   Status
                 </th>
-                <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider w-[10rem]">
+                <th className="px-2 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap">
                   Date
-                </th>
-                <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider w-[6rem]">
-                  Actions
                 </th>
               </tr>
             </thead>
             <tbody className="bg-card divide-y divide-gray-200">
               {filteredInvestments.length === 0 ? (
                 <tr>
-                  <td colSpan="6" className="px-6 py-12 text-center text-muted-foreground">
+                  <td colSpan="7" className="px-6 py-12 text-center text-muted-foreground">
                     <div className="flex flex-col items-center">
                       <TrendingUp className="w-12 h-12 text-muted-foreground mb-4" />
                       <p className="text-lg font-medium">No investments found</p>
@@ -602,69 +600,66 @@ const InvestmentsManagement = () => {
 
                   return (
                     <tr key={investment.id} className="hover:bg-accent">
-                    <td className="px-3 py-2 whitespace-nowrap">
+                    <td className="px-2 py-2 whitespace-nowrap">
                       <div className="flex items-center">
-                        <div className="flex-shrink-0 h-10 w-10">
-                          <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center">
-                            <TrendingUp className="w-5 h-5 text-muted-foreground" />
+                        <div className="flex-shrink-0 h-8 w-8">
+                          <div className="h-8 w-8 rounded-lg bg-muted flex items-center justify-center">
+                            <TrendingUp className="w-4 h-4 text-muted-foreground" />
                           </div>
                         </div>
-                        <div className="ml-3 min-w-0 flex-1">
-                          <div className="flex items-center gap-2">
+                        <div className="ml-2 min-w-0 flex-1">
+                          <div className="flex items-center gap-1">
                             {certificateUrl ? (
                               <button
                                 onClick={() => window.open(certificateUrl, '_blank')}
-                                className="text-sm font-medium text-card-foreground hover:text-primary-600 hover:underline cursor-pointer transition-colors"
+                                className="text-xs font-medium text-card-foreground hover:text-primary-600 hover:underline cursor-pointer transition-colors truncate"
                                 title="Click to view certificate PDF"
                               >
                                 {investment.displayCode || investment.id?.slice(0, 8) + '...'}
                               </button>
                             ) : (
-                              <div className="text-sm font-medium text-card-foreground">
+                              <div className="text-xs font-medium text-card-foreground truncate">
                                 {investment.displayCode || investment.id?.slice(0, 8) + '...'}
                               </div>
                             )}
                           </div>
-                          <div className="text-sm text-muted-foreground">
-                            Investment
-                          </div>
                         </div>
                       </div>
                     </td>
-                    <td className="px-3 py-2 whitespace-nowrap">
+                    <td className="px-2 py-2 whitespace-nowrap">
                       <div className="flex items-center">
-                        <div className="flex-shrink-0 h-8 w-8">
-                          <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
-                            <User className="w-4 h-4 text-muted-foreground" />
+                        <div className="flex-shrink-0 h-7 w-7">
+                          <div className="h-7 w-7 rounded-full bg-muted flex items-center justify-center">
+                            <User className="w-3.5 h-3.5 text-muted-foreground" />
                           </div>
                         </div>
-                        <div className="ml-2 min-w-0">
-                          <div className="text-sm font-medium text-card-foreground truncate">
+                        <div className="ml-2 min-w-0 flex-1">
+                          <div className="text-xs font-medium text-card-foreground truncate">
                             {mappedInvestment.user_name}
                           </div>
-                          <div className="text-xs text-muted-foreground truncate max-w-[14rem]">
+                          <div className="text-[10px] text-muted-foreground truncate">
                             {mappedInvestment.user_email}
                           </div>
                         </div>
                       </div>
                     </td>
-                    <td className="px-3 py-2 whitespace-nowrap">
+                    <td className="px-2 py-2 whitespace-nowrap">
                       <div className="flex items-center">
-                        <Building2 className="w-4 h-4 mr-2 text-muted-foreground" />
-                        <div className="min-w-0">
-                          <div className="text-sm font-medium text-card-foreground truncate">
+                        <Building2 className="w-3.5 h-3.5 mr-1.5 text-muted-foreground flex-shrink-0" />
+                        <div className="min-w-0 flex-1">
+                          <div className="text-xs font-medium text-card-foreground truncate">
                             {mappedInvestment.property_title}
                           </div>
-                          <div className="text-xs text-muted-foreground truncate max-w-[14rem]">
+                          <div className="text-[10px] text-muted-foreground truncate">
                             {investment.property?.displayCode || investment.property?.slug || ''}
                           </div>
                         </div>
                       </div>
                     </td>
-                    <td className="px-3 py-2 whitespace-nowrap text-sm text-card-foreground">
+                    <td className="px-2 py-2 whitespace-nowrap text-xs text-card-foreground">
                       {formatPrice(mappedInvestment.amount_invested, 'USDT')}
                     </td>
-                    <td className="px-3 py-2 whitespace-nowrap text-sm text-card-foreground">
+                    <td className="px-2 py-2 whitespace-nowrap text-xs text-card-foreground">
                       <div className="flex items-center">
                         <span className="font-medium">
                           {parseFloat(mappedInvestment.tokens_bought || 0).toLocaleString(undefined, {
@@ -672,28 +667,18 @@ const InvestmentsManagement = () => {
                             maximumFractionDigits: 2
                           })}
                         </span>
-                        {mappedInvestment.tokens_bought > 0 && (
-                          <span className="ml-1 text-xs text-muted-foreground">tokens</span>
-                        )}
                       </div>
                     </td>
-                    <td className="px-3 py-2 whitespace-nowrap">
-                      <Badge variant={statusInfo.variant} className="flex items-center text-[10px] px-2 py-0.5">
+                    <td className="px-2 py-2 whitespace-nowrap">
+                      <Badge variant={statusInfo.variant} className="flex items-center text-[10px] px-1.5 py-0.5">
                         <StatusIcon className="w-3 h-3 mr-1" />
                         {statusInfo.text}
                       </Badge>
                     </td>
-                    <td className="px-3 py-2 whitespace-nowrap text-xs text-muted-foreground">
+                    <td className="px-2 py-2 whitespace-nowrap text-[10px] text-muted-foreground">
                       <div className="flex items-center">
-                        <Calendar className="w-3 h-3 mr-2 text-muted-foreground" />
+                        <Calendar className="w-3 h-3 mr-1 text-muted-foreground" />
                         {formatDate(mappedInvestment.created_at)}
-                      </div>
-                    </td>
-                    <td className="px-3 py-2 whitespace-nowrap text-right text-sm font-medium">
-                      <div className="flex items-center space-x-2">
-                        <Button variant="outline" size="sm" className="h-7 w-7 p-0">
-                          <Eye className="w-3.5 h-3.5" />
-                        </Button>
                       </div>
                     </td>
                   </tr>

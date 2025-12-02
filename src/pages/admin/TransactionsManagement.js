@@ -71,46 +71,65 @@ const TransactionsManagement = () => {
   const filteredTransactions = useMemo(() => {
     let filtered = [...allTransactions];
     
-    // Search filter
+    // Search filter - search across ALL fields
     if (filters.search && filters.search.trim()) {
-      const searchLower = filters.search.toLowerCase();
+      const searchLower = filters.search.toLowerCase().trim();
       filtered = filtered.filter(transaction => {
-        const id = (transaction.id || '').toLowerCase();
-        const description = (transaction.description || '').toLowerCase();
-        const userName = (transaction.user_name || '').toLowerCase();
-        const userEmail = (transaction.user_email || '').toLowerCase();
+        // Get all searchable fields
+        const id = String(transaction.id || '').toLowerCase();
+        const displayCode = String(transaction.displayCode || '').toLowerCase();
+        const description = String(transaction.description || '').toLowerCase();
+        const userName = String(transaction.user?.fullName || transaction.user_name || '').toLowerCase();
+        const userEmail = String(transaction.user?.email || transaction.user_email || '').toLowerCase();
+        const propertyTitle = String(transaction.property?.title || transaction.property_title || '').toLowerCase();
+        const transactionType = String(transaction.transactionType || transaction.transaction_type || transaction.type || '').toLowerCase();
+        const status = String(transaction.status || '').toLowerCase();
+        const amount = String(transaction.amountUSDT || transaction.amount_in_pkr || transaction.amount || '').toLowerCase();
+        const currency = String(transaction.currency || 'USDT').toLowerCase();
         
+        // Search in all fields
         return id.includes(searchLower) ||
+               displayCode.includes(searchLower) ||
                description.includes(searchLower) ||
                userName.includes(searchLower) ||
-               userEmail.includes(searchLower);
+               userEmail.includes(searchLower) ||
+               propertyTitle.includes(searchLower) ||
+               transactionType.includes(searchLower) ||
+               status.includes(searchLower) ||
+               amount.includes(searchLower) ||
+               currency.includes(searchLower);
       });
     }
     
-    // Status filter
+    // Status filter - handle multiple field name variations
     if (filters.status && filters.status.trim()) {
       filtered = filtered.filter(transaction => {
-        const transactionStatus = (transaction.status || '').toLowerCase();
-        const filterStatus = filters.status.toLowerCase();
+        const transactionStatus = String(transaction.status || transaction.transactionStatus || '').toLowerCase().trim();
+        const filterStatus = filters.status.toLowerCase().trim();
         return transactionStatus === filterStatus;
       });
     }
     
-    // Transaction type filter
+    // Transaction type filter - handle multiple field name variations
     if (filters.transaction_type && filters.transaction_type.trim()) {
       filtered = filtered.filter(transaction => {
-        const transactionType = (transaction.transaction_type || '').toLowerCase();
-        const filterType = filters.transaction_type.toLowerCase();
+        const transactionType = String(
+          transaction.transactionType || 
+          transaction.transaction_type || 
+          transaction.type || 
+          ''
+        ).toLowerCase().trim();
+        const filterType = filters.transaction_type.toLowerCase().trim();
         return transactionType === filterType;
       });
     }
     
-    // Property filter
+    // Property filter - case-insensitive match
     if (filters.property && filters.property.trim()) {
       filtered = filtered.filter(transaction => {
-        const propertyTitle = (transaction.property?.title || transaction.property_title || '').toLowerCase();
-        const filterProperty = filters.property.toLowerCase();
-        return propertyTitle.includes(filterProperty);
+        const propertyTitle = String(transaction.property?.title || transaction.property_title || '').toLowerCase().trim();
+        const filterProperty = filters.property.toLowerCase().trim();
+        return propertyTitle === filterProperty;
       });
     }
     
@@ -169,21 +188,41 @@ const TransactionsManagement = () => {
     };
     
     allTransactions.forEach(tx => {
-      const amount = parseFloat(tx.amountUSDT || tx.amount_in_pkr || tx.amount || 0);
-      const type = (tx.transaction_type || tx.type || '').toLowerCase();
-      const status = (tx.status || '').toLowerCase();
+      // Get amount from multiple possible field names
+      const amount = parseFloat(
+        tx.amountUSDT || 
+        tx.amount_in_pkr || 
+        tx.amount || 
+        tx.amountUSDT || 
+        0
+      ) || 0;
       
-      // Count pending
+      // Get transaction type from multiple possible field names
+      const type = String(
+        tx.transactionType || 
+        tx.transaction_type || 
+        tx.type || 
+        ''
+      ).toLowerCase().trim();
+      
+      // Get status from multiple possible field names
+      const status = String(
+        tx.status || 
+        tx.transactionStatus || 
+        ''
+      ).toLowerCase().trim();
+      
+      // Count pending transactions
       if (status === 'pending') {
         stats.pendingCount++;
       }
       
-      // Sum deposits and withdrawals (only completed)
-      if (status === 'completed') {
-        if (type === 'deposit') {
+      // Sum deposits and withdrawals (only completed transactions)
+      if (status === 'completed' || status === 'success') {
+        if (type === 'deposit' || type === 'credit') {
           stats.totalDeposits += amount;
           stats.netVolume += amount;
-        } else if (type === 'withdrawal') {
+        } else if (type === 'withdrawal' || type === 'withdraw' || type === 'debit') {
           stats.totalWithdrawals += amount;
           stats.netVolume -= amount;
         }
@@ -226,7 +265,9 @@ const TransactionsManagement = () => {
   };
 
   const formatPrice = (amount, currency = 'USD') => {
-    const num = parseFloat(amount);
+    const num = parseFloat(amount) || 0;
+    if (isNaN(num)) return `${currency} 0`;
+    
     if (num >= 1000000000) {
       return `${currency} ${(num / 1000000000).toFixed(1)}B`;
     } else if (num >= 1000000) {
@@ -234,7 +275,7 @@ const TransactionsManagement = () => {
     } else if (num >= 1000) {
       return `${currency} ${(num / 1000).toFixed(0)}K`;
     }
-    return `${currency} ${num.toFixed(0)}`;
+    return `${currency} ${num.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
   };
 
   const formatDate = (dateString) => {
@@ -295,59 +336,67 @@ const TransactionsManagement = () => {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card className="p-6">
-          <div className="flex items-center">
-            <div className="p-2 bg-green-100 rounded-lg">
-              <TrendingUp className="w-6 h-6 text-green-600" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-muted-foreground">Total Deposits</p>
-              <p className="text-2xl font-bold text-card-foreground">
-                {formatPrice(summary.totalDeposits)}
-              </p>
-            </div>
-          </div>
-        </Card>
-
-        <Card className="p-6">
-          <div className="flex items-center">
-            <div className="p-2 bg-red-100 rounded-lg">
-              <TrendingDown className="w-6 h-6 text-red-600" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-muted-foreground">Total Withdrawals</p>
-              <p className="text-2xl font-bold text-card-foreground">
-                {formatPrice(summary.totalWithdrawals)}
-              </p>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <Card className="p-6 hover:shadow-lg transition-shadow">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center flex-1">
+              <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-lg flex-shrink-0">
+                <TrendingUp className="w-6 h-6 text-green-600 dark:text-green-400" />
+              </div>
+              <div className="ml-4 flex-1 min-w-0">
+                <p className="text-sm font-medium text-muted-foreground mb-1">Total Deposits</p>
+                <p className="text-2xl font-bold text-card-foreground truncate">
+                  {formatPrice(summary.totalDeposits)}
+                </p>
+              </div>
             </div>
           </div>
         </Card>
 
-        <Card className="p-6">
-          <div className="flex items-center">
-            <div className="p-2 bg-yellow-100 rounded-lg">
-              <Clock className="w-6 h-6 text-yellow-600" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-muted-foreground">Pending</p>
-              <p className="text-2xl font-bold text-card-foreground">
-                {summary.pendingCount}
-              </p>
+        <Card className="p-6 hover:shadow-lg transition-shadow">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center flex-1">
+              <div className="p-3 bg-red-100 dark:bg-red-900/30 rounded-lg flex-shrink-0">
+                <TrendingDown className="w-6 h-6 text-red-600 dark:text-red-400" />
+              </div>
+              <div className="ml-4 flex-1 min-w-0">
+                <p className="text-sm font-medium text-muted-foreground mb-1">Total Withdrawals</p>
+                <p className="text-2xl font-bold text-card-foreground truncate">
+                  {formatPrice(summary.totalWithdrawals)}
+                </p>
+              </div>
             </div>
           </div>
         </Card>
 
-        <Card className="p-6">
-          <div className="flex items-center">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <DollarSign className="w-6 h-6 text-blue-600" />
+        <Card className="p-6 hover:shadow-lg transition-shadow">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center flex-1">
+              <div className="p-3 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg flex-shrink-0">
+                <Clock className="w-6 h-6 text-yellow-600 dark:text-yellow-400" />
+              </div>
+              <div className="ml-4 flex-1 min-w-0">
+                <p className="text-sm font-medium text-muted-foreground mb-1">Pending</p>
+                <p className="text-2xl font-bold text-card-foreground">
+                  {summary.pendingCount.toLocaleString()}
+                </p>
+              </div>
             </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-muted-foreground">Net Volume</p>
-              <p className="text-2xl font-bold text-card-foreground">
-                {formatPrice(summary.netVolume)}
-              </p>
+          </div>
+        </Card>
+
+        <Card className="p-6 hover:shadow-lg transition-shadow">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center flex-1">
+              <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex-shrink-0">
+                <DollarSign className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+              </div>
+              <div className="ml-4 flex-1 min-w-0">
+                <p className="text-sm font-medium text-muted-foreground mb-1">Net Volume</p>
+                <p className="text-2xl font-bold text-card-foreground truncate">
+                  {formatPrice(summary.netVolume)}
+                </p>
+              </div>
             </div>
           </div>
         </Card>
@@ -362,7 +411,7 @@ const TransactionsManagement = () => {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <input
                 type="text"
-                placeholder="Search transactions..."
+                placeholder="Search ID, name, email, property, amount..."
                 value={filters.search}
                 onChange={(e) => handleFilterChange('search', e.target.value)}
                 onKeyDown={(e) => {
