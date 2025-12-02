@@ -692,8 +692,9 @@ const PropertiesManagement = () => {
   };
 
   const handleViewProperty = (property) => {
-    setSelectedProperty(property);
-    setShowModal(true);
+    const propertyId = property.id || property.displayCode || property.slug;
+    const propertyUrl = `/admin/property/${propertyId}`;
+    window.open(propertyUrl, '_blank');
   };
 
   const confirmStatusUpdate = () => {
@@ -1229,7 +1230,7 @@ const PropertiesManagement = () => {
                               onClick={() => {
                                 const propertyId = mappedProperty.id || mappedProperty.displayCode;
                                 if (propertyId) {
-                                  window.location.href = `/admin/property/${propertyId}`;
+                                  window.open(`/admin/property/${propertyId}`, '_blank');
                                 }
                               }}
                               className="text-blue-600 hover:text-blue-800 hover:underline cursor-pointer text-left truncate max-w-full"
