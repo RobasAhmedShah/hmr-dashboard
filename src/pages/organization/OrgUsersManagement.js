@@ -193,57 +193,63 @@ const OrgUsersManagement = ({ organizationId }) => {
       </div>
 
       {/* Investment Analytics Summary */}
-      {analytics && Object.keys(analytics).length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card className="p-4 bg-gradient-to-br from-primary/10 to-blue-100 border-primary/20">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-primary font-medium">Total Investment Value</p>
-                <p className="text-2xl font-bold text-primary mt-1">
-                  ${parseFloat(analytics.totalAmountUSDT || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                </p>
-              </div>
-              <DollarSign className="w-8 h-8 text-primary opacity-50" />
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <Card className="p-6 border-2 border-blue-400 rounded-lg">
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-sm text-muted-foreground mb-1">Total Investment Value</p>
+              <p className="text-2xl font-bold text-card-foreground">
+                ${parseFloat(analytics.totalAmountUSDT || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </p>
             </div>
-          </Card>
+            <div className="p-2 bg-blue-100 rounded-lg">
+              <DollarSign className="w-5 h-5 text-blue-600" />
+            </div>
+          </div>
+        </Card>
 
-          <Card className="p-4 bg-gradient-to-br from-green-50 to-green-100 border-green-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-green-600 font-medium">Total Investments</p>
-                <p className="text-2xl font-bold text-green-900 mt-1">
-                  {analytics.totalInvestments || 0}
-                </p>
-              </div>
-              <TrendingUp className="w-8 h-8 text-green-600 opacity-50" />
+        <Card className="p-6 border-2 border-green-500 rounded-lg">
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-sm text-muted-foreground mb-1">Total Investors</p>
+              <p className="text-2xl font-bold text-card-foreground">
+                {pagination.totalUsers || allInvestors.length}
+              </p>
             </div>
-          </Card>
+            <div className="p-2 bg-green-100 rounded-lg">
+              <UsersIcon className="w-5 h-5 text-green-600" />
+            </div>
+          </div>
+        </Card>
 
-          <Card className="p-4 bg-gradient-to-br from-purple-50 to-purple-100 border-border">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-purple-600 font-medium">Active Investments</p>
-                <p className="text-2xl font-bold text-purple-900 mt-1">
-                  {analytics.activeInvestments || 0}
-                </p>
-              </div>
-              <CheckCircle className="w-8 h-8 text-purple-600 opacity-50" />
+        <Card className="p-6 border-2 border-purple-500 rounded-lg">
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-sm text-muted-foreground mb-1">Active Investments</p>
+              <p className="text-2xl font-bold text-card-foreground">
+                {analytics.activeInvestments || 0}
+              </p>
             </div>
-          </Card>
+            <div className="p-2 bg-purple-100 rounded-lg">
+              <CheckCircle className="w-5 h-5 text-purple-600" />
+            </div>
+          </div>
+        </Card>
 
-          <Card className="p-4 bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-orange-600 font-medium">Avg. Investment</p>
-                <p className="text-2xl font-bold text-orange-900 mt-1">
-                  ${parseFloat(analytics.averageInvestmentAmount || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                </p>
-              </div>
-              <BarChart3 className="w-8 h-8 text-orange-600 opacity-50" />
+        <Card className="p-6 border-2 border-orange-500 rounded-lg">
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-sm text-muted-foreground mb-1">Avg. Investment</p>
+              <p className="text-2xl font-bold text-card-foreground">
+                ${parseFloat(analytics.averageInvestmentAmount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </p>
             </div>
-          </Card>
-        </div>
-      )}
+            <div className="p-2 bg-orange-100 rounded-lg">
+              <BarChart3 className="w-5 h-5 text-orange-600" />
+            </div>
+          </div>
+        </Card>
+      </div>
 
       {/* Filters */}
       <Card className="p-6">

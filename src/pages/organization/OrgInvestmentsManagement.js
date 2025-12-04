@@ -22,8 +22,13 @@ const OrgInvestmentsManagement = ({ organizationId }) => {
   
   const [filters, setFilters] = useState({
     search: '',
-    status: ''
+    status: '',
+    startDate: '',
+    endDate: '',
+    sortBy: 'latest' // 'latest' or 'earliest'
   });
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   // Fetch investments using organization API (with fallback)
   const { data: investmentsData, isLoading, error } = useQuery(
@@ -130,10 +135,11 @@ const OrgInvestmentsManagement = ({ organizationId }) => {
     return inv.property_name || inv.propertyName || inv.property?.name || 'N/A';
   };
 
-  // Frontend filtering
+  // Frontend filtering and sorting
   const filteredInvestments = useMemo(() => {
     let filtered = [...investments];
     
+    // Search filter
     if (filters.search) {
       const searchLower = filters.search.toLowerCase();
       filtered = filtered.filter(inv => {
@@ -147,14 +153,68 @@ const OrgInvestmentsManagement = ({ organizationId }) => {
       });
     }
     
+    // Status filter
     if (filters.status) {
       filtered = filtered.filter(inv =>
         (inv.status || '').toLowerCase() === filters.status.toLowerCase()
       );
     }
     
+    // Date range filter
+    if (filters.startDate || filters.endDate) {
+      filtered = filtered.filter(inv => {
+        const invDate = new Date(inv.created_at || inv.createdAt || 0);
+        if (!invDate || isNaN(invDate.getTime())) return false;
+        
+        const startDate = filters.startDate ? new Date(filters.startDate) : null;
+        const endDate = filters.endDate ? new Date(filters.endDate) : null;
+        
+        // Set time to start/end of day for proper comparison
+        if (startDate) {
+          startDate.setHours(0, 0, 0, 0);
+        }
+        if (endDate) {
+          endDate.setHours(23, 59, 59, 999);
+        }
+        
+        invDate.setHours(0, 0, 0, 0);
+        
+        if (startDate && endDate) {
+          return invDate >= startDate && invDate <= endDate;
+        } else if (startDate) {
+          return invDate >= startDate;
+        } else if (endDate) {
+          return invDate <= endDate;
+        }
+        return true;
+      });
+    }
+    
+    // Sorting
+    filtered.sort((a, b) => {
+      const dateA = new Date(a.created_at || a.createdAt || 0);
+      const dateB = new Date(b.created_at || b.createdAt || 0);
+      
+      if (filters.sortBy === 'latest') {
+        return dateB - dateA; // Newest first
+      } else {
+        return dateA - dateB; // Oldest first
+      }
+    });
+    
     return filtered;
   }, [investments, filters]);
+  
+  // Pagination
+  const totalPages = Math.ceil(filteredInvestments.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedInvestments = filteredInvestments.slice(startIndex, endIndex);
+  
+  // Reset to page 1 when filters change
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [filters.search, filters.status, filters.startDate, filters.endDate]);
 
   const handleFilterChange = (key, value) => {
     setFilters(prev => ({ ...prev, [key]: value }));
@@ -297,70 +357,58 @@ const OrgInvestmentsManagement = ({ organizationId }) => {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card className="p-6 border-l-4 border-primary">
-          <div className="flex items-center justify-between">
+        <Card className="p-6 border-2 border-blue-400 rounded-lg">
+          <div className="flex items-start justify-between">
             <div>
-              <p className="text-sm text-muted-foreground">Total Investments</p>
-              <p className="text-2xl font-bold text-card-foreground mt-1">
+              <p className="text-sm text-muted-foreground mb-1">Total Investment Value</p>
+              <p className="text-2xl font-bold text-card-foreground">
                 {formatCurrency(summary.totalInvestment)}
               </p>
-              <p className="text-xs text-muted-foreground mt-1">
-                {filteredInvestments.length} investments
-              </p>
             </div>
-            <div className="p-3 bg-primary/20 rounded-lg">
-              <DollarSign className="w-6 h-6 text-primary" />
+            <div className="p-2 bg-blue-100 rounded-lg">
+              <DollarSign className="w-5 h-5 text-blue-600" />
             </div>
           </div>
         </Card>
 
-        <Card className="p-6 border-l-4 border-purple-500">
-          <div className="flex items-center justify-between">
+        <Card className="p-6 border-2 border-green-500 rounded-lg">
+          <div className="flex items-start justify-between">
             <div>
-              <p className="text-sm text-muted-foreground">Total Tokens</p>
-              <p className="text-2xl font-bold text-card-foreground mt-1">
-                {summary.totalTokens.toLocaleString()}
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Avg: {(filteredInvestments.length > 0 ? summary.totalTokens / filteredInvestments.length : 0).toFixed(2)} per investment
+              <p className="text-sm text-muted-foreground mb-1">Total Investments</p>
+              <p className="text-2xl font-bold text-card-foreground">
+                {filteredInvestments.length}
               </p>
             </div>
-            <div className="p-3 bg-primary/20 rounded-lg">
-              <TrendingUp className="w-6 h-6 text-purple-600" />
+            <div className="p-2 bg-green-100 rounded-lg">
+              <TrendingUp className="w-5 h-5 text-green-600" />
             </div>
           </div>
         </Card>
 
-        <Card className="p-6 border-l-4 border-green-500">
-          <div className="flex items-center justify-between">
+        <Card className="p-6 border-2 border-purple-500 rounded-lg">
+          <div className="flex items-start justify-between">
             <div>
-              <p className="text-sm text-muted-foreground">Active Investments</p>
-              <p className="text-2xl font-bold text-card-foreground mt-1">
+              <p className="text-sm text-muted-foreground mb-1">Active Investments</p>
+              <p className="text-2xl font-bold text-card-foreground">
                 {summary.activeInvestments}
               </p>
-              <p className="text-xs text-muted-foreground mt-1">
-                {summary.pendingInvestments} pending
-              </p>
             </div>
-            <div className="p-3 bg-green-100 rounded-lg">
-              <CheckCircle className="w-6 h-6 text-green-600" />
+            <div className="p-2 bg-purple-100 rounded-lg">
+              <CheckCircle className="w-5 h-5 text-purple-600" />
             </div>
           </div>
         </Card>
 
-        <Card className="p-6 border-l-4 border-orange-500">
-          <div className="flex items-center justify-between">
+        <Card className="p-6 border-2 border-orange-500 rounded-lg">
+          <div className="flex items-start justify-between">
             <div>
-              <p className="text-sm text-muted-foreground">Avg Investment</p>
-              <p className="text-2xl font-bold text-card-foreground mt-1">
+              <p className="text-sm text-muted-foreground mb-1">Avg. Investment</p>
+              <p className="text-2xl font-bold text-card-foreground">
                 {formatCurrency(summary.averageInvestment)}
               </p>
-              <p className="text-xs text-muted-foreground mt-1">
-                per investor
-              </p>
             </div>
-            <div className="p-3 bg-orange-100 rounded-lg">
-              <TrendingUp className="w-6 h-6 text-orange-600" />
+            <div className="p-2 bg-orange-100 rounded-lg">
+              <TrendingUp className="w-5 h-5 text-orange-600" />
             </div>
           </div>
         </Card>
@@ -368,7 +416,7 @@ const OrgInvestmentsManagement = ({ organizationId }) => {
 
       {/* Filters */}
       <Card className="p-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Search</label>
             <div className="relative">
@@ -378,6 +426,11 @@ const OrgInvestmentsManagement = ({ organizationId }) => {
                 placeholder="Search investments..."
                 value={filters.search}
                 onChange={(e) => handleFilterChange('search', e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    setCurrentPage(1);
+                  }
+                }}
                 className="w-full pl-10 pr-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-primary"
               />
             </div>
@@ -396,6 +449,76 @@ const OrgInvestmentsManagement = ({ organizationId }) => {
               <option value="completed">Completed</option>
               <option value="cancelled">Cancelled</option>
             </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+            <div className="relative">
+              <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                type="date"
+                value={filters.startDate}
+                onChange={(e) => handleFilterChange('startDate', e.target.value)}
+                className="w-full pl-10 pr-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-primary"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+            <div className="relative">
+              <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                type="date"
+                value={filters.endDate}
+                onChange={(e) => handleFilterChange('endDate', e.target.value)}
+                min={filters.startDate}
+                className="w-full pl-10 pr-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-primary"
+              />
+            </div>
+          </div>
+        </div>
+        
+        <div className="mt-4 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Sort By</label>
+              <select
+                value={filters.sortBy}
+                onChange={(e) => handleFilterChange('sortBy', e.target.value)}
+                className="px-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-primary"
+              >
+                <option value="latest">Latest First</option>
+                <option value="earliest">Earliest First</option>
+              </select>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            {(filters.startDate || filters.endDate) && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  handleFilterChange('startDate', '');
+                  handleFilterChange('endDate', '');
+                }}
+                className="text-xs"
+              >
+                Clear Date Filter
+              </Button>
+            )}
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => {
+                // Trigger filter application by resetting page
+                setCurrentPage(1);
+              }}
+              className="text-xs flex items-center gap-2"
+            >
+              <Search className="w-4 h-4" />
+              Apply Filters
+            </Button>
           </div>
         </div>
       </Card>
@@ -427,7 +550,7 @@ const OrgInvestmentsManagement = ({ organizationId }) => {
               </tr>
             </thead>
             <tbody className="bg-card divide-y divide-gray-200">
-              {filteredInvestments.length === 0 ? (
+              {paginatedInvestments.length === 0 ? (
                 <tr>
                   <td colSpan="6" className="px-6 py-12 text-center">
                     <TrendingUp className="w-12 h-12 text-gray-400 mx-auto mb-4" />
@@ -436,7 +559,7 @@ const OrgInvestmentsManagement = ({ organizationId }) => {
                   </td>
                 </tr>
               ) : (
-                filteredInvestments.map((investment) => {
+                paginatedInvestments.map((investment) => {
                   const amount = getInvestmentAmount(investment);
                   const tokens = getTokenCount(investment);
                   const investorName = getInvestorName(investment);
@@ -505,6 +628,91 @@ const OrgInvestmentsManagement = ({ organizationId }) => {
             </tbody>
           </table>
         </div>
+        
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="bg-card px-4 py-3 flex items-center justify-between border-t border-border sm:px-6">
+            <div className="flex-1 flex justify-between sm:hidden">
+              <Button
+                variant="outline"
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+              >
+                Previous
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+              >
+                Next
+              </Button>
+            </div>
+            <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm text-foreground">
+                  Showing{' '}
+                  <span className="font-medium">
+                    {filteredInvestments.length === 0 ? 0 : startIndex + 1}
+                  </span>{' '}
+                  to{' '}
+                  <span className="font-medium">
+                    {Math.min(endIndex, filteredInvestments.length)}
+                  </span>{' '}
+                  of{' '}
+                  <span className="font-medium">{filteredInvestments.length}</span>{' '}
+                  results
+                </p>
+              </div>
+              <div>
+                <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+                  <Button
+                    variant="outline"
+                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                    disabled={currentPage === 1}
+                    className="rounded-r-none"
+                  >
+                    Previous
+                  </Button>
+                  {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
+                    let pageNum;
+                    if (totalPages <= 7) {
+                      pageNum = i + 1;
+                    } else if (currentPage <= 4) {
+                      pageNum = i + 1;
+                    } else if (currentPage >= totalPages - 3) {
+                      pageNum = totalPages - 6 + i;
+                    } else {
+                      pageNum = currentPage - 3 + i;
+                    }
+                    
+                    return (
+                      <button
+                        key={pageNum}
+                        onClick={() => setCurrentPage(pageNum)}
+                        className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                          pageNum === currentPage
+                            ? 'z-10 bg-primary text-primary-foreground border-primary'
+                            : 'bg-card border-input text-muted-foreground hover:bg-accent'
+                        }`}
+                      >
+                        {pageNum}
+                      </button>
+                    );
+                  })}
+                  <Button
+                    variant="outline"
+                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                    disabled={currentPage === totalPages}
+                    className="rounded-l-none"
+                  >
+                    Next
+                  </Button>
+                </nav>
+              </div>
+            </div>
+          </div>
+        )}
       </Card>
     </div>
   );
