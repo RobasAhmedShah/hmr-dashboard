@@ -23,8 +23,13 @@ const OrgTransactionsManagement = ({ organizationId }) => {
   const [filters, setFilters] = useState({
     search: '',
     status: '',
-    transaction_type: ''
+    transaction_type: '',
+    startDate: '',
+    endDate: '',
+    sortBy: 'latest' // 'latest' or 'earliest'
   });
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   // Fetch organization liquidity transactions
   const { data: transactionsData, isLoading, error } = useQuery(
@@ -90,10 +95,11 @@ const OrgTransactionsManagement = ({ organizationId }) => {
            'other';
   };
 
-  // Frontend filtering
+  // Frontend filtering and sorting
   const filteredTransactions = useMemo(() => {
     let filtered = [...allTransactions];
     
+    // Search filter
     if (filters.search) {
       const searchLower = filters.search.toLowerCase();
       filtered = filtered.filter(transaction => {
@@ -111,12 +117,14 @@ const OrgTransactionsManagement = ({ organizationId }) => {
       });
     }
     
+    // Status filter
     if (filters.status) {
       filtered = filtered.filter(transaction =>
         (transaction.status || '').toLowerCase() === filters.status.toLowerCase()
       );
     }
     
+    // Type filter
     if (filters.transaction_type) {
       const typeFilter = filters.transaction_type.toLowerCase();
       filtered = filtered.filter(transaction => {
@@ -125,8 +133,61 @@ const OrgTransactionsManagement = ({ organizationId }) => {
       });
     }
     
+    // Date range filter
+    if (filters.startDate || filters.endDate) {
+      filtered = filtered.filter(transaction => {
+        const txDate = new Date(transaction.created_at || transaction.createdAt || 0);
+        if (!txDate || isNaN(txDate.getTime())) return false;
+        
+        const startDate = filters.startDate ? new Date(filters.startDate) : null;
+        const endDate = filters.endDate ? new Date(filters.endDate) : null;
+        
+        // Set time to start/end of day for proper comparison
+        if (startDate) {
+          startDate.setHours(0, 0, 0, 0);
+        }
+        if (endDate) {
+          endDate.setHours(23, 59, 59, 999);
+        }
+        
+        txDate.setHours(0, 0, 0, 0);
+        
+        if (startDate && endDate) {
+          return txDate >= startDate && txDate <= endDate;
+        } else if (startDate) {
+          return txDate >= startDate;
+        } else if (endDate) {
+          return txDate <= endDate;
+        }
+        return true;
+      });
+    }
+    
+    // Sorting
+    filtered.sort((a, b) => {
+      const dateA = new Date(a.created_at || a.createdAt || 0);
+      const dateB = new Date(b.created_at || b.createdAt || 0);
+      
+      if (filters.sortBy === 'latest') {
+        return dateB - dateA; // Newest first
+      } else {
+        return dateA - dateB; // Oldest first
+      }
+    });
+    
     return filtered;
   }, [allTransactions, filters]);
+  
+  // Pagination
+  const totalPages = Math.ceil(filteredTransactions.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedTransactions = filteredTransactions.slice(startIndex, endIndex);
+  
+  // Reset to page 1 when filters change
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [filters.search, filters.status, filters.transaction_type, filters.startDate, filters.endDate]);
 
   const handleFilterChange = (key, value) => {
     setFilters(prev => ({ ...prev, [key]: value }));
@@ -301,44 +362,44 @@ const OrgTransactionsManagement = ({ organizationId }) => {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="p-6 border-l-4 border-primary">
-          <div className="flex items-center justify-between">
+        <Card className="p-6 border-2 border-blue-400 rounded-lg">
+          <div className="flex items-start justify-between">
             <div>
-              <p className="text-sm text-muted-foreground">Total Volume</p>
-              <p className="text-2xl font-bold text-card-foreground mt-1">
+              <p className="text-sm text-muted-foreground mb-1">Total Volume</p>
+              <p className="text-2xl font-bold text-card-foreground">
                 {formatCurrency(summary.totalAmount)}
               </p>
             </div>
-            <div className="p-3 bg-primary/20 rounded-lg">
-              <DollarSign className="w-6 h-6 text-primary" />
+            <div className="p-2 bg-blue-100 rounded-lg">
+              <DollarSign className="w-5 h-5 text-blue-600" />
             </div>
           </div>
         </Card>
 
-        <Card className="p-6 border-l-4 border-green-500">
-          <div className="flex items-center justify-between">
+        <Card className="p-6 border-2 border-green-500 rounded-lg">
+          <div className="flex items-start justify-between">
             <div>
-              <p className="text-sm text-muted-foreground">Completed</p>
-              <p className="text-2xl font-bold text-card-foreground mt-1">
+              <p className="text-sm text-muted-foreground mb-1">Completed</p>
+              <p className="text-2xl font-bold text-card-foreground">
                 {summary.completedTransactions}
               </p>
             </div>
-            <div className="p-3 bg-green-100 rounded-lg">
-              <CheckCircle className="w-6 h-6 text-green-600" />
+            <div className="p-2 bg-green-100 rounded-lg">
+              <CheckCircle className="w-5 h-5 text-green-600" />
             </div>
           </div>
         </Card>
 
-        <Card className="p-6 border-l-4 border-yellow-500">
-          <div className="flex items-center justify-between">
+        <Card className="p-6 border-2 border-yellow-500 rounded-lg">
+          <div className="flex items-start justify-between">
             <div>
-              <p className="text-sm text-muted-foreground">Pending</p>
-              <p className="text-2xl font-bold text-card-foreground mt-1">
+              <p className="text-sm text-muted-foreground mb-1">Pending</p>
+              <p className="text-2xl font-bold text-card-foreground">
                 {summary.pendingTransactions}
               </p>
             </div>
-            <div className="p-3 bg-yellow-100 rounded-lg">
-              <Clock className="w-6 h-6 text-yellow-600" />
+            <div className="p-2 bg-yellow-100 rounded-lg">
+              <Clock className="w-5 h-5 text-yellow-600" />
             </div>
           </div>
         </Card>
@@ -346,7 +407,7 @@ const OrgTransactionsManagement = ({ organizationId }) => {
 
       {/* Filters */}
       <Card className="p-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Search</label>
             <div className="relative">
@@ -356,6 +417,11 @@ const OrgTransactionsManagement = ({ organizationId }) => {
                 placeholder="Search transactions..."
                 value={filters.search}
                 onChange={(e) => handleFilterChange('search', e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    setCurrentPage(1);
+                  }
+                }}
                 className="w-full pl-10 pr-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-primary"
               />
             </div>
@@ -391,6 +457,76 @@ const OrgTransactionsManagement = ({ organizationId }) => {
               <option value="reward">Reward</option>
             </select>
           </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+            <div className="relative">
+              <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                type="date"
+                value={filters.startDate}
+                onChange={(e) => handleFilterChange('startDate', e.target.value)}
+                className="w-full pl-10 pr-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-primary"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+            <div className="relative">
+              <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                type="date"
+                value={filters.endDate}
+                onChange={(e) => handleFilterChange('endDate', e.target.value)}
+                min={filters.startDate}
+                className="w-full pl-10 pr-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-primary"
+              />
+            </div>
+          </div>
+        </div>
+        
+        <div className="mt-4 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Sort By</label>
+              <select
+                value={filters.sortBy}
+                onChange={(e) => handleFilterChange('sortBy', e.target.value)}
+                className="px-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-primary"
+              >
+                <option value="latest">Latest First</option>
+                <option value="earliest">Earliest First</option>
+              </select>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            {(filters.startDate || filters.endDate) && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  handleFilterChange('startDate', '');
+                  handleFilterChange('endDate', '');
+                }}
+                className="text-xs"
+              >
+                Clear Date Filter
+              </Button>
+            )}
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => {
+                // Trigger filter application by resetting page
+                setCurrentPage(1);
+              }}
+              className="text-xs flex items-center gap-2"
+            >
+              <Search className="w-4 h-4" />
+              Apply Filters
+            </Button>
+          </div>
         </div>
       </Card>
 
@@ -421,7 +557,7 @@ const OrgTransactionsManagement = ({ organizationId }) => {
               </tr>
             </thead>
             <tbody className="bg-card divide-y divide-gray-200">
-              {filteredTransactions.length === 0 ? (
+              {paginatedTransactions.length === 0 ? (
                 <tr>
                   <td colSpan="6" className="px-6 py-12 text-center">
                     <DollarSign className="w-12 h-12 text-gray-400 mx-auto mb-4" />
@@ -430,7 +566,7 @@ const OrgTransactionsManagement = ({ organizationId }) => {
                   </td>
                 </tr>
               ) : (
-                filteredTransactions.map((transaction) => {
+                paginatedTransactions.map((transaction) => {
                   const amount = getTransactionAmount(transaction);
                   const txType = getTransactionType(transaction);
                   const userName = getTransactionUser(transaction);
@@ -493,6 +629,91 @@ const OrgTransactionsManagement = ({ organizationId }) => {
             </tbody>
           </table>
         </div>
+        
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="bg-card px-4 py-3 flex items-center justify-between border-t border-border sm:px-6">
+            <div className="flex-1 flex justify-between sm:hidden">
+              <Button
+                variant="outline"
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+              >
+                Previous
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+              >
+                Next
+              </Button>
+            </div>
+            <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm text-foreground">
+                  Showing{' '}
+                  <span className="font-medium">
+                    {filteredTransactions.length === 0 ? 0 : startIndex + 1}
+                  </span>{' '}
+                  to{' '}
+                  <span className="font-medium">
+                    {Math.min(endIndex, filteredTransactions.length)}
+                  </span>{' '}
+                  of{' '}
+                  <span className="font-medium">{filteredTransactions.length}</span>{' '}
+                  results
+                </p>
+              </div>
+              <div>
+                <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+                  <Button
+                    variant="outline"
+                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                    disabled={currentPage === 1}
+                    className="rounded-r-none"
+                  >
+                    Previous
+                  </Button>
+                  {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
+                    let pageNum;
+                    if (totalPages <= 7) {
+                      pageNum = i + 1;
+                    } else if (currentPage <= 4) {
+                      pageNum = i + 1;
+                    } else if (currentPage >= totalPages - 3) {
+                      pageNum = totalPages - 6 + i;
+                    } else {
+                      pageNum = currentPage - 3 + i;
+                    }
+                    
+                    return (
+                      <button
+                        key={pageNum}
+                        onClick={() => setCurrentPage(pageNum)}
+                        className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                          pageNum === currentPage
+                            ? 'z-10 bg-primary text-primary-foreground border-primary'
+                            : 'bg-card border-input text-muted-foreground hover:bg-accent'
+                        }`}
+                      >
+                        {pageNum}
+                      </button>
+                    );
+                  })}
+                  <Button
+                    variant="outline"
+                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                    disabled={currentPage === totalPages}
+                    className="rounded-l-none"
+                  >
+                    Next
+                  </Button>
+                </nav>
+              </div>
+            </div>
+          </div>
+        )}
       </Card>
     </div>
   );
